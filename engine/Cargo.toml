@@ -5,3 +5,4 @@ edition = "2021"
 
 [dependencies]
 winit = "0.29.9"
+shipyard = "0.6.2"

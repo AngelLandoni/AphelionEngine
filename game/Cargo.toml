@@ -5,3 +5,4 @@ edition = "2021"
 
 [dependencies]
 engine = { path = "../engine" }
+shipyard = "0.6.2"

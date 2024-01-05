@@ -10,7 +10,22 @@ use crate::{
     app::App,
 };
 
-pub struct WinitWindowPlugin;
+pub struct WinitWindowPlugin {
+    title: String,
+    width: f64,
+    height: f64,
+}
+
+impl WinitWindowPlugin {
+    /// Creates a new `Winit` Window.
+    pub fn new(title: &str, width: f64, height: f64) -> Self {
+        WinitWindowPlugin {
+            title: title.to_string(),
+            width,
+            height,
+        }
+    }    
+}
 
 impl Pluggable for WinitWindowPlugin {
     /// Spawns the main window and triggers the `winit` run loop.
@@ -18,11 +33,15 @@ impl Pluggable for WinitWindowPlugin {
         let event_loop = EventLoop::new()
             .expect("Unable to initialize `Winit` main run loop");
 
+        let title = self.title.clone();
+        let width = self.width;
+        let height = self.height;
+
         app.set_run_loop(move |app: &mut App| {
             // Create a window builder
             let window_builder = WindowBuilder::new()
-                .with_title("My Window")
-                .with_inner_size(LogicalSize::new(800.0, 600.0));
+                .with_title(title)
+                .with_inner_size(LogicalSize::new(width, height));
 
             // Create the window
             let _window = window_builder.build(&event_loop)
@@ -43,6 +62,10 @@ impl Pluggable for WinitWindowPlugin {
                 match e {
                     WindowEvent::CloseRequested => {
                         elwt.exit();
+                    }
+
+                    WindowEvent::RedrawRequested => {
+                        app.update();
                     }
 
                     _ => (),
