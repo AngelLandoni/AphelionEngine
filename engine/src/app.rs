@@ -1,4 +1,4 @@
-use shipyard::{World, Workload};
+use shipyard::World;
 
 use crate::{
     plugin::Pluggable,
