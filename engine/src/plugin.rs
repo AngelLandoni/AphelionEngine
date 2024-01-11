@@ -1,3 +1,4 @@
+pub mod renderer;
 pub mod window;
 
 use crate::app::App;

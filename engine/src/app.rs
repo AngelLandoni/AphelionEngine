@@ -10,7 +10,7 @@ use crate::{
 /// custom configurations to the engine.
 pub struct App<'app> {
     /// The main `ECS`.
-    world: World,
+    pub(crate) world: World,
     /// This is the main run loop responsible for keeping the application alive
     /// and dispatching events.
     run_loop: Box<dyn FnOnce(&mut App) + 'app>,

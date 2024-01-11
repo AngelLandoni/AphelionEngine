@@ -1,5 +1,5 @@
 use engine::{
-    plugin::{window::winit_window_plugin::WinitWindowPlugin, Pluggable},
+    plugin::{window::WinitWindowPlugin, Pluggable, renderer::WgpuRendererPlugin},
     schedule::Schedule,
     app::App,
 };
@@ -43,13 +43,13 @@ impl Pluggable for PlayerPlugin {
 }
 
 pub fn main() {
-    println!("Game running");
     App::new()
         .add_plugin(WinitWindowPlugin::new(
             "My game",
-            1024.0,
-            800.0
+            1024,
+            800,
         ))
+        .add_plugin(WgpuRendererPlugin)
         .add_plugin(PlayerPlugin)
         .run();
 }
