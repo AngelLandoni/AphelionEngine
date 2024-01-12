@@ -2,7 +2,7 @@ use shipyard::World;
 
 use crate::{
     plugin::Pluggable,
-    schedule::{Scheduler, Schedule},
+    schedule::{Scheduler, Schedule}, workload::run_update_workload,
 };
 
 /// This class represents the application, serving as the container for global
@@ -10,14 +10,14 @@ use crate::{
 /// custom configurations to the engine.
 pub struct App<'app> {
     /// The main `ECS`.
-    pub(crate) world: World,
+    pub world: World,
     /// This is the main run loop responsible for keeping the application alive
     /// and dispatching events.
     run_loop: Box<dyn FnOnce(&mut App) + 'app>,
     /// Conatins all the plugins to be configured.
     plugins: Vec<Box<dyn Pluggable + 'app>>,
     /// Contains all the workloads to be performed.
-    scheduler: Scheduler<'app>,
+    pub(crate) scheduler: Scheduler<'app>,
 }
 
 impl<'app> App<'app> {
@@ -58,6 +58,7 @@ impl<'app> App<'app> {
     /// 
     /// TODO(Angel): Check if update needs `mut`.
     pub fn update(&mut self) {
+        run_update_workload(self);
     }
     
     /// Setups the main `RunLoop`.

@@ -16,11 +16,12 @@ use engine::shipyard::{
 struct Pos(f32, f32);
 
 fn create_ints(mut _entities: EntitiesViewMut, mut _vm_vel: ViewMut<Pos>) {
+    println!("Creating stuff!");
 }
 
 fn delete_ints(mut _vm_vel: ViewMut<Pos>) {
+    println!("Deleting stuff!");
 }
-
 
 fn int_cycle() -> Workload {
     (create_ints, delete_ints).into_workload()
@@ -30,13 +31,10 @@ struct PlayerPlugin;
 
 impl Pluggable for PlayerPlugin {
     fn configure(&self, app: &mut App) {
-        // Configure the workload.
-        app.schedule(Schedule::Startup, |world| {
-            world.add_workload(int_cycle);
-        });
+        app.world.add_workload(int_cycle); 
 
-        // Trigger the workload.
         app.schedule(Schedule::Update, |world| {
+            println!("Running workload from userland!");
             world.run_workload(int_cycle).unwrap();
         });
     }

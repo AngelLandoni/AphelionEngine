@@ -4,10 +4,7 @@ use shipyard::World;
 /// Specifies the various steps comprising the application lifecycle.
 #[derive(Eq, PartialEq, Hash)]
 pub enum Schedule {
-    Startup,
-    ConfigFinished,
     Update,
-    End
 }
 
 /// Holds a collection of `Workload`s to be executed alongside information about

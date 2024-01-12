@@ -1,9 +1,4 @@
-use egui::FontDefinitions;
-use egui_wgpu_backend::RenderPass;
-use egui_winit_platform::{Platform, PlatformDescriptor};
-
 use shipyard::{Unique, UniqueView};
-use winit::platform;
 
 use crate::{
     app::App,
@@ -15,7 +10,6 @@ use crate::{
     plugin::window::UniqueWindow,
     plugin::Pluggable
 };
-
 
 /// Shipyard component responsible for storing all renderer-related resources.
 #[derive(Unique)]
@@ -36,20 +30,6 @@ impl Pluggable for WgpuRendererPlugin {
         let gpu = futures_lite::future::block_on(
             Gpu::new(&window_resource.host_window)
         );
-
-        let mut platform = Platform::new(PlatformDescriptor {
-            physical_width: window_resource.host_window.descriptor.width,
-            physical_height: window_resource.host_window.descriptor.width,
-            scale_factor: 1.0,
-            font_definitions: FontDefinitions::default(),
-            style: Default::default(),
-        });
-
-        
-        let surface_format = gpu.surface.get_capabilities(&gpu.adapter).formats[0];
-        RenderPass::new(&gpu.device, surface_format, 1);
-        // Display the demo application that ships with egui.
-        //let mut demo_app = egui_demo_lib::DemoWindows::default();
 
         drop(window_resource);
 
