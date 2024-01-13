@@ -10,3 +10,6 @@ wgpu = "0.18.0"
 crossbeam-queue = "0.3.11"
 raw-window-handle = "0.5.2"
 futures-lite = "2.2.0"
+iced = { git = "https://github.com/iced-rs/iced", branch = "master" }
+iced_wgpu = { git = "https://github.com/iced-rs/iced", branch = "master" }
+iced_winit = { git = "https://github.com/iced-rs/iced", branch = "master" }

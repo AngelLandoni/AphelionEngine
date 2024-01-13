@@ -9,7 +9,8 @@ use wgpu::{
     DeviceDescriptor,
     SurfaceConfiguration,
     TextureUsages,
-    ShaderModule,
+    ShaderModule, 
+    TextureFormat,
 };
 
 use crate::host::window::Window;
@@ -22,7 +23,8 @@ pub(crate) struct Gpu {
     /// Represents a logical device that facilitates interaction with the
     /// underlying physical GPU (Adapter).
     pub device: Device,
-    pub queue: Queue
+    pub queue: Queue,
+    pub texture_format: TextureFormat
 }
 
 impl Gpu {
@@ -54,11 +56,11 @@ impl Gpu {
         .expect("Unable to acquire the wgpu device and/or queue");
 
         let swapchain_capabilities = surface.get_capabilities(&adapter);
-        let swapchain_format = swapchain_capabilities.formats[0];
+        let texture_format = swapchain_capabilities.formats[0];
 
         let config = SurfaceConfiguration {
             usage: TextureUsages::RENDER_ATTACHMENT,
-            format: swapchain_format,
+            format: texture_format,
             width: window.descriptor.width,
             height: window.descriptor.height,
             present_mode: wgpu::PresentMode::Fifo,
@@ -73,6 +75,7 @@ impl Gpu {
             adapter,
             device,
             queue,
+            texture_format,
         }
     }
 

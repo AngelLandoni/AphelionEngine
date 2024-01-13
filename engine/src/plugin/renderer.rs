@@ -1,22 +1,21 @@
-use shipyard::{Unique, UniqueView};
+use shipyard::UniqueView;
 
 use crate::{
     app::App,
     graphics::{
-        gpu::Gpu,
         CommandQueue,
+        gpu::Gpu,
+        components::{
+            UniqueRenderer,
+            UniqueCommandQueue
+        },
         MAX_NUMBER_IF_COMMANDS_PER_FRAME
     },
-    plugin::window::UniqueWindow,
-    plugin::Pluggable
+    plugin::{
+        window::UniqueWindow,
+        Pluggable,
+    },
 };
-
-/// Shipyard component responsible for storing all renderer-related resources.
-#[derive(Unique)]
-pub struct UniqueRenderer(Gpu);
-
-#[derive(Unique)]
-pub struct UniqueCommandQueue(CommandQueue);
 
 pub struct WgpuRendererPlugin;
 
@@ -33,10 +32,12 @@ impl Pluggable for WgpuRendererPlugin {
 
         drop(window_resource);
 
-        app.world.add_unique(UniqueRenderer(gpu));
+        app.world.add_unique(UniqueRenderer {
+            gpu
+        });
 
-        app.world.add_unique(UniqueCommandQueue(
-            CommandQueue::new(MAX_NUMBER_IF_COMMANDS_PER_FRAME)
-        ));
+        app.world.add_unique(UniqueCommandQueue {
+            queue: CommandQueue::new(MAX_NUMBER_IF_COMMANDS_PER_FRAME)
+        });
     }
 }
