@@ -1,5 +1,6 @@
 pub(crate) mod gpu;
 pub(crate) mod passes;
+pub(crate) mod components;
 
 use wgpu::CommandBuffer;
 use crossbeam_queue::ArrayQueue;
@@ -7,7 +8,7 @@ use crossbeam_queue::ArrayQueue;
 /// Specifies the rendering order of different passes; a higher value indicates 
 /// that the pass should be drawn later in the rendering pipeline.
 pub(crate) enum PassSubmitOrder {
-    Gui,    
+    DebugGui,    
 }
 
 /// Wraps a `wgpu` `CommandBuffer` and includes information about the position 

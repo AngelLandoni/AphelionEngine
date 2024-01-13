@@ -1,1 +1,1 @@
-pub(crate) mod gui_pass;
+pub(crate) mod debug_gui_pass;
