@@ -58,11 +58,13 @@ impl Gpu {
         let swapchain_capabilities = surface.get_capabilities(&adapter);
         let texture_format = swapchain_capabilities.formats[0];
 
+        let size = window.accesor.inner_size();
+
         let config = SurfaceConfiguration {
             usage: TextureUsages::RENDER_ATTACHMENT,
             format: texture_format,
-            width: window.descriptor.width,
-            height: window.descriptor.height,
+            width: size.width,
+            height: size.height,
             present_mode: wgpu::PresentMode::Fifo,
             alpha_mode: swapchain_capabilities.alpha_modes[0],
             view_formats: vec![],

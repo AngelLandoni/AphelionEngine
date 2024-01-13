@@ -11,10 +11,8 @@ use crate::{
         },
         MAX_NUMBER_IF_COMMANDS_PER_FRAME
     },
-    plugin::{
-        window::UniqueWindow,
-        Pluggable,
-    },
+    host::components::UniqueWindow,
+    plugin::Pluggable,
 };
 
 pub struct WgpuRendererPlugin;

@@ -5,10 +5,11 @@ use raw_window_handle::{
     RawDisplayHandle,
 };
 
-/// Contains information needed to create the main application window.
-pub struct WindowDescriptor {
-    pub(crate) width: u32,
-    pub(crate) height: u32,
+use crate::types::Size;
+
+pub trait WindowInfoAccessible {
+    fn inner_size(&self) -> Size<u32>;
+    fn scale_factor(&self) -> f64;
 }
 
 /// Represents the main application window. The current engine version does not
@@ -16,21 +17,29 @@ pub struct WindowDescriptor {
 /// in future projects, this abstraction may evolve to accommodate the need for
 /// multiple windows.
 pub struct Window {
-    pub(crate) descriptor: WindowDescriptor,
+    pub(crate) accesor: Box<dyn WindowInfoAccessible>,
     window_handle: RawWindowHandle,
     display_handle: RawDisplayHandle,
 }
 
 impl Window {
     /// Creates a new instance of Window.
-    pub(crate) fn new(descriptor: WindowDescriptor,
+    pub(crate) fn new(accesor: Box<dyn WindowInfoAccessible>,
                       window_handle: RawWindowHandle,
                       display_handle: RawDisplayHandle) -> Self {
         Window {
-            descriptor,
+            accesor,
             window_handle,
             display_handle,
         }
+    }
+
+    pub(crate) fn inner_size(&self) -> Size<u32> {
+        self.accesor.inner_size()
+    }
+
+    pub(crate) fn scale_factor(&self) -> f64 {
+        self.accesor.scale_factor()
     }
 }
 

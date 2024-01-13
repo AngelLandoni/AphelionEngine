@@ -1,10 +1,10 @@
-use std::{
-    sync::{Arc, Mutex},
-    any::Any
+use std::sync::{Arc, Mutex};
+
+use raw_window_handle::{
+    HasRawWindowHandle,
+    HasRawDisplayHandle
 };
 
-use raw_window_handle::{HasRawWindowHandle, HasRawDisplayHandle};
-use shipyard::Unique;
 use winit::{
     event_loop::EventLoop,
     window::WindowBuilder, 
@@ -14,16 +14,27 @@ use winit::{
 
 use crate::{
     plugin::Pluggable,
-    app::App, host::window::{Window, WindowDescriptor},
+    app::App, 
+    host::{
+        components::UniqueWindow,
+        window::{
+            Window,
+            WindowInfoAccessible
+        }
+    },
+    types::Size,
 };
 
-#[derive(Unique)]
-pub struct UniqueWindow {
-    /// The instance of the native window must be kept alive until it is no 
-    /// longer needed.
-    // TODO(Angel): Use a different way to keep the native window alive.
-    native_window: Arc<Mutex<dyn Any + Send + Sync>>,
-    pub(crate) host_window: Window
+pub struct WinitWindowWrapper(winit::window::Window);
+
+impl WindowInfoAccessible for WinitWindowWrapper {
+    fn inner_size(&self) -> Size<u32> {
+        Size::new(self.0.inner_size().width, self.0.inner_size().height)        
+    }
+
+    fn scale_factor(&self) -> f64 {
+        self.0.scale_factor()
+    }
 }
 
 pub struct WinitWindowPlugin {
@@ -61,18 +72,17 @@ impl Pluggable for WinitWindowPlugin {
             .build(&event_loop)
             .expect("Unable to spawn main `Winit` `Window`");
 
+        let raw_window_handle = winit_window.raw_window_handle();
+        let raw_display_handle = winit_window.raw_display_handle();
+
         let host_window = Window::new(
-    WindowDescriptor {
-                width: width,
-                height: height,
-            },
-            winit_window.raw_window_handle(),
-            winit_window.raw_display_handle(),
+            Box::new(WinitWindowWrapper(winit_window)),
+            raw_window_handle,
+            raw_display_handle,
         );
 
         // Add the window as a resource; ensure the `winit_window` is kept alive.
         app.world.add_unique(UniqueWindow {
-            native_window: Arc::new(Mutex::new(winit_window)),
             host_window: host_window,
         });
 
