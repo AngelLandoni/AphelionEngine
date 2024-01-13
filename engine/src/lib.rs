@@ -4,5 +4,6 @@ pub mod schedule;
 pub mod host;
 mod graphics;
 mod workload;
+mod types;
 
 pub use shipyard;
