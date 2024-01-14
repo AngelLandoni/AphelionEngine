@@ -2,7 +2,8 @@ use std::any::Any;
 use std::marker::PhantomData;
 use std::sync::{Arc, RwLock};
 
-use iced::{Font, Pixels, color};
+use iced::{Font, Pixels, color, Theme};
+use iced_wgpu::core::renderer;
 use iced_wgpu::graphics::color;
 use iced_wgpu::{
     graphics::Viewport,
@@ -10,12 +11,14 @@ use iced_wgpu::{
     Backend,
     Settings
 };
+use iced_winit::Clipboard;
 use iced_winit::runtime::{
     Debug,
-    Program,
     program,
 };
-use shipyard::{UniqueView, Unique, World};
+
+use iced_widget::runtime::Program;
+use shipyard::{UniqueView, Unique, };
 
 use crate::graphics::gpu::Gpu;
 use crate::{
@@ -27,16 +30,25 @@ use crate::{
 
 pub trait AnyIced {
     fn render(&mut self, gpu: &Gpu);
+    fn queue_event(&mut self, event: iced::Event);
+    fn update(&mut self);
 }
 
-pub struct IcedWrapper<T: 'static, C: Program + 'static> {
+//pub struct IcedWrapper<P: iced_widget::runtime::Program + 'static> {
+pub struct IcedWrapper<P>
+    where
+    P: Program<Renderer = Renderer<iced::Theme>> + 'static,
+{ 
    viewport: Viewport,
-   renderer: Renderer<T>,
-   state: program::State<C>,
+   //renderer: Renderer<<C::Renderer as iced_core::Renderer>::Theme>,
+   renderer: Renderer<<P::Renderer as iced_core::Renderer>::Theme>,
+   state: program::State<P>,
    debug: Debug,
+   theme: <P::Renderer as iced_core::Renderer>::Theme,
 }
 
-impl<T: 'static, C: Program + 'static> AnyIced for IcedWrapper<T, C> {
+impl<P: Program<Renderer = Renderer<iced::Theme>> + 'static> AnyIced for IcedWrapper<P> {
+//impl<R: iced_core::Renderer, P: Program + 'static + <Renderer = R>> AnyIced for IcedWrapper<R, P> {
     fn render(&mut self, gpu: &Gpu) {
         let screen_frame = gpu.surface.get_current_texture().unwrap();
         let mut encoder = gpu.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
@@ -55,7 +67,7 @@ impl<T: 'static, C: Program + 'static> AnyIced for IcedWrapper<T, C> {
                 &gpu.device,
                 &gpu.queue,
                 &mut encoder,
-                Some(color!(0xff00ff)),
+                None,
                 screen_frame.texture.format(),
                 &view,
                 primitive,
@@ -68,10 +80,30 @@ impl<T: 'static, C: Program + 'static> AnyIced for IcedWrapper<T, C> {
         screen_frame.present();
 
     }
+
+    fn queue_event(&mut self, event: iced::Event) {
+        self.state.queue_event(event);
+    }
+
+    fn update(&mut self) {
+        let mut c = Clipboard::unconnected();
+
+        let _ = self.state.update(
+            self.viewport.logical_size(),
+            iced::mouse::Cursor::Unavailable,
+            &mut self.renderer,
+            &self.theme,
+            &renderer::Style {
+                text_color: Color::WHITE,
+            },
+            &mut c,
+            &mut self.debug,
+        );
+    }
 }
 
-unsafe impl<T: 'static, C: Program + 'static> Send for IcedWrapper<T, C> {}
-unsafe impl<T: 'static, C: Program + 'static> Sync for IcedWrapper<T, C> {}
+unsafe impl<P: Program<Renderer = Renderer<iced::Theme>> + 'static> Send for IcedWrapper<P> {}
+unsafe impl<P: Program<Renderer = Renderer<iced::Theme>> + 'static> Sync for IcedWrapper<P> {}
 
 #[derive(Unique)]
 pub struct UniqueIced {
@@ -128,6 +160,7 @@ impl Pluggable for IcedPlugin {
                     renderer,
                     state,
                     debug,
+                    theme: Theme::Dark,
                 } 
             ) as Box<dyn AnyIced + Send + Sync>
         );
@@ -142,7 +175,6 @@ impl Pluggable for IcedPlugin {
 use iced_widget::{slider, text_input, Column, Row, Text};
 use iced_winit::core::{Alignment, Color, Element, Length};
 use iced_winit::runtime::Command;
-use iced_winit::style::Theme;
 
 pub struct Controls {
     background_color: Color,
