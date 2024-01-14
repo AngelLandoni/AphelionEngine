@@ -5,11 +5,12 @@ use raw_window_handle::{
     HasRawDisplayHandle
 };
 
+use shipyard::{Unique, UniqueView};
 use winit::{
     event_loop::EventLoop,
     window::WindowBuilder, 
     event::{Event, WindowEvent},
-    dpi::LogicalSize, 
+    dpi::LogicalSize, keyboard::ModifiersState, 
 };
 
 use crate::{
@@ -24,6 +25,8 @@ use crate::{
     },
     types::Size,
 };
+
+use super::iced::UniqueIced;
 
 pub struct WinitWindowWrapper(winit::window::Window);
 
@@ -86,30 +89,45 @@ impl Pluggable for WinitWindowPlugin {
             host_window: host_window,
         });
 
+        let mut modifiers = ModifiersState::default();
         app.set_run_loop(move |app: &mut App| {
             event_loop.run(move |event, elwt| {
-                let (e, _w_id) = match event {
+                let u_window = app.world.borrow::<UniqueView<UniqueWindow>>().unwrap();
+                let u_iced = app.world.borrow::<UniqueView<UniqueIced>>().unwrap();
+
+                match event {
                     Event::WindowEvent { window_id, event } => {
-                        (event, window_id)
+                       
+                        // Map window event to iced event
+                        if let Some(event) = iced_winit::conversion::window_event(
+                            iced_winit::core::window::Id::MAIN,
+                            &event,
+                            u_window.host_window.scale_factor(),
+                            modifiers,
+                        ) {
+                            u_iced.inner.lock().unwrap().queue_event(event);
+                        }
+
+                        match event {
+
+                            WindowEvent::CloseRequested => {
+                                elwt.exit();
+                            }
+        
+                            WindowEvent::RedrawRequested => {
+                                app.update();
+                            }
+
+                            _ => {} 
+                        } 
                     }
 
-                    _ => {
-                        app.update();
-                        return;
-                    }
-                };
 
-                match e {
-                    WindowEvent::CloseRequested => {
-                        elwt.exit();
-                    }
 
-                    WindowEvent::RedrawRequested => {
-                        app.update();
-                    }
+                    _ => {}
+                }
 
-                    _ => (),
-                };
+                u_iced.inner.lock().unwrap().update();
             })
             .expect("Unable to lunch `Winit` event loop");
         });

@@ -57,7 +57,7 @@ impl<'app> App<'app> {
     /// `winit` or any other window handler.
     /// 
     /// TODO(Angel): Check if update needs `mut`.
-    pub fn update(&mut self) {
+    pub fn update(&self) {
         run_update_workload(self);
     }
     
