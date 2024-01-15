@@ -1,16 +1,16 @@
 use shipyard::World;
 
 use crate::{
-    host::events::{
+    host::{events::{
         Event,
         WindowEvent,
-    },
+    }, components::UniqueCursor},
     plugin::Pluggable,
     schedule::{
         Scheduler,
         Schedule
     }, 
-    workload::{run_update_workload, run_request_redraw_workload, run_submit_queue_workload},
+    workload::{run_update_workload, run_request_redraw_workload, run_submit_queue_workload, update_cursor_position, run_window_event_workload},
 };
 
 /// This class represents the application, serving as the container for global
@@ -32,8 +32,13 @@ impl<'app> App<'app> {
     /// Creates a new `App` instance. It utilizes a dummy run loop and requires
     /// configuration for actual rendering.
     pub fn new() -> Self {
+        // TODO(Angel): Find a better place for this.
+
+        let world = World::new();
+        world.add_unique(UniqueCursor { x: 0.0, y: 0.0 });
+
         App {
-            world: World::new(),
+            world,
             run_loop: Box::new(dummy_run_loop),
             plugins: Vec::new(),
             scheduler: Scheduler::new()
@@ -62,7 +67,7 @@ impl<'app> App<'app> {
 
     /// A function what must be called everytime there is an event. In case
     /// of inmediate mode it must be called once per frame.
-    pub fn tick(&self, event: &Event) {
+    pub fn tick(&mut self, event: &Event) {
         match event {
             Event::Window(w_event) => {
                 match w_event {
@@ -74,8 +79,14 @@ impl<'app> App<'app> {
                         run_request_redraw_workload(self);
                     }
 
+                    WindowEvent::CursorMoved(x, y) => {
+                        update_cursor_position(self, x, y);
+                    }
+
                     WindowEvent::UnknownOrNotImplemented => {}
                 }
+
+                run_window_event_workload(self);
             }
 
             Event::UnknownOrNotImplemented => {}
@@ -85,15 +96,6 @@ impl<'app> App<'app> {
         run_submit_queue_workload(self);
     }
 
-    /// A function that must be called each frame. This will be called from the 
-    /// `run_loop` size as it is taking ownership of `App`. This allow us to use
-    /// `winit` or any other window handler.
-    /// 
-    /// TODO(Angel): Check if update needs `mut`.
-    pub fn update(&self) {
-        //run_update_workload(self);
-    }
-    
     /// Setups the main `RunLoop`.
     pub(crate) fn set_run_loop(&mut self,
                                run_loop: impl FnOnce(&mut App) + 'app) {

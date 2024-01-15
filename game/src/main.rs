@@ -16,11 +16,9 @@ use engine::shipyard::{
 struct Pos(f32, f32);
 
 fn create_ints(mut _entities: EntitiesViewMut, mut _vm_vel: ViewMut<Pos>) {
-    println!("Creating stuff!");
 }
 
 fn delete_ints(mut _vm_vel: ViewMut<Pos>) {
-    println!("Deleting stuff!");
 }
 
 fn int_cycle() -> Workload {
@@ -34,7 +32,6 @@ impl Pluggable for PlayerPlugin {
         app.world.add_workload(int_cycle); 
 
         app.schedule(Schedule::Update, |world| {
-            println!("Running workload from userland!");
             world.run_workload(int_cycle).unwrap();
         });
     }

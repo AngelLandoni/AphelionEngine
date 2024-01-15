@@ -8,6 +8,7 @@ pub enum Event {
 /// the window context. This functions as a lingua franca across different 
 /// window management systems.
 pub enum WindowEvent {
+    CursorMoved(f64, f64),
     CloseRequested,
     RequestRedraw,
     UnknownOrNotImplemented,
