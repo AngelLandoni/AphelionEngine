@@ -1,8 +1,16 @@
 use shipyard::World;
 
 use crate::{
+    host::events::{
+        Event,
+        WindowEvent,
+    },
     plugin::Pluggable,
-    schedule::{Scheduler, Schedule}, workload::run_update_workload,
+    schedule::{
+        Scheduler,
+        Schedule
+    }, 
+    workload::{run_update_workload, run_request_redraw_workload, run_submit_queue_workload},
 };
 
 /// This class represents the application, serving as the container for global
@@ -52,13 +60,38 @@ impl<'app> App<'app> {
         run_loop(&mut self);
     }
 
+    /// A function what must be called everytime there is an event. In case
+    /// of inmediate mode it must be called once per frame.
+    pub fn tick(&self, event: &Event) {
+        match event {
+            Event::Window(w_event) => {
+                match w_event {
+                    WindowEvent::CloseRequested => {
+                        println!("Close window");
+                    }
+                    
+                    WindowEvent::RequestRedraw => {
+                        run_request_redraw_workload(self);
+                    }
+
+                    WindowEvent::UnknownOrNotImplemented => {}
+                }
+            }
+
+            Event::UnknownOrNotImplemented => {}
+        }
+
+        run_update_workload(self);
+        run_submit_queue_workload(self);
+    }
+
     /// A function that must be called each frame. This will be called from the 
     /// `run_loop` size as it is taking ownership of `App`. This allow us to use
     /// `winit` or any other window handler.
     /// 
     /// TODO(Angel): Check if update needs `mut`.
     pub fn update(&self) {
-        run_update_workload(self);
+        //run_update_workload(self);
     }
     
     /// Setups the main `RunLoop`.

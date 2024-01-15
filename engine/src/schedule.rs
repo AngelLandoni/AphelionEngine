@@ -5,6 +5,8 @@ use shipyard::World;
 #[derive(Eq, PartialEq, Hash)]
 pub enum Schedule {
     Update,
+    RequestRedraw,
+    BeforeSubmitQueue,
 }
 
 /// Holds a collection of `Workload`s to be executed alongside information about
