@@ -5,6 +5,7 @@ use shipyard::World;
 #[derive(Eq, PartialEq, Hash)]
 pub enum Schedule {
     Update,
+    WindowEvent,
     RequestRedraw,
     BeforeSubmitQueue,
 }

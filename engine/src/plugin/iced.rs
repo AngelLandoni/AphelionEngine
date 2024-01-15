@@ -14,12 +14,14 @@ use iced_winit::runtime::{
     Debug,
     program,
 };
+use iced_winit::conversion;
 
 use iced_widget::runtime::Program;
 use shipyard::{UniqueView, Unique};
 
 
 use crate::graphics::gpu::Gpu;
+use crate::host::components::UniqueCursor;
 use crate::{
     app::App,
     plugin::{
@@ -34,7 +36,7 @@ use crate::{
 pub(crate) trait AnyIced {
     fn render(&mut self, gpu: &Gpu);
     fn queue_event(&mut self, event: iced::Event);
-    fn update(&mut self);
+    fn update(&mut self, cursor_x: f64, cursor_y: f64);
 }
 
 //pub struct IcedWrapper<P: iced_widget::runtime::Program + 'static> {
@@ -82,15 +84,21 @@ impl<P: Program<Renderer = Renderer<iced::Theme>> + 'static> AnyIced for IcedWra
     }
 
     fn queue_event(&mut self, event: iced::Event) {
+        println!("Event: {:?}", event);
         self.state.queue_event(event);
     }
 
-    fn update(&mut self) {
+    fn update(&mut self, cursor_x: f64, cursor_y: f64) {
         let mut c = Clipboard::unconnected();
+
+        let cursor = iced::mouse::Cursor::Available(conversion::cursor_position(
+            winit::dpi::PhysicalPosition::new(cursor_x, cursor_y),
+            self.viewport.scale_factor()
+        )); 
 
         let _ = self.state.update(
             self.viewport.logical_size(),
-            iced::mouse::Cursor::Unavailable,
+            cursor,
             &mut self.renderer,
             &self.theme,
             &renderer::Style {
@@ -172,7 +180,7 @@ impl Pluggable for IcedPlugin {
         }
         
         {
-            app.schedule(Schedule::RequestRedraw, |world| {
+            app.schedule(Schedule::WindowEvent, |world| {
                 world.run(iced_update_event_queue_system);
             });
 
@@ -181,8 +189,10 @@ impl Pluggable for IcedPlugin {
             });
 
             app.schedule(Schedule::BeforeSubmitQueue, |world| {
+                // TODO(Angel): Move this to a system.
                 let u_iced = world.borrow::<UniqueView<UniqueIced>>().unwrap();
-                u_iced.inner.lock().unwrap().update();
+                let u_cursor = world.borrow::<UniqueView<UniqueCursor>>().unwrap();
+                u_iced.inner.lock().unwrap().update(u_cursor.x, u_cursor.y);
             });
         }
 
@@ -194,10 +204,15 @@ fn iced_update_event_queue_system(u_window: UniqueView<UniqueWindow>,
                                   u_winit_event: UniqueView<UniqueWinitEvent>) {
     let modifiers = ModifiersState::default();
 
+    let w_e = match &u_winit_event.inner {
+        Some(e) => e,
+        None => return,
+    };
+
     // Map window event to iced event
     if let Some(event) = iced_winit::conversion::window_event(
         iced_winit::core::window::Id::MAIN,
-        &u_winit_event.inner,
+        &w_e,
         u_window.host_window.scale_factor(),
         modifiers
     ) {

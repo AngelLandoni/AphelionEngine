@@ -3,7 +3,7 @@ use raw_window_handle::{
     HasRawDisplayHandle
 };
 
-use shipyard::{Unique, UniqueView};
+use shipyard::{Unique, UniqueView, UniqueViewMut};
 
 use winit::{
     event_loop::EventLoop,
@@ -42,7 +42,7 @@ impl WindowInfoAccessible for WinitWindowWrapper {
 
 #[derive(Unique)]
 pub(crate) struct UniqueWinitEvent {
-    pub(crate) inner: WindowEvent
+    pub(crate) inner: Option<WindowEvent>
 }
 
 pub struct WinitWindowPlugin {
@@ -94,6 +94,10 @@ impl Pluggable for WinitWindowPlugin {
             host_window: host_window,
         });
 
+        app.world.add_unique(UniqueWinitEvent {
+            inner: None,
+        });
+
         app.set_run_loop(move |app: &mut App| {
             event_loop.set_control_flow(winit::event_loop::ControlFlow::Poll);
 
@@ -101,9 +105,8 @@ impl Pluggable for WinitWindowPlugin {
                 // Iced_winit needs the event to behave correctly.
                 match event.clone() {
                     Event::WindowEvent { window_id: _, event } => {
-                        app.world.add_unique(UniqueWinitEvent {
-                            inner: event,
-                        });
+                        let mut w_e = app.world.borrow::<UniqueViewMut<UniqueWinitEvent>>().unwrap();
+                        w_e.inner = Some(event);
                     }
                     _ => {}
                 }
@@ -121,6 +124,7 @@ fn map_winit_events<T>(event: &Event<T>) -> host::events::Event {
     match event {
         Event::WindowEvent { window_id, event } => {
             match event {
+                WindowEvent::CursorMoved { device_id: _, position } => host::events::Event::Window(host::events::WindowEvent::CursorMoved(position.x, position.y)),
                 WindowEvent::CloseRequested => host::events::Event::Window(host::events::WindowEvent::CloseRequested),
                 WindowEvent::RedrawRequested => host::events::Event::Window(host::events::WindowEvent::RequestRedraw),
                 _ => host::events::Event::Window(host::events::WindowEvent::UnknownOrNotImplemented),
