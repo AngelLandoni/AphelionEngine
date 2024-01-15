@@ -1,10 +1,8 @@
-use std::any::Any;
-use std::marker::PhantomData;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
 
-use iced::{Font, Pixels, color, Theme};
+use winit::keyboard::ModifiersState;
+use iced::{Font, Pixels, Theme};
 use iced_wgpu::core::renderer;
-use iced_wgpu::graphics::color;
 use iced_wgpu::{
     graphics::Viewport,
     Renderer,
@@ -18,17 +16,22 @@ use iced_winit::runtime::{
 };
 
 use iced_widget::runtime::Program;
-use shipyard::{UniqueView, Unique, };
+use shipyard::{UniqueView, Unique};
+
 
 use crate::graphics::gpu::Gpu;
 use crate::{
     app::App,
-    plugin::Pluggable,
+    plugin::{
+        Pluggable,
+        window::UniqueWinitEvent,
+    },
     graphics::components::UniqueRenderer, 
     host::components::UniqueWindow,
+    schedule::Schedule,
 };
 
-pub trait AnyIced {
+pub(crate) trait AnyIced {
     fn render(&mut self, gpu: &Gpu);
     fn queue_event(&mut self, event: iced::Event);
     fn update(&mut self);
@@ -40,7 +43,6 @@ pub struct IcedWrapper<P>
     P: Program<Renderer = Renderer<iced::Theme>> + 'static,
 { 
    viewport: Viewport,
-   //renderer: Renderer<<C::Renderer as iced_core::Renderer>::Theme>,
    renderer: Renderer<<P::Renderer as iced_core::Renderer>::Theme>,
    state: program::State<P>,
    debug: Debug,
@@ -48,8 +50,8 @@ pub struct IcedWrapper<P>
 }
 
 impl<P: Program<Renderer = Renderer<iced::Theme>> + 'static> AnyIced for IcedWrapper<P> {
-//impl<R: iced_core::Renderer, P: Program + 'static + <Renderer = R>> AnyIced for IcedWrapper<R, P> {
     fn render(&mut self, gpu: &Gpu) {
+
         let screen_frame = gpu.surface.get_current_texture().unwrap();
         let mut encoder = gpu.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
@@ -59,8 +61,6 @@ impl<P: Program<Renderer = Renderer<iced::Theme>> + 'static> AnyIced for IcedWra
             &wgpu::TextureViewDescriptor::default(),
         );
 
-        println!("Pass render to iced"); 
-        
         // And then iced on top
         self.renderer.with_primitives(|backend, primitive| {
             backend.present(
@@ -114,63 +114,101 @@ pub struct IcedPlugin;
 
 impl Pluggable for IcedPlugin {
     fn configure(&self, app: &mut App) {
-        let u_gpu = app
-            .world
-            .borrow::<UniqueView<UniqueRenderer>>()
-            .expect("Unable to adquire GPU");
+        {
+            let u_gpu = app
+                .world
+                .borrow::<UniqueView<UniqueRenderer>>()
+                .expect("Unable to adquire GPU");
 
-        let u_window = app
-            .world
-            .borrow::<UniqueView<UniqueWindow>>()
-            .expect("Unable to adquire Window");
+            let u_window = app
+                .world
+                .borrow::<UniqueView<UniqueWindow>>()
+                .expect("Unable to adquire Window");
 
-        let physical_size = u_window.host_window.inner_size();
-        let scale_factor = u_window.host_window.scale_factor();
+            let physical_size = u_window.host_window.inner_size();
+            let scale_factor = u_window.host_window.scale_factor();
+
+            let viewport = Viewport::with_physical_size(
+                iced::Size::new(physical_size.width, physical_size.height),
+                scale_factor,
+            );
+
+            let mut debug = Debug::new();
+            let mut renderer = Renderer::new(
+                Backend::new(
+                    &u_gpu.gpu.device,
+                    &u_gpu.gpu.queue,
+                    Settings::default(),
+                    u_gpu.gpu.texture_format,
+                ),
+                Font::default(),
+                Pixels(16.0),
+            );
+
+            let controls = Controls::new();
+
+            let state = program::State::new(
+                controls,
+                viewport.logical_size(),
+                &mut renderer,
+                &mut debug,
+            );
+
+            let any_iced =  std::sync::Mutex::new(
+                Box::new(
+                    IcedWrapper {
+                        viewport,
+                        renderer,
+                        state,
+                        debug,
+                        theme: Theme::Dark,
+                    } 
+                ) as Box<dyn AnyIced + Send + Sync>
+            );
+
+            app.world.add_unique(UniqueIced {
+                inner: Arc::new(any_iced),
+            });
+        }
         
-        let viewport = Viewport::with_physical_size(
-            iced::Size::new(physical_size.width, physical_size.height),
-            scale_factor,
-        );
+        {
+            app.schedule(Schedule::RequestRedraw, |world| {
+                world.run(iced_update_event_queue_system);
+            });
 
-        let mut debug = Debug::new();
-        let mut renderer = Renderer::new(
-            Backend::new(
-                &u_gpu.gpu.device,
-                &u_gpu.gpu.queue,
-                Settings::default(),
-                u_gpu.gpu.texture_format,
-            ),
-            Font::default(),
-            Pixels(16.0),
-        );
+            app.schedule(Schedule::Update, |world| {
+                world.run(iced_render_system);
+            });
 
-        let controls = Controls::new();
+            app.schedule(Schedule::BeforeSubmitQueue, |world| {
+                let u_iced = world.borrow::<UniqueView<UniqueIced>>().unwrap();
+                u_iced.inner.lock().unwrap().update();
+            });
+        }
 
-        let state = program::State::new(
-            controls,
-            viewport.logical_size(),
-            &mut renderer,
-            &mut debug,
-        );
-
-        let any_iced =  std::sync::Mutex::new(
-            Box::new(
-                IcedWrapper {
-                    viewport,
-                    renderer,
-                    state,
-                    debug,
-                    theme: Theme::Dark,
-                } 
-            ) as Box<dyn AnyIced + Send + Sync>
-        );
-
-        app.world.add_unique(UniqueIced {
-            inner: Arc::new(any_iced),
-        });
     }
 }
 
+fn iced_update_event_queue_system(u_window: UniqueView<UniqueWindow>,
+                                  u_iced: UniqueView<UniqueIced>,
+                                  u_winit_event: UniqueView<UniqueWinitEvent>) {
+    let modifiers = ModifiersState::default();
+
+    // Map window event to iced event
+    if let Some(event) = iced_winit::conversion::window_event(
+        iced_winit::core::window::Id::MAIN,
+        &u_winit_event.inner,
+        u_window.host_window.scale_factor(),
+        modifiers
+    ) {
+        u_iced.inner.lock().unwrap().queue_event(event);
+    }
+}
+
+fn iced_render_system(u_gpu: UniqueView<UniqueRenderer>,
+                      u_iced: UniqueView<UniqueIced>) {
+    u_iced.inner.lock().unwrap().render(&u_gpu.gpu);
+}
 
 use iced_widget::{slider, text_input, Column, Row, Text};
 use iced_winit::core::{Alignment, Color, Element, Length};

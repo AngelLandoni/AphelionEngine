@@ -1,11 +1,10 @@
-use std::sync::{Arc, Mutex};
-
 use raw_window_handle::{
     HasRawWindowHandle,
     HasRawDisplayHandle
 };
 
 use shipyard::{Unique, UniqueView};
+
 use winit::{
     event_loop::EventLoop,
     window::WindowBuilder, 
@@ -14,6 +13,7 @@ use winit::{
 };
 
 use crate::{
+    host,
     plugin::Pluggable,
     app::App, 
     host::{
@@ -38,6 +38,11 @@ impl WindowInfoAccessible for WinitWindowWrapper {
     fn scale_factor(&self) -> f64 {
         self.0.scale_factor()
     }
+}
+
+#[derive(Unique)]
+pub(crate) struct UniqueWinitEvent {
+    pub(crate) inner: WindowEvent
 }
 
 pub struct WinitWindowPlugin {
@@ -89,47 +94,39 @@ impl Pluggable for WinitWindowPlugin {
             host_window: host_window,
         });
 
-        let mut modifiers = ModifiersState::default();
         app.set_run_loop(move |app: &mut App| {
+            event_loop.set_control_flow(winit::event_loop::ControlFlow::Poll);
+
             event_loop.run(move |event, elwt| {
-                let u_window = app.world.borrow::<UniqueView<UniqueWindow>>().unwrap();
-                let u_iced = app.world.borrow::<UniqueView<UniqueIced>>().unwrap();
-
-                match event {
-                    Event::WindowEvent { window_id, event } => {
-                       
-                        // Map window event to iced event
-                        if let Some(event) = iced_winit::conversion::window_event(
-                            iced_winit::core::window::Id::MAIN,
-                            &event,
-                            u_window.host_window.scale_factor(),
-                            modifiers,
-                        ) {
-                            u_iced.inner.lock().unwrap().queue_event(event);
-                        }
-
-                        match event {
-
-                            WindowEvent::CloseRequested => {
-                                elwt.exit();
-                            }
-        
-                            WindowEvent::RedrawRequested => {
-                                app.update();
-                            }
-
-                            _ => {} 
-                        } 
+                // Iced_winit needs the event to behave correctly.
+                match event.clone() {
+                    Event::WindowEvent { window_id: _, event } => {
+                        app.world.add_unique(UniqueWinitEvent {
+                            inner: event,
+                        });
                     }
-
-
-
                     _ => {}
                 }
 
-                u_iced.inner.lock().unwrap().update();
+                let host_event = map_winit_events(&event);
+                app.tick(&host_event);
             })
             .expect("Unable to lunch `Winit` event loop");
         });
+    }
+}
+
+/// Maps the Winit events to host event.
+fn map_winit_events<T>(event: &Event<T>) -> host::events::Event {
+    match event {
+        Event::WindowEvent { window_id, event } => {
+            match event {
+                WindowEvent::CloseRequested => host::events::Event::Window(host::events::WindowEvent::CloseRequested),
+                WindowEvent::RedrawRequested => host::events::Event::Window(host::events::WindowEvent::RequestRedraw),
+                _ => host::events::Event::Window(host::events::WindowEvent::UnknownOrNotImplemented),
+            }
+        }
+
+        _ => host::events::Event::UnknownOrNotImplemented,
     }
 }
