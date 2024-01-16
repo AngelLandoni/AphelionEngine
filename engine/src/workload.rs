@@ -4,7 +4,11 @@ use shipyard::UniqueViewMut;
 
 use crate::{
     app::App,
-    schedule::Schedule, host::components::UniqueCursor,
+    schedule::Schedule, 
+    host::components::{
+        UniqueCursor,
+        UniqueWindow
+    },
 };
 
 /// Coordinates all the update systems.
@@ -58,4 +62,23 @@ pub(crate) fn update_cursor_position(app: &mut App, x: &f64, y: &f64) {
 
     cursor.x = *x;
     cursor.y = *y;
+}
+
+pub(crate) fn update_window_size(app: &mut App, width: &u32, height: &u32) {
+    {
+        let storage = app.world.borrow_mut();
+
+        let mut size = storage
+            .borrow::<UniqueViewMut<UniqueWindow>>()
+            .expect("Unable to adquire cursor");
+        
+        size.host_window.size.width = *width;
+        size.host_window.size.height = *height;    
+    }
+    
+    if let Some(w_u_fns) = app.scheduler.schedules.get(&Schedule::WindowResize) {
+        for func in w_u_fns {
+            func(&app.world);
+        }
+    }
 }

@@ -11,5 +11,6 @@ pub enum WindowEvent {
     CursorMoved(f64, f64),
     CloseRequested,
     RequestRedraw,
+    Resized(u32, u32),
     UnknownOrNotImplemented,
 }

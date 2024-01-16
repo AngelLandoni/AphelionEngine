@@ -10,7 +10,13 @@ use crate::{
         Scheduler,
         Schedule
     }, 
-    workload::{run_update_workload, run_request_redraw_workload, run_submit_queue_workload, update_cursor_position, run_window_event_workload},
+    workload::{
+        run_update_workload,
+        run_request_redraw_workload,
+        run_submit_queue_workload,
+        update_cursor_position,
+        run_window_event_workload, update_window_size
+    },
 };
 
 /// This class represents the application, serving as the container for global
@@ -81,6 +87,10 @@ impl<'app> App<'app> {
 
                     WindowEvent::CursorMoved(x, y) => {
                         update_cursor_position(self, x, y);
+                    }
+
+                    WindowEvent::Resized(width, height) => {
+                        update_window_size(self, width, height);
                     }
 
                     WindowEvent::UnknownOrNotImplemented => {}
