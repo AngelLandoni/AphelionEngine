@@ -33,6 +33,12 @@ pub struct App<'app> {
     pub(crate) scheduler: Scheduler<'app>,
 }
 
+impl<'app> Default for App<'app> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<'app> App<'app> {
     /// Creates a new `App` instance. It utilizes a dummy run loop and requires
     /// configuration for actual rendering.
