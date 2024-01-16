@@ -18,6 +18,7 @@ pub trait WindowInfoAccessible {
 /// multiple windows.
 pub struct Window {
     pub(crate) accesor: Box<dyn WindowInfoAccessible>,
+    pub(crate) size: Size<u32>,
     window_handle: RawWindowHandle,
     display_handle: RawDisplayHandle,
 }
@@ -25,10 +26,12 @@ pub struct Window {
 impl Window {
     /// Creates a new instance of Window.
     pub(crate) fn new(accesor: Box<dyn WindowInfoAccessible>,
+                      size: Size<u32>,
                       window_handle: RawWindowHandle,
                       display_handle: RawDisplayHandle) -> Self {
         Window {
             accesor,
+            size,
             window_handle,
             display_handle,
         }

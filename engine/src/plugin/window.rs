@@ -3,13 +3,16 @@ use raw_window_handle::{
     HasRawDisplayHandle
 };
 
-use shipyard::{Unique, UniqueView, UniqueViewMut};
+use shipyard::{
+    Unique,
+    UniqueViewMut
+};
 
 use winit::{
     event_loop::EventLoop,
     window::WindowBuilder, 
     event::{Event, WindowEvent},
-    dpi::LogicalSize, keyboard::ModifiersState, 
+    dpi::LogicalSize, 
 };
 
 use crate::{
@@ -25,8 +28,6 @@ use crate::{
     },
     types::Size,
 };
-
-use super::iced::UniqueIced;
 
 pub struct WinitWindowWrapper(winit::window::Window);
 
@@ -47,8 +48,7 @@ pub(crate) struct UniqueWinitEvent {
 
 pub struct WinitWindowPlugin {
     title: String,
-    width: u32,
-    height: u32,
+    size: Size<u32>,
 }
 
 impl WinitWindowPlugin {
@@ -56,8 +56,7 @@ impl WinitWindowPlugin {
     pub fn new(title: &str, width: u32, height: u32) -> Self {
         WinitWindowPlugin {
             title: title.to_string(),
-            width,
-            height,
+            size: Size { width, height },
         }
     }    
 }
@@ -69,8 +68,8 @@ impl Pluggable for WinitWindowPlugin {
             .expect("Unable to initialize `Winit` main run loop");
 
         let title = self.title.clone();
-        let width = self.width;
-        let height = self.height;
+        let width = self.size.width;
+        let height = self.size.height;
 
         let window_builder = WindowBuilder::new()
             .with_title(title)
@@ -85,6 +84,7 @@ impl Pluggable for WinitWindowPlugin {
 
         let host_window = Window::new(
             Box::new(WinitWindowWrapper(winit_window)),
+            self.size,
             raw_window_handle,
             raw_display_handle,
         );
@@ -124,6 +124,7 @@ fn map_winit_events<T>(event: &Event<T>) -> host::events::Event {
     match event {
         Event::WindowEvent { window_id, event } => {
             match event {
+                WindowEvent::Resized(size ) => host::events::Event::Window(host::events::WindowEvent::Resized(size.width, size.height)),
                 WindowEvent::CursorMoved { device_id: _, position } => host::events::Event::Window(host::events::WindowEvent::CursorMoved(position.x, position.y)),
                 WindowEvent::CloseRequested => host::events::Event::Window(host::events::WindowEvent::CloseRequested),
                 WindowEvent::RedrawRequested => host::events::Event::Window(host::events::WindowEvent::RequestRedraw),

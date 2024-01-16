@@ -8,6 +8,8 @@ pub enum Schedule {
     WindowEvent,
     RequestRedraw,
     BeforeSubmitQueue,
+
+    WindowResize,
 }
 
 /// Holds a collection of `Workload`s to be executed alongside information about

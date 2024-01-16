@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use iced_wgpu::graphics::text::cosmic_text::rustybuzz::script::THAANA;
 use winit::keyboard::ModifiersState;
 use iced::{Font, Pixels, Theme};
 use iced_wgpu::core::renderer;
@@ -18,19 +17,23 @@ use iced_winit::runtime::{
 use iced_winit::conversion;
 
 use iced_widget::runtime::Program;
-use shipyard::{UniqueView, Unique};
+use shipyard::{UniqueView, Unique, UniqueViewMut};
 
-
-use crate::graphics::gpu::Gpu;
-use crate::host::components::UniqueCursor;
 use crate::{
     app::App,
     plugin::{
         Pluggable,
         window::UniqueWinitEvent,
     },
-    graphics::components::UniqueRenderer, 
-    host::components::UniqueWindow,
+    graphics::{
+        gpu::Gpu,
+        components::UniqueRenderer
+    }, 
+    host::components::{
+        UniqueCursor,
+        UniqueWindow
+    },
+    types::Size,
     schedule::Schedule,
 };
 
@@ -38,6 +41,7 @@ pub(crate) trait AnyIced {
     fn render(&mut self, gpu: &Gpu);
     fn queue_event(&mut self, event: iced::Event);
     fn update(&mut self, cursor_x: f64, cursor_y: f64);
+    fn window_resized(&mut self, size: Size<u32>, scale_factor: f64);
 }
 
 //pub struct IcedWrapper<P: iced_widget::runtime::Program + 'static> {
@@ -51,17 +55,41 @@ pub struct IcedWrapper<P>
    debug: Debug,
    theme: <P::Renderer as iced_core::Renderer>::Theme,
    should_redraw: bool,
+   should_resize: Option<(Size<u32>, f64)>,
 }
 
 impl<P: Program<Renderer = Renderer<iced::Theme>> + 'static> AnyIced for IcedWrapper<P> {
     fn render(&mut self, gpu: &Gpu) {
+        if let Some(s_r) = &self.should_resize {
+            let size = s_r.0;
+
+            self.viewport = Viewport::with_physical_size(
+                iced::Size::new(s_r.0.width, s_r.0.height),
+                s_r.1,
+            );
+
+            let device = &gpu.device;
+            gpu.surface.configure(
+                device,
+                 &wgpu::SurfaceConfiguration {
+                    usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+                    format: gpu.texture_format,
+                    width: size.width,
+                    height: size.height,
+                    present_mode: wgpu::PresentMode::AutoVsync,
+                    alpha_mode: wgpu::CompositeAlphaMode::Auto,
+                    view_formats: vec![],
+               }
+            );
+
+            self.should_resize = None;
+        }
+
         if !self.should_redraw { return }
         self.should_redraw = false;
 
         let screen_frame = gpu.surface.get_current_texture().unwrap();
         let mut encoder = gpu.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
-
-        let program = self.state.program();
 
         let view = screen_frame.texture.create_view(
             &wgpu::TextureViewDescriptor::default(),
@@ -87,7 +115,6 @@ impl<P: Program<Renderer = Renderer<iced::Theme>> + 'static> AnyIced for IcedWra
     }
 
     fn queue_event(&mut self, event: iced::Event) {
-        println!("Event: {:?}", event);
         self.state.queue_event(event);
     }
 
@@ -114,6 +141,10 @@ impl<P: Program<Renderer = Renderer<iced::Theme>> + 'static> AnyIced for IcedWra
         );
 
         self.should_redraw = true;
+    }
+
+    fn window_resized(&mut self, size: Size<u32>, scale_factor: f64) {
+        self.should_resize = Some((size, scale_factor));
     }
 }
 
@@ -178,6 +209,7 @@ impl Pluggable for IcedPlugin {
                         debug,
                         theme: Theme::Light,
                         should_redraw: true,
+                        should_resize: None,
                     } 
                 ) as Box<dyn AnyIced + Send + Sync>
             );
@@ -201,6 +233,10 @@ impl Pluggable for IcedPlugin {
                 let u_iced = world.borrow::<UniqueView<UniqueIced>>().unwrap();
                 let u_cursor = world.borrow::<UniqueView<UniqueCursor>>().unwrap();
                 u_iced.inner.lock().unwrap().update(u_cursor.x, u_cursor.y);
+            });
+
+            app.schedule(Schedule::WindowResize, |world| {
+                world.run(resize_window_system);
             });
         }
 
@@ -233,6 +269,14 @@ fn iced_render_system(u_gpu: UniqueView<UniqueRenderer>,
     u_iced.inner.lock().unwrap().render(&u_gpu.gpu);
 }
 
+fn resize_window_system(u_iced: UniqueViewMut<UniqueIced>,
+                        u_w: UniqueView<UniqueWindow>) {
+    u_iced.inner.lock().unwrap().window_resized(
+        u_w.host_window.size,
+        u_w.host_window.accesor.scale_factor()
+    );
+}
+
 use iced_widget::{slider, text_input, Column, Row, Text};
 use iced_winit::core::{Alignment, Color, Element, Length};
 use iced_winit::runtime::Command;
@@ -241,7 +285,6 @@ use iced::widget::{
     row, scrollable, text, toggler, vertical_rule,
     vertical_space,
 };
-use iced::Sandbox;
 
 pub struct Controls {
     theme: Theme,
