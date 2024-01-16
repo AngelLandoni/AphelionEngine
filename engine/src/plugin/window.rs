@@ -91,7 +91,7 @@ impl Pluggable for WinitWindowPlugin {
 
         // Add the window as a resource; ensure the `winit_window` is kept alive.
         app.world.add_unique(UniqueWindow {
-            host_window: host_window,
+            host_window,
         });
 
         app.world.add_unique(UniqueWinitEvent {
@@ -101,7 +101,7 @@ impl Pluggable for WinitWindowPlugin {
         app.set_run_loop(move |app: &mut App| {
             event_loop.set_control_flow(winit::event_loop::ControlFlow::Wait);
 
-            event_loop.run(move |event, elwt| {
+            event_loop.run(move |event, _elwt| {
                 // Iced_winit needs the event to behave correctly.
                 match event.clone() {
                     Event::WindowEvent { window_id: _, event } => {
@@ -122,7 +122,7 @@ impl Pluggable for WinitWindowPlugin {
 /// Maps the Winit events to host event.
 fn map_winit_events<T>(event: &Event<T>) -> host::events::Event {
     match event {
-        Event::WindowEvent { window_id, event } => {
+        Event::WindowEvent { window_id: _, event } => {
             match event {
                 WindowEvent::Resized(size ) => host::events::Event::Window(host::events::WindowEvent::Resized(size.width, size.height)),
                 WindowEvent::CursorMoved { device_id: _, position } => host::events::Event::Window(host::events::WindowEvent::CursorMoved(position.x, position.y)),

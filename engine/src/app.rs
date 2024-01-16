@@ -12,7 +12,6 @@ use crate::{
     }, 
     workload::{
         run_update_workload,
-        run_request_redraw_workload,
         run_submit_queue_workload,
         update_cursor_position,
         run_window_event_workload, update_window_size
