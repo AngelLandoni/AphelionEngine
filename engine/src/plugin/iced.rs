@@ -256,7 +256,7 @@ fn iced_update_event_queue_system(u_window: UniqueView<UniqueWindow>,
     // Map window event to iced event
     if let Some(event) = iced_winit::conversion::window_event(
         iced_winit::core::window::Id::MAIN,
-        &w_e,
+        w_e,
         u_window.host_window.scale_factor(),
         modifiers
     ) {
@@ -277,7 +277,7 @@ fn resize_window_system(u_iced: UniqueViewMut<UniqueIced>,
     );
 }
 
-use iced_widget::{slider, text_input, Column, Row, Text};
+use iced_widget::{slider, text_input};
 use iced_winit::core::{Alignment, Color, Element, Length};
 use iced_winit::runtime::Command;
 use iced::widget::{
