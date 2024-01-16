@@ -30,7 +30,7 @@ impl<'a> Scheduler<'a> {
     pub(crate) fn add_schedule(&mut self, schedule: Schedule, callback: impl Fn(&World) + 'a) {
         self.schedules
             .entry(schedule)
-            .or_insert(Vec::new())
+            .or_default()
             .push(Box::new(callback));
     }
 }

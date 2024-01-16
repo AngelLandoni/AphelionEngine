@@ -315,6 +315,12 @@ pub enum Message {
     TogglerToggled(bool),
 }
 
+impl Default for Controls {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Controls {
     pub fn new() -> Controls {
         Controls {
