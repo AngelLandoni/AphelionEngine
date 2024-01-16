@@ -99,7 +99,7 @@ impl Pluggable for WinitWindowPlugin {
         });
 
         app.set_run_loop(move |app: &mut App| {
-            event_loop.set_control_flow(winit::event_loop::ControlFlow::Poll);
+            event_loop.set_control_flow(winit::event_loop::ControlFlow::Wait);
 
             event_loop.run(move |event, elwt| {
                 // Iced_winit needs the event to behave correctly.

@@ -76,7 +76,7 @@ impl<'app> App<'app> {
                     }
                     
                     WindowEvent::RequestRedraw => {
-                        run_request_redraw_workload(self);
+                        //run_request_redraw_workload(self);
                     }
 
                     WindowEvent::CursorMoved(x, y) => {

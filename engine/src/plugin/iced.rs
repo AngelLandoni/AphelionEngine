@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use iced_wgpu::graphics::text::cosmic_text::rustybuzz::script::THAANA;
 use winit::keyboard::ModifiersState;
 use iced::{Font, Pixels, Theme};
 use iced_wgpu::core::renderer;
@@ -49,10 +50,13 @@ pub struct IcedWrapper<P>
    state: program::State<P>,
    debug: Debug,
    theme: <P::Renderer as iced_core::Renderer>::Theme,
+   should_redraw: bool,
 }
 
 impl<P: Program<Renderer = Renderer<iced::Theme>> + 'static> AnyIced for IcedWrapper<P> {
     fn render(&mut self, gpu: &Gpu) {
+        if !self.should_redraw { return }
+        self.should_redraw = false;
 
         let screen_frame = gpu.surface.get_current_texture().unwrap();
         let mut encoder = gpu.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
@@ -80,7 +84,6 @@ impl<P: Program<Renderer = Renderer<iced::Theme>> + 'static> AnyIced for IcedWra
 
         gpu.queue.submit(Some(encoder.finish()));
         screen_frame.present();
-
     }
 
     fn queue_event(&mut self, event: iced::Event) {
@@ -89,6 +92,8 @@ impl<P: Program<Renderer = Renderer<iced::Theme>> + 'static> AnyIced for IcedWra
     }
 
     fn update(&mut self, cursor_x: f64, cursor_y: f64) {
+        if self.state.is_queue_empty() { return }
+
         let mut c = Clipboard::unconnected();
 
         let cursor = iced::mouse::Cursor::Available(conversion::cursor_position(
@@ -107,6 +112,8 @@ impl<P: Program<Renderer = Renderer<iced::Theme>> + 'static> AnyIced for IcedWra
             &mut c,
             &mut self.debug,
         );
+
+        self.should_redraw = true;
     }
 }
 
@@ -169,7 +176,8 @@ impl Pluggable for IcedPlugin {
                         renderer,
                         state,
                         debug,
-                        theme: Theme::Dark,
+                        theme: Theme::Light,
+                        should_redraw: true,
                     } 
                 ) as Box<dyn AnyIced + Send + Sync>
             );
@@ -188,7 +196,7 @@ impl Pluggable for IcedPlugin {
                 world.run(iced_render_system);
             });
 
-            app.schedule(Schedule::BeforeSubmitQueue, |world| {
+            app.schedule(Schedule::WindowEvent, |world| {
                 // TODO(Angel): Move this to a system.
                 let u_iced = world.borrow::<UniqueView<UniqueIced>>().unwrap();
                 let u_cursor = world.borrow::<UniqueView<UniqueCursor>>().unwrap();
@@ -228,23 +236,52 @@ fn iced_render_system(u_gpu: UniqueView<UniqueRenderer>,
 use iced_widget::{slider, text_input, Column, Row, Text};
 use iced_winit::core::{Alignment, Color, Element, Length};
 use iced_winit::runtime::Command;
+use iced::widget::{
+    button, checkbox, column, container, horizontal_rule, progress_bar, radio,
+    row, scrollable, text, toggler, vertical_rule,
+    vertical_space,
+};
+use iced::Sandbox;
 
 pub struct Controls {
+    theme: Theme,
     background_color: Color,
     text: String,
+    slider_value: f32,
+    checkbox_value: bool,
+    toggler_value: bool,
+    input_value: String,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum ThemeType {
+    Light,
+    Dark,
+    Custom,
 }
 
 #[derive(Debug, Clone)]
 pub enum Message {
     BackgroundColorChanged(Color),
     TextChanged(String),
+    ThemeChanged(ThemeType),
+    InputChanged(String),
+    ButtonPressed,
+    SliderChanged(f32),
+    CheckboxToggled(bool),
+    TogglerToggled(bool),
 }
 
 impl Controls {
     pub fn new() -> Controls {
         Controls {
+            theme: Theme::Dark,
             background_color: Color::BLACK,
             text: String::default(),
+            slider_value: 0.0,
+            checkbox_value: false,
+            toggler_value: false,
+            input_value: "".to_owned(),
         }
     }
 
@@ -265,13 +302,31 @@ impl Program for Controls {
             Message::TextChanged(text) => {
                 self.text = text;
             }
+            Message::ThemeChanged(theme) => {
+                self.theme = match theme {
+                    ThemeType::Light => Theme::Light,
+                    ThemeType::Dark => Theme::Dark,
+                    ThemeType::Custom => Theme::custom(iced::theme::Palette {
+                        background: Color::from_rgb(1.0, 0.9, 1.0),
+                        text: Color::BLACK,
+                        primary: Color::from_rgb(0.5, 0.5, 0.0),
+                        success: Color::from_rgb(0.0, 1.0, 0.0),
+                        danger: Color::from_rgb(1.0, 0.0, 0.0),
+                    }),
+                }
+            }
+            Message::InputChanged(value) => self.input_value = value,
+            Message::ButtonPressed => {}
+            Message::SliderChanged(value) => self.slider_value = value,
+            Message::CheckboxToggled(value) => self.checkbox_value = value,
+            Message::TogglerToggled(value) => self.toggler_value = value,
         }
 
         Command::none()
     }
 
     fn view(&self) -> Element<Message, Renderer<Theme>> {
-        let background_color = self.background_color;
+        /*let background_color = self.background_color;
         let text = &self.text;
 
         let sliders = Row::new()
@@ -326,6 +381,88 @@ impl Program for Controls {
                         ),
                 ),
             )
+            .into()*/
+
+            let choose_theme =
+            [ThemeType::Light, ThemeType::Dark, ThemeType::Custom]
+                .iter()
+                .fold(
+                    column![text("Choose a theme:")].spacing(10),
+                    |column, theme| {
+                        column.push(radio(
+                            format!("{theme:?}"),
+                            *theme,
+                            Some(match self.theme {
+                                Theme::Light => ThemeType::Light,
+                                Theme::Dark => ThemeType::Dark,
+                                Theme::Custom { .. } => ThemeType::Custom,
+                            }),
+                            Message::ThemeChanged,
+                        ))
+                    },
+                );
+
+        let text_input = text_input("Type something...", &self.input_value)
+            .on_input(Message::InputChanged)
+            .padding(10)
+            .size(20);
+
+        let button = button("Submit")
+            .padding(10)
+            .on_press(Message::ButtonPressed);
+
+        let slider =
+            slider(0.0..=100.0, self.slider_value, Message::SliderChanged);
+
+        let progress_bar = progress_bar(0.0..=100.0, self.slider_value);
+
+        let scrollable = scrollable(
+            column!["Scroll me!", vertical_space(800), "You did it!"]
+                .width(Length::Fill),
+        )
+        .width(Length::Fill)
+        .height(100);
+
+        let checkbox = checkbox(
+            "Check me!",
+            self.checkbox_value,
+            Message::CheckboxToggled,
+        );
+
+        let toggler = toggler(
+            String::from("Toggle me!"),
+            self.toggler_value,
+            Message::TogglerToggled,
+        )
+        .width(Length::Shrink)
+        .spacing(10);
+
+        let content = column![
+            choose_theme,
+            horizontal_rule(38),
+            row![text_input, button]
+                .spacing(10)
+                .align_items(Alignment::Center),
+            slider,
+            progress_bar,
+            row![
+                scrollable,
+                vertical_rule(38),
+                column![checkbox, toggler].spacing(20)
+            ]
+            .spacing(10)
+            .height(100)
+            .align_items(Alignment::Center),
+        ]
+        .spacing(20)
+        .padding(20)
+        .max_width(600);
+
+        container(content)
+            .width(Length::Fill)
+            .height(Length::Fill)
+            .center_x()
+            .center_y()
             .into()
     }
 }
