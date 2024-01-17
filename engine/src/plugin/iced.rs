@@ -19,6 +19,9 @@ use iced_winit::conversion;
 use iced_widget::runtime::Program;
 use shipyard::{UniqueView, Unique, UniqueViewMut};
 
+use crate::graphics::CommandQueue;
+use crate::graphics::components::{ScreenTexture, ScreenFrame};
+use crate::graphics::{OrderCommandQueue, OrderCommandBuffer, CommandSubmitOrder};
 use crate::{
     app::App,
     plugin::{
@@ -38,7 +41,8 @@ use crate::{
 };
 
 pub(crate) trait AnyIced {
-    fn render(&mut self, gpu: &Gpu);
+    fn pre_frame_config(&mut self, gpu: &Gpu);
+    fn render(&mut self, gpu: &Gpu, queue: &OrderCommandQueue, screen_frame: &ScreenFrame, screen_texture: &ScreenTexture);
     fn queue_event(&mut self, event: iced::Event);
     fn update(&mut self, cursor_x: f64, cursor_y: f64);
     fn window_resized(&mut self, size: Size<u32>, scale_factor: f64);
@@ -59,7 +63,7 @@ pub struct IcedWrapper<P>
 }
 
 impl<P: Program<Renderer = Renderer<iced::Theme>> + 'static> AnyIced for IcedWrapper<P> {
-    fn render(&mut self, gpu: &Gpu) {
+    fn pre_frame_config(&mut self, gpu: &Gpu) {
         if let Some(s_r) = &self.should_resize {
             let size = s_r.0;
 
@@ -84,34 +88,40 @@ impl<P: Program<Renderer = Renderer<iced::Theme>> + 'static> AnyIced for IcedWra
 
             self.should_resize = None;
         }
+    }
+
+    fn render(&mut self, gpu: &Gpu, queue: &OrderCommandQueue, screen_frame: &ScreenFrame, screen_texture: &ScreenTexture) {
+        
 
         if !self.should_redraw { return }
         self.should_redraw = false;
 
-        let screen_frame = gpu.surface.get_current_texture().unwrap();
-        let mut encoder = gpu.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+        if let Some(frame) = &screen_frame.0 {
+            if let Some(view) = &screen_texture.0 {
+                let mut encoder = gpu.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
-        let view = screen_frame.texture.create_view(
-            &wgpu::TextureViewDescriptor::default(),
-        );
-
-        // And then iced on top
-        self.renderer.with_primitives(|backend, primitive| {
-            backend.present(
-                &gpu.device,
-                &gpu.queue,
-                &mut encoder,
-                None,
-                screen_frame.texture.format(),
-                &view,
-                primitive,
-                &self.viewport,
-                &self.debug.overlay(),
-            );
-        });
-
-        gpu.queue.submit(Some(encoder.finish()));
-        screen_frame.present();
+                // And then iced on top
+                self.renderer.with_primitives(|backend, primitive| {
+                    backend.present(
+                        &gpu.device,
+                        &gpu.queue,
+                        &mut encoder,
+                        None,
+                        frame.texture.format(),
+                        &view,
+                        primitive,
+                        &self.viewport,
+                        &self.debug.overlay(),
+                    );
+                });
+        
+                let _ = queue.push(OrderCommandBuffer::new(
+                    Some("Iced step".to_owned()),
+                    CommandSubmitOrder::DebugGui,
+                    encoder.finish(),
+                ));
+            }
+        }
     }
 
     fn queue_event(&mut self, event: iced::Event) {
@@ -224,6 +234,12 @@ impl Pluggable for IcedPlugin {
                 world.run(iced_update_event_queue_system);
             });
 
+            app.schedule(Schedule::Start, |world| {
+                let u_iced = world.borrow::<UniqueView<UniqueIced>>().unwrap();
+                let u_gpu = world.borrow::<UniqueView<UniqueRenderer>>().unwrap();
+                u_iced.inner.lock().unwrap().pre_frame_config(&u_gpu.gpu);
+            });
+
             app.schedule(Schedule::Update, |world| {
                 world.run(iced_render_system);
             });
@@ -265,8 +281,16 @@ fn iced_update_event_queue_system(u_window: UniqueView<UniqueWindow>,
 }
 
 fn iced_render_system(u_gpu: UniqueView<UniqueRenderer>,
-                      u_iced: UniqueView<UniqueIced>) {
-    u_iced.inner.lock().unwrap().render(&u_gpu.gpu);
+                      u_iced: UniqueView<UniqueIced>,
+                      queue: UniqueView<CommandQueue>,
+                      s_frame: UniqueView<ScreenFrame>,
+                      s_texture: UniqueView<ScreenTexture>) {
+    u_iced.inner.lock().unwrap().render(
+        &u_gpu.gpu,
+        &queue.0,
+        &s_frame,
+        &s_texture
+    );
 }
 
 fn resize_window_system(u_iced: UniqueViewMut<UniqueIced>,
@@ -375,63 +399,6 @@ impl Program for Controls {
     }
 
     fn view(&self) -> Element<Message, Renderer<Theme>> {
-        /*let background_color = self.background_color;
-        let text = &self.text;
-
-        let sliders = Row::new()
-            .width(500)
-            .spacing(20)
-            .push(
-                slider(0.0..=1.0, background_color.r, move |r| {
-                    Message::BackgroundColorChanged(Color {
-                        r,
-                        ..background_color
-                    })
-                })
-                .step(0.01),
-            )
-            .push(
-                slider(0.0..=1.0, background_color.g, move |g| {
-                    Message::BackgroundColorChanged(Color {
-                        g,
-                        ..background_color
-                    })
-                })
-                .step(0.01),
-            )
-            .push(
-                slider(0.0..=1.0, background_color.b, move |b| {
-                    Message::BackgroundColorChanged(Color {
-                        b,
-                        ..background_color
-                    })
-                })
-                .step(0.01),
-            );
-
-        Row::new()
-            .height(Length::Fill)
-            .align_items(Alignment::End)
-            .push(
-                Column::new().align_items(Alignment::End).push(
-                    Column::new()
-                        .padding(10)
-                        .spacing(10)
-                        .push(Text::new("Background color").style(Color::WHITE))
-                        .push(sliders)
-                        .push(
-                            Text::new(format!("{background_color:?}"))
-                                .size(14)
-                                .style(Color::WHITE),
-                        )
-                        .push(
-                            text_input("Placeholder", text)
-                                .on_input(Message::TextChanged),
-                        ),
-                ),
-            )
-            .into()*/
-
             let choose_theme =
             [ThemeType::Light, ThemeType::Dark, ThemeType::Custom]
                 .iter()

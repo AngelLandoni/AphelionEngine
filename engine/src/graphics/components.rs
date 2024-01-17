@@ -1,9 +1,11 @@
 use shipyard::Unique;
 
-use crate::graphics::{
-    gpu::Gpu,
-    CommandQueue,
+use wgpu::{
+    SurfaceTexture,
+    TextureView
 };
+
+use crate::graphics::gpu::Gpu;
 
 /// Shipyard component responsible for storing all renderer-related resources.
 #[derive(Unique)]
@@ -12,6 +14,7 @@ pub struct UniqueRenderer {
 }
 
 #[derive(Unique)]
-pub struct UniqueCommandQueue {
-    pub(crate) queue: CommandQueue,
-}
+pub struct ScreenFrame(pub(crate) Option<SurfaceTexture>);
+
+#[derive(Unique)]
+pub struct ScreenTexture(pub(crate) Option<TextureView>);

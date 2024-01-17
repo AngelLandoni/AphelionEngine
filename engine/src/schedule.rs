@@ -4,12 +4,17 @@ use shipyard::World;
 /// Specifies the various steps comprising the application lifecycle.
 #[derive(Eq, PartialEq, Hash)]
 pub enum Schedule {
+    Start,
+    InitFrame,
+
     Update,
     WindowEvent,
     RequestRedraw,
-    BeforeSubmitQueue,
+    QueueSubmit,
 
     WindowResize,
+
+    EndFrame,
 }
 
 /// Holds a collection of `Workload`s to be executed alongside information about

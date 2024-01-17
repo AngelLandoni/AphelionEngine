@@ -1,15 +1,22 @@
-use shipyard::UniqueView;
+use shipyard::{UniqueView, UniqueViewMut};
 
 use crate::{
     app::App,
+    schedule::Schedule,
     graphics::{
-        CommandQueue,
         gpu::Gpu,
         components::{
             UniqueRenderer,
-            UniqueCommandQueue
+            ScreenTexture,
+            ScreenFrame,
         },
-        MAX_NUMBER_IF_COMMANDS_PER_FRAME
+        rendering::{
+            acquire_screen_texture,
+            present_screen_texture, submit_commands_in_order
+        },
+        CommandQueue,
+        OrderCommandQueue,
+        MAX_NUMBER_IF_COMMANDS_PER_FRAME,
     },
     host::components::UniqueWindow,
     plugin::Pluggable,
@@ -30,12 +37,39 @@ impl Pluggable for WgpuRendererPlugin {
 
         drop(window_resource);
 
-        app.world.add_unique(UniqueRenderer {
-            gpu
-        });
+        // Setup all the unique resources.
+        {
+            let world = &app.world;
+            world.add_unique(ScreenTexture(None));
 
-        app.world.add_unique(UniqueCommandQueue {
-            queue: CommandQueue::new(MAX_NUMBER_IF_COMMANDS_PER_FRAME)
-        });
+            world.add_unique(UniqueRenderer {
+                gpu
+            });
+
+            world.add_unique(ScreenFrame(None));
+            world.add_unique(ScreenTexture(None));
+    
+            world.add_unique(CommandQueue(
+                OrderCommandQueue::new(MAX_NUMBER_IF_COMMANDS_PER_FRAME)
+            ));
+        }
+        
+        // Setup scheludes.
+        {
+            app.schedule(Schedule::InitFrame, |world| {
+                world.run(acquire_screen_texture);
+            });
+
+            app.schedule(Schedule::QueueSubmit, |world| {
+                world.run(submit_commands_in_order);
+            });
+
+            app.schedule(Schedule::EndFrame, |world| {
+                world.run(present_screen_texture);
+                world.run(|mut texture: UniqueViewMut<ScreenTexture>| {
+                    texture.0 = None;
+                })
+            });
+        }
     }
 }

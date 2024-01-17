@@ -46,8 +46,32 @@ pub(crate) fn run_update_workload(app: &App) {
 pub(crate) fn run_submit_queue_workload(app: &App) {
     // Execute all the configs that should be triggered before the queue
     // gets submitted.
-    if let Some(fsq_fns) = app.scheduler.schedules.get(&Schedule::BeforeSubmitQueue) {
+    if let Some(fsq_fns) = app.scheduler.schedules.get(&Schedule::QueueSubmit) {
         for func in fsq_fns {
+            func(&app.world);
+        }
+    } 
+}
+
+pub(crate) fn start_frame_workload(app: &App) {
+    if let Some(s_fns) = app.scheduler.schedules.get(&Schedule::Start) {
+        for func in s_fns {
+            func(&app.world);
+        }
+    } 
+}
+
+pub(crate) fn init_frame_workload(app: &App) {
+    if let Some(if_fns) = app.scheduler.schedules.get(&Schedule::InitFrame) {
+        for func in if_fns {
+            func(&app.world);
+        }
+    } 
+}
+
+pub(crate) fn finish_frame_workload(app: &App) {
+    if let Some(ef_fns) = app.scheduler.schedules.get(&Schedule::EndFrame) {
+        for func in ef_fns {
             func(&app.world);
         }
     } 
