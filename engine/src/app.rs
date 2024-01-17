@@ -14,7 +14,7 @@ use crate::{
         run_update_workload,
         run_submit_queue_workload,
         update_cursor_position,
-        run_window_event_workload, update_window_size
+        run_window_event_workload, update_window_size, init_frame_workload, finish_frame_workload, start_frame_workload
     },
 };
 
@@ -79,6 +79,9 @@ impl<'app> App<'app> {
     /// A function what must be called everytime there is an event. In case
     /// of inmediate mode it must be called once per frame.
     pub fn tick(&mut self, event: &Event) {
+        start_frame_workload(self); 
+        init_frame_workload(self); 
+
         match event {
             Event::Window(w_event) => {
                 match w_event {
@@ -109,6 +112,7 @@ impl<'app> App<'app> {
 
         run_update_workload(self);
         run_submit_queue_workload(self);
+        finish_frame_workload(self); 
     }
 
     /// Setups the main `RunLoop`.
