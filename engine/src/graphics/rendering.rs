@@ -2,14 +2,14 @@ use shipyard::{UniqueView, UniqueViewMut};
 use wgpu::CommandBuffer;
 
 use crate::graphics::{
+    CommandQueue,
+    OrderCommandBuffer,
     components::{
         UniqueRenderer,
         ScreenFrame,
         ScreenTexture,
     }
 };
-
-use super::{CommandQueue, OrderCommandBuffer};
 
 /// Setups the screen texture into the world.
 // TODO(Angel): Remove panic, to support headless.

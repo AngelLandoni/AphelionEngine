@@ -1,27 +1,34 @@
 use std::sync::Arc;
 
 use winit::keyboard::ModifiersState;
-use iced::{Font, Pixels, Theme};
-use iced_wgpu::core::renderer;
+use iced::{
+    Font,
+    Pixels,
+    Theme
+};
 use iced_wgpu::{
     graphics::Viewport,
+    core::renderer,
     Renderer,
     Backend,
     Settings
 };
-use iced_winit::Clipboard;
-use iced_winit::runtime::{
-    Debug,
-    program,
+use iced_winit::{
+    runtime::{
+        program,
+        Debug,
+        Program,
+    },
+    Clipboard,
+    conversion,
 };
-use iced_winit::conversion;
 
-use iced_widget::runtime::Program;
-use shipyard::{UniqueView, Unique, UniqueViewMut};
+use shipyard::{
+    UniqueView,
+    Unique,
+    UniqueViewMut
+};
 
-use crate::graphics::CommandQueue;
-use crate::graphics::components::{ScreenTexture, ScreenFrame};
-use crate::graphics::{OrderCommandQueue, OrderCommandBuffer, CommandSubmitOrder};
 use crate::{
     app::App,
     plugin::{
@@ -30,7 +37,15 @@ use crate::{
     },
     graphics::{
         gpu::Gpu,
-        components::UniqueRenderer
+        components::{
+            UniqueRenderer,
+            ScreenFrame,
+            ScreenTexture
+        },
+        CommandQueue,
+        OrderCommandQueue,
+        OrderCommandBuffer,
+        CommandSubmitOrder,
     }, 
     host::components::{
         UniqueCursor,
@@ -42,13 +57,18 @@ use crate::{
 
 pub(crate) trait AnyIced {
     fn pre_frame_config(&mut self, gpu: &Gpu);
-    fn render(&mut self, gpu: &Gpu, queue: &OrderCommandQueue, screen_frame: &ScreenFrame, screen_texture: &ScreenTexture);
+    fn render(
+        &mut self,
+        gpu: &Gpu,
+        queue: &OrderCommandQueue,
+        screen_frame: &ScreenFrame,
+        screen_texture: &ScreenTexture
+    );
     fn queue_event(&mut self, event: iced::Event);
     fn update(&mut self, cursor_x: f64, cursor_y: f64);
     fn window_resized(&mut self, size: Size<u32>, scale_factor: f64);
 }
 
-//pub struct IcedWrapper<P: iced_widget::runtime::Program + 'static> {
 pub struct IcedWrapper<P>
     where
     P: Program<Renderer = Renderer<iced::Theme>> + 'static,
@@ -90,15 +110,23 @@ impl<P: Program<Renderer = Renderer<iced::Theme>> + 'static> AnyIced for IcedWra
         }
     }
 
-    fn render(&mut self, gpu: &Gpu, queue: &OrderCommandQueue, screen_frame: &ScreenFrame, screen_texture: &ScreenTexture) {
-        
-
+    fn render(
+        &mut self,
+        gpu: &Gpu,
+        queue: &OrderCommandQueue,
+        screen_frame: &ScreenFrame,
+        screen_texture: &ScreenTexture
+    ) {    
         if !self.should_redraw { return }
         self.should_redraw = false;
 
         if let Some(frame) = &screen_frame.0 {
             if let Some(view) = &screen_texture.0 {
-                let mut encoder = gpu.device.create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+                let mut encoder = gpu
+                    .device
+                    .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                        label: None
+                    });
 
                 // And then iced on top
                 self.renderer.with_primitives(|backend, primitive| {
@@ -230,14 +258,14 @@ impl Pluggable for IcedPlugin {
         }
         
         {
-            app.schedule(Schedule::WindowEvent, |world| {
-                world.run(iced_update_event_queue_system);
-            });
-
             app.schedule(Schedule::Start, |world| {
                 let u_iced = world.borrow::<UniqueView<UniqueIced>>().unwrap();
                 let u_gpu = world.borrow::<UniqueView<UniqueRenderer>>().unwrap();
                 u_iced.inner.lock().unwrap().pre_frame_config(&u_gpu.gpu);
+            });
+
+            app.schedule(Schedule::WindowEvent, |world| {
+                world.run(iced_update_event_queue_system);
             });
 
             app.schedule(Schedule::Update, |world| {
