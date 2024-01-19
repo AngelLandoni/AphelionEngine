@@ -1,22 +1,38 @@
 use shipyard::{UniqueView, UniqueViewMut};
 use wgpu::CommandBuffer;
 
-use crate::graphics::{
-    CommandQueue,
-    OrderCommandBuffer,
-    components::{
-        UniqueRenderer,
-        ScreenFrame,
-        ScreenTexture,
-    }
+use crate::{
+    graphics::{
+        CommandQueue,
+        OrderCommandBuffer,
+        components::{
+            UniqueRenderer,
+            ScreenFrame,
+            ScreenTexture,
+        }
+    }, host::components::UniqueWindow
 };
+
+pub fn reconfigure_surface_if_needed_system(
+    mut gpu: UniqueViewMut<UniqueRenderer>,
+    window: UniqueView<UniqueWindow>
+) {
+    if gpu.gpu.surface_config.width != window.host_window.size.width ||
+       gpu.gpu.surface_config.height != window.host_window.size.height {
+
+        gpu.gpu.surface_config.width = window.host_window.size.width;
+        gpu.gpu.surface_config.height = window.host_window.size.height;
+
+        gpu.gpu.surface.configure(&gpu.gpu.device, &gpu.gpu.surface_config);
+    }
+}
 
 /// Setups the screen texture into the world.
 // TODO(Angel): Remove panic, to support headless.
-pub fn acquire_screen_texture(u_gui: UniqueView<UniqueRenderer>, 
+pub fn acquire_screen_texture(u_gpu: UniqueView<UniqueRenderer>, 
                               mut s_frame: UniqueViewMut<ScreenFrame>,
                               mut s_texture: UniqueViewMut<ScreenTexture>) {
-    if let Ok(frame) = u_gui.gpu.surface.get_current_texture() {
+    if let Ok(frame) = u_gpu.gpu.surface.get_current_texture() {
         let view = frame
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());

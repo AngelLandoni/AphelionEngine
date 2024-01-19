@@ -25,7 +25,6 @@ pub struct EguiContext(pub Context);
 pub struct EguiRenderer {
     state: State,
     renderer: Renderer,
-    screen_descriptor: Option<ScreenDescriptor>,
 }
 
 pub struct EguiInit();
@@ -73,20 +72,11 @@ impl Pluggable for EguiPlugin {
                 1,
             );
 
-            let screen_descriptor = ScreenDescriptor {
-                size_in_pixels: [
-                    gpu.gpu.surface_config.width,
-                    gpu.gpu.surface_config.height,
-                ],
-                pixels_per_point: u_window.host_window.accesor.scale_factor() as f32,
-            };
-
             app.world.add_unique(EguiContext(context));
             
             app.world.add_unique(EguiRenderer {
                 state,
                 renderer,
-                screen_descriptor: Some(screen_descriptor),
             });
         }
 
@@ -172,10 +162,15 @@ fn egui_render_system(
         .create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: None
         });
-    
-    
-    let s_desc = std::mem::take(&mut egui.screen_descriptor).unwrap();
 
+    let screen_descriptor = ScreenDescriptor {
+        size_in_pixels: [
+            gpu.gpu.surface_config.width,
+            gpu.gpu.surface_config.height,
+        ],
+        pixels_per_point: window.host_window.accesor.scale_factor() as f32,
+    };
+    
     egui
         .renderer
         .update_buffers(
@@ -183,7 +178,7 @@ fn egui_render_system(
             &gpu.gpu.queue,
             &mut encoder,
             &tris,
-            &s_desc,
+            &screen_descriptor,
         );
 
     {
@@ -206,13 +201,8 @@ fn egui_render_system(
             occlusion_query_set: None,
         });
 
-        egui.renderer.render(&mut r_pass, &tris, &s_desc);
+        egui.renderer.render(&mut r_pass, &tris, &screen_descriptor);
     }
-
-    let _ = std::mem::replace(
-        &mut egui.screen_descriptor,
-        Some(s_desc)
-    );
 
     for t in &output.textures_delta.free {
         egui.renderer.free_texture(t);

@@ -12,7 +12,7 @@ use crate::{
         },
         rendering::{
             acquire_screen_texture,
-            present_screen_texture, submit_commands_in_order
+            present_screen_texture, submit_commands_in_order, reconfigure_surface_if_needed_system
         },
         CommandQueue,
         OrderCommandQueue,
@@ -56,6 +56,10 @@ impl Pluggable for WgpuRendererPlugin {
         
         // Setup scheludes.
         {
+            app.schedule(Schedule::Start, |world| {
+                world.run(reconfigure_surface_if_needed_system);
+            });
+
             app.schedule(Schedule::InitFrame, |world| {
                 world.run(acquire_screen_texture);
             });
@@ -66,8 +70,9 @@ impl Pluggable for WgpuRendererPlugin {
 
             app.schedule(Schedule::EndFrame, |world| {
                 world.run(present_screen_texture);
-                world.run(|mut texture: UniqueViewMut<ScreenTexture>| {
+                world.run(|mut texture: UniqueViewMut<ScreenTexture>, mut s_frame: UniqueViewMut<ScreenFrame>| {
                     texture.0 = None;
+                    s_frame.0 = None;
                 })
             });
         }

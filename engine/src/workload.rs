@@ -1,6 +1,6 @@
-use std::borrow::BorrowMut;
+use std::{borrow::BorrowMut, ops::Deref};
 
-use shipyard::UniqueViewMut;
+use shipyard::{UniqueViewMut, error::UniqueRemove};
 
 use crate::{
     app::App,
@@ -8,7 +8,7 @@ use crate::{
     host::components::{
         UniqueCursor,
         UniqueWindow
-    },
+    }, graphics::components::UniqueRenderer,
 };
 /// Coordinates all the update systems.
 pub(crate) fn run_before_request_redraw_workload(app: &App) {
@@ -118,7 +118,7 @@ pub(crate) fn update_window_size(app: &mut App, width: &u32, height: &u32) {
             .expect("Unable to adquire cursor");
         
         size.host_window.size.width = *width;
-        size.host_window.size.height = *height;    
+        size.host_window.size.height = *height;
     }
     
     if let Some(w_u_fns) = app.scheduler.schedules.get(&Schedule::WindowResize) {
