@@ -1,3 +1,7 @@
+use std::any::Any;
+
+use downcast_rs::{Downcast, DowncastSync, impl_downcast};
+
 use raw_window_handle::{
     HasRawWindowHandle,
     HasRawDisplayHandle,
@@ -7,10 +11,11 @@ use raw_window_handle::{
 
 use crate::types::Size;
 
-pub trait WindowInfoAccessible {
+pub trait WindowInfoAccessible: Downcast {
     fn inner_size(&self) -> Size<u32>;
     fn scale_factor(&self) -> f64;
 }
+impl_downcast!(WindowInfoAccessible);
 
 /// Represents the main application window. The current engine version does not
 /// support multiple windows, and there are no immediate plans to do so. However,
@@ -25,10 +30,12 @@ pub struct Window {
 
 impl Window {
     /// Creates a new instance of Window.
-    pub(crate) fn new(accesor: Box<dyn WindowInfoAccessible>,
-                      size: Size<u32>,
-                      window_handle: RawWindowHandle,
-                      display_handle: RawDisplayHandle) -> Self {
+    pub(crate) fn new<A: WindowInfoAccessible>(
+        accesor: Box<A>,
+        size: Size<u32>,
+        window_handle: RawWindowHandle,
+        display_handle: RawDisplayHandle
+    ) -> Self {
         Window {
             accesor,
             size,
@@ -37,7 +44,7 @@ impl Window {
         }
     }
 
-    pub(crate) fn inner_size(&self) -> Size<u32> {
+    pub(crate) fn inner_size(&self) -> Size<u32> { 
         self.accesor.inner_size()
     }
 

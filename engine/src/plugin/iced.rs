@@ -1,4 +1,4 @@
-use std::sync::Arc;
+/*use std::sync::Arc;
 
 use winit::keyboard::ModifiersState;
 use iced::{
@@ -509,4 +509,4 @@ impl Program for Controls {
             .center_y()
             .into()
     }
-}
+}*/
