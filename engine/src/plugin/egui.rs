@@ -16,7 +16,7 @@ use crate::{
     graphics::{components::{UniqueRenderer, ScreenTexture}, CommandQueue, OrderCommandBuffer, CommandSubmitOrder},
 };
 
-use super::window::WinitWindowWrapper;
+use super::window::{WinitWindowWrapper, UniqueWinitEvent};
 
 #[derive(Unique)]
 pub struct EguiRenderer {
@@ -87,6 +87,10 @@ impl Pluggable for EguiPlugin {
         {
             app.schedule(Schedule::Update, |world| {
                 world.run(egui_render_system);
+            });
+
+            app.schedule(Schedule::WindowEvent, |world| {
+                world.run(egui_handle_events_system);
             });
         }
     }
@@ -195,6 +199,31 @@ fn egui_render_system(
         CommandSubmitOrder::DebugGui,
         encoder.finish(),
     ));
+}
+
+fn egui_handle_events_system(
+    mut egui: UniqueViewMut<EguiRenderer>,
+    window: UniqueView<UniqueWindow>,
+    winit_event: UniqueView<UniqueWinitEvent>
+) {
+    let w = match window.host_window.accesor.downcast_ref::<WinitWindowWrapper>() {
+        Some(w) => w,
+        None => {
+            // TODO(Angel): Use logger.
+            println!("Unable to find Winit Window");
+            return
+        }
+    };
+
+    let e = match &winit_event.inner {
+        Some(e) => e,
+        None => {
+            println!("Unable to find winit event");
+            return
+        }
+    };
+
+    egui.state.on_window_event(&w.0, &e);
 }
 
 pub fn GUI(ui: &Context) {
