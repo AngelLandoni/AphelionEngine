@@ -1,3 +1,6 @@
+use std::sync::{Arc, Mutex};
+
+use egui_demo_lib::DemoWindows;
 use engine::{
     plugin::{
         Pluggable,
@@ -19,10 +22,10 @@ use engine::shipyard::{
 use shipyard::{UniqueView, Unique, UniqueViewMut};
 
 #[derive(Unique)]
-struct UIState {
-    name: String,
-    age: u32,
-}
+struct Demo(DemoWindows);
+
+unsafe impl Send for Demo {}
+unsafe impl Sync for Demo {}
 
 #[derive(Component, Debug)]
 struct Pos(f32, f32);
@@ -33,20 +36,8 @@ fn create_ints(mut _entities: EntitiesViewMut, mut _vm_vel: ViewMut<Pos>) {
 fn delete_ints(mut _vm_vel: ViewMut<Pos>) {
 }
 
-fn set_ui(egui: UniqueView<EguiContext>, mut state: UniqueViewMut<UIState>) {
-    engine::egui::CentralPanel::default().show(&egui.0, |ui| {
-        ui.heading("My egui Application");
-        ui.horizontal(|ui| {
-            let name_label = ui.label("Your name: ");
-            ui.text_edit_singleline(&mut state.name)
-                .labelled_by(name_label.id);
-        });
-        ui.add(engine::egui::Slider::new(&mut state.age, 0..=120).text("age"));
-        if ui.button("Click each year").clicked() {
-            state.age += 1;
-        }
-        ui.label(format!("Hello '{}', age {}", state.name, state.age));
-    });
+fn set_ui(egui: UniqueView<EguiContext>, mut demo: UniqueViewMut<Demo>) {
+    demo.0.ui(&egui.0);
 }
 
 fn int_cycle() -> Workload {
@@ -57,11 +48,10 @@ struct PlayerPlugin;
 
 impl Pluggable for PlayerPlugin {
     fn configure(&self, app: &mut App) {
+        let demo = egui_demo_lib::DemoWindows::default();
+
         app.world.add_workload(int_cycle); 
-        app.world.add_unique(UIState {
-            name: "Angel".to_string(),
-            age: 28,
-        });
+        app.world.add_unique(Demo(demo));
 
         app.schedule(Schedule::RequestRedraw, |world| {
             world.run(set_ui);

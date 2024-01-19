@@ -6,3 +6,4 @@ edition = "2021"
 [dependencies]
 engine = { path = "../engine" }
 shipyard = "0.6.2"
+egui_demo_lib = "0.25.0"
