@@ -98,12 +98,18 @@ impl Pluggable for WinitWindowPlugin {
         app.set_run_loop(move |app: &mut App| {
             event_loop.set_control_flow(winit::event_loop::ControlFlow::Wait);
 
-            event_loop.run(move |event, _elwt| {
+            event_loop.run(move |event, elwt| {
                 // Iced_winit needs the event to behave correctly.
                 match event.clone() {
                     Event::WindowEvent { window_id: _, event } => {
+                        match event {
+                            WindowEvent::CloseRequested => elwt.exit(),
+
+                            _ => {}
+                        }
+
                         let mut w_e = app.world.borrow::<UniqueViewMut<UniqueWinitEvent>>().unwrap();
-                        w_e.inner = Some(event);
+                        w_e.inner = Some(event);                        
                     }
                     _ => {}
                 }
