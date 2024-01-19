@@ -1,7 +1,7 @@
-use std::{env::set_current_dir, f32::consts::E};
 
-use downcast_rs::Downcast;
-use egui::{Context, Visuals, epaint::Shadow, Align2, FullOutput};
+
+
+use egui::{Context, Visuals, epaint::Shadow};
 use egui_winit::State;
 use egui_wgpu::{Renderer, renderer::ScreenDescriptor};
 
@@ -12,7 +12,7 @@ use crate::{
     app::App,
     plugin::Pluggable,
     schedule::Schedule,
-    host::{components::UniqueWindow, window::Window},
+    host::{components::UniqueWindow},
     graphics::{components::{UniqueRenderer, ScreenTexture}, CommandQueue, OrderCommandBuffer, CommandSubmitOrder},
 };
 
@@ -162,7 +162,7 @@ fn egui_render_system(
             &gpu.gpu.device,
             &gpu.gpu.queue,
             *id,
-            &image_delta
+            image_delta
         )
     }
 
@@ -247,6 +247,6 @@ fn egui_handle_events_system(
         }
     };
 
-    let _ = egui.state.on_window_event(&w.0, &e);
+    let _ = egui.state.on_window_event(&w.0, e);
     w.0.request_redraw();
 }

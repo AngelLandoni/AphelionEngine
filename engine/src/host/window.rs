@@ -1,6 +1,6 @@
-use std::any::Any;
 
-use downcast_rs::{Downcast, DowncastSync, impl_downcast};
+
+use downcast_rs::{Downcast, impl_downcast};
 
 use raw_window_handle::{
     HasRawWindowHandle,
