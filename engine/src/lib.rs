@@ -7,3 +7,4 @@ mod workload;
 mod types;
 
 pub use shipyard;
+pub use egui;

@@ -1,7 +1,7 @@
 use std::{env::set_current_dir, f32::consts::E};
 
 use downcast_rs::Downcast;
-use egui::{Context, Visuals, epaint::Shadow, Align2};
+use egui::{Context, Visuals, epaint::Shadow, Align2, FullOutput};
 use egui_winit::State;
 use egui_wgpu::{Renderer, renderer::ScreenDescriptor};
 
@@ -19,12 +19,17 @@ use crate::{
 use super::window::{WinitWindowWrapper, UniqueWinitEvent};
 
 #[derive(Unique)]
+pub struct EguiContext(pub Context);
+
+#[derive(Unique)]
 pub struct EguiRenderer {
-    context: Context,
     state: State,
     renderer: Renderer,
     screen_descriptor: Option<ScreenDescriptor>,
 }
+
+pub struct EguiInit();
+
 pub struct EguiPlugin;
 
 // https://github.com/ejb004/egui-wgpu-demo/blob/master/src/gui.rs
@@ -76,8 +81,9 @@ impl Pluggable for EguiPlugin {
                 pixels_per_point: u_window.host_window.accesor.scale_factor() as f32,
             };
 
+            app.world.add_unique(EguiContext(context));
+            
             app.world.add_unique(EguiRenderer {
-                context,
                 state,
                 renderer,
                 screen_descriptor: Some(screen_descriptor),
@@ -85,7 +91,11 @@ impl Pluggable for EguiPlugin {
         }
 
         {
-            app.schedule(Schedule::Update, |world| {
+            app.schedule(Schedule::BeforeRequestRedraw, |world| {
+                world.run(egui_generate_full_output);
+            });
+
+            app.schedule(Schedule::AfterRequestRedraw, |world| {
                 world.run(egui_render_system);
             });
 
@@ -96,12 +106,10 @@ impl Pluggable for EguiPlugin {
     }
 }
 
-fn egui_render_system(
-    gpu: UniqueView<UniqueRenderer>,
-    mut egui: UniqueViewMut<EguiRenderer>,
+fn egui_generate_full_output(
     window: UniqueView<UniqueWindow>,
-    s_texture: UniqueView<ScreenTexture>,
-    queue: UniqueView<CommandQueue>,
+    mut egui: UniqueViewMut<EguiRenderer>,
+    egui_ctx: UniqueView<EguiContext>,
 ) {
     let w = match window.host_window.accesor.downcast_ref::<WinitWindowWrapper>() {
         Some(w) => w,
@@ -112,6 +120,29 @@ fn egui_render_system(
         }
     };
 
+    let raw_input = egui.state.take_egui_input(&w.0);
+    egui_ctx.0.begin_frame(raw_input);
+}
+
+fn egui_render_system(
+    gpu: UniqueView<UniqueRenderer>,
+    window: UniqueView<UniqueWindow>,
+    s_texture: UniqueView<ScreenTexture>,
+    queue: UniqueView<CommandQueue>,
+    mut egui: UniqueViewMut<EguiRenderer>,
+    egui_ctx: UniqueView<EguiContext>,
+) {
+    let w = match window.host_window.accesor.downcast_ref::<WinitWindowWrapper>() {
+        Some(w) => w,
+        None => {
+            // TODO(Angel): Use logger.
+            println!("Unable to find Winit Window");
+            return
+        }
+    };
+
+    let output = egui_ctx.0.end_frame();
+
     let view = match &s_texture.0 {
         Some(v) => v,
         None => {
@@ -120,20 +151,13 @@ fn egui_render_system(
         }
     };
 
-    let raw_input = egui.state.take_egui_input(&w.0);
-    
-    let full_output = egui.context.run(raw_input, |ui| {
-        // WHy not just use ui?
-        GUI(&egui.context)
-    });
+    egui.state.handle_platform_output(&w.0, output.platform_output);
 
-    egui.state.handle_platform_output(&w.0, full_output.platform_output);
-
-    let tris = egui
-        .context
-        .tessellate(full_output.shapes, full_output.pixels_per_point);
+    let tris = egui_ctx
+        .0
+        .tessellate(output.shapes, output.pixels_per_point);
     
-    for (id, image_delta) in &full_output.textures_delta.set {
+    for (id, image_delta) in &output.textures_delta.set {
         egui.renderer.update_texture(
             &gpu.gpu.device,
             &gpu.gpu.queue,
@@ -190,7 +214,7 @@ fn egui_render_system(
         Some(s_desc)
     );
 
-    for t in &full_output.textures_delta.free {
+    for t in &output.textures_delta.free {
         egui.renderer.free_texture(t);
     }
 
@@ -223,27 +247,6 @@ fn egui_handle_events_system(
         }
     };
 
-    egui.state.on_window_event(&w.0, &e);
-}
-
-pub fn GUI(ui: &Context) {
-    egui::Window::new("Streamline CFD")
-        // .vscroll(true)
-        .default_open(true)
-        .max_width(1000.0)
-        .max_height(800.0)
-        .default_width(800.0)
-        .resizable(true)
-        .anchor(Align2::LEFT_TOP, [0.0, 0.0])
-        .show(&ui, |mut ui| {
-            if ui.add(egui::Button::new("Click me")).clicked() {
-                println!("PRESSED")
-            }
-
-            ui.label("Slider");
-            // ui.add(egui::Slider::new(_, 0..=120).text("age"));
-            ui.end_row();
-
-            // proto_scene.egui(ui);
-        });
+    let _ = egui.state.on_window_event(&w.0, &e);
+    w.0.request_redraw();
 }

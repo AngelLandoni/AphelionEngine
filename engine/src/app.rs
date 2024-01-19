@@ -18,7 +18,9 @@ use crate::{
         update_window_size,
         init_frame_workload,
         finish_frame_workload,
-        start_frame_workload, run_request_redraw_workload,
+        start_frame_workload, 
+        run_request_redraw_workload, 
+        run_before_request_redraw_workload, run_after_request_redraw_workload,
     },
 };
 
@@ -94,7 +96,9 @@ impl<'app> App<'app> {
                     }
                     
                     WindowEvent::RequestRedraw => {
+                        run_before_request_redraw_workload(self);
                         run_request_redraw_workload(self);
+                        run_after_request_redraw_workload(self);
                     }
 
                     WindowEvent::CursorMoved(x, y) => {
