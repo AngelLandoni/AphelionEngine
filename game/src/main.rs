@@ -1,5 +1,10 @@
 use engine::{
-    plugin::{window::WinitWindowPlugin, Pluggable, renderer::WgpuRendererPlugin, iced::IcedPlugin},
+    plugin::{
+        Pluggable,
+        window::WinitWindowPlugin,
+        renderer::WgpuRendererPlugin,
+        egui::EguiPlugin,
+    },
     schedule::Schedule,
     app::App,
 };
@@ -45,7 +50,7 @@ pub fn main() {
             800,
         ))
         .add_plugin(WgpuRendererPlugin)
-        .add_plugin(IcedPlugin)
+        .add_plugin(EguiPlugin)
         .add_plugin(PlayerPlugin)
         .run();
 }

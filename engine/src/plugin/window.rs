@@ -21,15 +21,12 @@ use crate::{
     app::App, 
     host::{
         components::UniqueWindow,
-        window::{
-            Window,
-            WindowInfoAccessible
-        }
+        window::{Window, WindowInfoAccessible},
     },
     types::Size,
 };
 
-pub struct WinitWindowWrapper(winit::window::Window);
+pub struct WinitWindowWrapper(pub(crate) winit::window::Window);
 
 impl WindowInfoAccessible for WinitWindowWrapper {
     fn inner_size(&self) -> Size<u32> {

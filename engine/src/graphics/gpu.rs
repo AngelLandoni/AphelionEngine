@@ -24,6 +24,7 @@ pub(crate) struct Gpu {
     /// underlying physical GPU (Adapter).
     pub device: Device,
     pub queue: Queue,
+    pub surface_config: SurfaceConfiguration,
     pub texture_format: TextureFormat
 }
 
@@ -60,7 +61,7 @@ impl Gpu {
 
         let size = window.accesor.inner_size();
 
-        let config = SurfaceConfiguration {
+        let surface_config = SurfaceConfiguration {
             usage: TextureUsages::RENDER_ATTACHMENT,
             format: texture_format,
             width: size.width,
@@ -70,13 +71,14 @@ impl Gpu {
             view_formats: vec![],
         };
 
-        surface.configure(&device, &config);
+        surface.configure(&device, &surface_config);
 
         Gpu {
             surface,
             adapter,
             device,
             queue,
+            surface_config,
             texture_format,
         }
     }

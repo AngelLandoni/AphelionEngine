@@ -1,6 +1,7 @@
 pub mod renderer;
 pub mod window;
 pub mod iced;
+pub mod egui;
 
 use crate::app::App;
 
