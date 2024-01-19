@@ -9,7 +9,9 @@ pub enum Schedule {
 
     Update,
     WindowEvent,
+    BeforeRequestRedraw,
     RequestRedraw,
+    AfterRequestRedraw,
     QueueSubmit,
 
     WindowResize,
