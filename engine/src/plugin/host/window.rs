@@ -1,3 +1,5 @@
+use std::time::{Instant, Duration};
+
 use raw_window_handle::{
     HasRawWindowHandle,
     HasRawDisplayHandle
@@ -5,7 +7,7 @@ use raw_window_handle::{
 
 use shipyard::{
     Unique,
-    UniqueViewMut
+    UniqueViewMut, UniqueView
 };
 
 use winit::{
@@ -17,7 +19,7 @@ use winit::{
 
 use crate::{
     host,
-    plugin::Pluggable,
+    plugin::{Pluggable, core::clock::Clock},
     app::App, 
     host::{
         components::UniqueWindow,
@@ -96,9 +98,11 @@ impl Pluggable for WinitWindowPlugin {
         });
 
         app.set_run_loop(move |app: &mut App| {
-            event_loop.set_control_flow(winit::event_loop::ControlFlow::Wait);
+            event_loop.set_control_flow(winit::event_loop::ControlFlow::Poll);
 
             event_loop.run(move |event, elwt| {
+                elwt.set_control_flow(winit::event_loop::ControlFlow::Poll);
+
                 // Iced_winit needs the event to behave correctly.
                 match event.clone() {
                     Event::WindowEvent { window_id: _, event } => {
@@ -111,6 +115,7 @@ impl Pluggable for WinitWindowPlugin {
                         let mut w_e = app.world.borrow::<UniqueViewMut<UniqueWinitEvent>>().unwrap();
                         w_e.inner = Some(event);                        
                     }
+
                     _ => {}
                 }
 

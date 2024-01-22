@@ -1,12 +1,10 @@
-use std::sync::{Arc, Mutex};
-
 use egui_demo_lib::DemoWindows;
 use engine::{
     plugin::{
         Pluggable,
-        window::WinitWindowPlugin,
-        renderer::WgpuRendererPlugin,
-        egui::{EguiPlugin, EguiContext},
+        host::window::WinitWindowPlugin,
+        graphics::renderer::WgpuRendererPlugin,
+        graphics::egui::{EguiPlugin, EguiContext}, core::clock::{Clock, ClockPluggin},
     },
     schedule::Schedule,
     app::App,
@@ -36,8 +34,36 @@ fn create_ints(mut _entities: EntitiesViewMut, mut _vm_vel: ViewMut<Pos>) {
 fn delete_ints(mut _vm_vel: ViewMut<Pos>) {
 }
 
-fn set_ui(egui: UniqueView<EguiContext>, mut demo: UniqueViewMut<Demo>) {
-    demo.0.ui(&egui.0);
+fn set_ui(egui: UniqueView<EguiContext>, mut demo: UniqueViewMut<Demo>, clock: UniqueView<Clock>) {
+    let delta: String = format!("{}", clock.delta_milliseconds()).chars().take(4).collect();
+    
+    let window = engine::egui::Window::new("Delta time")
+        .id(engine::egui::Id::new("delta_window"))
+        .resizable(false);
+
+    window.show(&egui.0, |ui| {
+        engine::egui::SidePanel::left("left_panel")
+            .resizable(true)
+            .default_width(150.0)
+            .width_range(80.0..=200.0)
+            .show_inside(ui, |ui| {
+                ui.vertical_centered(|ui| {
+                    ui.heading("Info");
+                });
+
+                engine::egui::ScrollArea::vertical().show(ui, |ui| {
+                    engine::egui::Grid::new("Info")
+                        .num_columns(2)
+                        .show(ui, |ui| {
+                            ui.label("Delta: ");
+                            ui.label(delta);
+                            ui.end_row();
+                        });
+                });
+            });
+    });
+
+    //demo.0.ui(&egui.0);
 }
 
 fn int_cycle() -> Workload {
@@ -71,6 +97,7 @@ pub fn main() {
             800,
         ))
         .add_plugin(WgpuRendererPlugin)
+        .add_plugin(ClockPluggin::default())
         .add_plugin(EguiPlugin)
         .add_plugin(PlayerPlugin)
         .run();

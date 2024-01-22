@@ -10,13 +10,25 @@ use wgpu::{RenderPassDescriptor, RenderPassColorAttachment, Operations};
 
 use crate::{
     app::App,
-    plugin::Pluggable,
+    plugin::{
+        Pluggable,
+        host::window::{
+            WinitWindowWrapper,
+            UniqueWinitEvent,
+        },
+    },
     schedule::Schedule,
-    host::{components::UniqueWindow},
-    graphics::{components::{UniqueRenderer, ScreenTexture}, CommandQueue, OrderCommandBuffer, CommandSubmitOrder},
+    host::components::UniqueWindow,
+    graphics::{
+        components::{
+            UniqueRenderer,
+            ScreenTexture
+        },
+        CommandQueue,
+        OrderCommandBuffer,
+        CommandSubmitOrder
+    },
 };
-
-use super::window::{WinitWindowWrapper, UniqueWinitEvent};
 
 #[derive(Unique)]
 pub struct EguiContext(pub Context);

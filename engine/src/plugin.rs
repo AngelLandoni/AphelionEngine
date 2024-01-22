@@ -1,6 +1,6 @@
-pub mod renderer;
-pub mod window;
-pub mod egui;
+pub mod core;
+pub mod host;
+pub mod graphics;
 
 use crate::app::App;
 
