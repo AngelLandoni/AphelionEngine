@@ -84,7 +84,7 @@ impl Gpu {
     }
 
     /// Reads a shader file and generate a module.
-    pub(crate) fn create_shader(&self, label: &str, shader_code: &str) -> ShaderModule {
+    pub(crate) fn compile_program(&self, label: &str, shader_code: &str) -> ShaderModule {
         self.device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(label),
             source: wgpu::ShaderSource::Wgsl(shader_code.into()),

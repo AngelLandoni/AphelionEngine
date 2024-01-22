@@ -1,5 +1,3 @@
-
-
 use downcast_rs::{Downcast, impl_downcast};
 
 use raw_window_handle::{

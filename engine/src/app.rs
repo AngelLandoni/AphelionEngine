@@ -102,6 +102,8 @@ impl<'app> App<'app> {
                         run_before_request_redraw_workload(self);
                         run_request_redraw_workload(self);
                         run_after_request_redraw_workload(self);
+
+                        run_submit_queue_workload(self);
                     }
 
                     WindowEvent::CursorMoved(x, y) => {
@@ -121,7 +123,6 @@ impl<'app> App<'app> {
             Event::UnknownOrNotImplemented => {}
         }
 
-        run_submit_queue_workload(self);
         finish_frame_workload(self); 
     }
 

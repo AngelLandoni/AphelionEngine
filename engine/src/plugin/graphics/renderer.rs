@@ -12,11 +12,14 @@ use crate::{
         },
         rendering::{
             acquire_screen_texture,
-            present_screen_texture, submit_commands_in_order, reconfigure_surface_if_needed_system
+            present_screen_texture,
+            submit_commands_in_order,
+            reconfigure_surface_if_needed_system
         },
         CommandQueue,
         OrderCommandQueue,
-        MAX_NUMBER_IF_COMMANDS_PER_FRAME,
+        pipelines::traingle_test_pipeline::TriangleTestPipeline,
+        MAX_NUMBER_IF_COMMANDS_PER_FRAME, passes::triangle_test_pass::triangle_test_pass_system,
     },
     host::components::UniqueWindow,
     plugin::Pluggable,
@@ -41,17 +44,18 @@ impl Pluggable for WgpuRendererPlugin {
         {
             let world = &app.world;
             world.add_unique(ScreenTexture(None));
-
-            world.add_unique(UniqueRenderer {
-                gpu
-            });
-
             world.add_unique(ScreenFrame(None));
-            world.add_unique(ScreenTexture(None));
     
             world.add_unique(CommandQueue(
                 OrderCommandQueue::new(MAX_NUMBER_IF_COMMANDS_PER_FRAME)
             ));
+
+            // Pipelines
+            world.add_unique(TriangleTestPipeline::new(&gpu));
+
+            world.add_unique(UniqueRenderer {
+                gpu
+            });
         }
         
         // Setup scheludes.
@@ -62,6 +66,10 @@ impl Pluggable for WgpuRendererPlugin {
 
             app.schedule(Schedule::InitFrame, |world| {
                 world.run(acquire_screen_texture);
+            });
+
+            app.schedule(Schedule::RequestRedraw, |world| {
+                world.run(triangle_test_pass_system);
             });
 
             app.schedule(Schedule::QueueSubmit, |world| {

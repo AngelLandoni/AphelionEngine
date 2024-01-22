@@ -2,6 +2,8 @@ pub(crate) mod gpu;
 pub(crate) mod passes;
 pub(crate) mod components;
 pub(crate) mod rendering;
+pub(crate) mod vertex;
+pub(crate) mod pipelines;
 
 use shipyard::Unique;
 use wgpu::CommandBuffer;
@@ -14,7 +16,8 @@ pub struct CommandQueue(pub(crate) OrderCommandQueue);
 /// that the pass should be drawn later in the rendering pipeline.
 #[derive(Copy, Clone)]
 pub(crate) enum CommandSubmitOrder {
-    DebugGui,    
+    DebugGui,
+    TriangleTest,
 }
 
 impl CommandSubmitOrder {
