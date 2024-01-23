@@ -1,3 +1,4 @@
+use bytemuck::{Pod, AnyBitPattern};
 use wgpu::{
     Surface,
     Adapter,
@@ -10,7 +11,7 @@ use wgpu::{
     SurfaceConfiguration,
     TextureUsages,
     ShaderModule, 
-    TextureFormat,
+    TextureFormat, Buffer, BufferAddress, COPY_BUFFER_ALIGNMENT, BufferUsages, BufferDescriptor, util::{DeviceExt, BufferInitDescriptor},
 };
 
 use crate::host::window::Window;
@@ -88,6 +89,42 @@ impl Gpu {
         self.device.create_shader_module(wgpu::ShaderModuleDescriptor {
             label: Some(label),
             source: wgpu::ShaderSource::Wgsl(shader_code.into()),
+        })
+    }
+
+    /// Allocates a buffer in the GPU RAM and returns a reference to it.
+    pub(crate) fn allocate_buffer(&self, label: &str, size: u64, usage: BufferUsages) -> Buffer {
+        // Convert the size from the provided one into one that WGPU handles.
+        let unpadded_size: BufferAddress = size as BufferAddress;
+        // Make sure the size is 4 bytes aligned.
+        let padding: BufferAddress = 
+            COPY_BUFFER_ALIGNMENT -
+            unpadded_size %
+            COPY_BUFFER_ALIGNMENT;
+
+        // Final padding, the size now is memory aligned.
+        let padded_size: BufferAddress = unpadded_size + padding;
+
+        // Allocate and return the reference.
+        self.device.create_buffer(&BufferDescriptor {
+            label: Some(label),
+            size: padded_size,
+            usage,
+            mapped_at_creation: true,
+        })
+    }
+
+    /// Allocates and initilizes a chunk of memory on the GPU.
+    pub(crate) fn allocate_buffer_init<T: Pod + AnyBitPattern>(
+        &self,
+        label: &str,
+        content: T,
+        usage: BufferUsages
+    ) -> Buffer {
+        self.device.create_buffer_init(&BufferInitDescriptor {
+            label: Some(label),
+            contents: bytemuck::cast_slice(&[content]),
+            usage,
         })
     }
 }

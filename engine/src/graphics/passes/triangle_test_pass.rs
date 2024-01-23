@@ -33,9 +33,9 @@ pub fn triangle_test_pass_system(
                 resolve_target: None,
                 ops: Operations {
                     load: wgpu::LoadOp::Clear(wgpu::Color {
-                        r: 0.1,
-                        g: 0.2,
-                        b: 0.3,
+                        r: 0.0,
+                        g: 0.0,
+                        b: 0.0,
                         a: 1.0,
                     }),
                     store: wgpu::StoreOp::Store,
@@ -47,6 +47,8 @@ pub fn triangle_test_pass_system(
         });
 
         pass.set_pipeline(&triangle_pipeline.pipeline);
+        // Camera position.
+        pass.set_bind_group(0, &triangle_pipeline.camera_bind_group, &[]);
         pass.draw(0..3, 0..1);
     }
     

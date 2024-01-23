@@ -1,6 +1,6 @@
-use std::time::{Instant, Duration};
+use std::time::Instant;
 
-use shipyard::{Unique, UniqueViewMut, UniqueView};
+use shipyard::{Unique, UniqueViewMut};
 
 use crate::{
     plugin::Pluggable,
@@ -39,8 +39,8 @@ impl Clock {
         self.last_frame_time = Instant::now();
     }
 
-    pub fn delta_seconds(&self) -> &f64 {
-        &self.delta
+    pub fn delta_seconds(&self) -> f64 {
+        self.delta
     }
 
     pub fn delta_milliseconds(&self) -> f64 {
@@ -50,12 +50,12 @@ impl Clock {
 
 /// Traks the elapsed time between frames. This can be used to know the delta
 /// time.
-pub struct ClockPluggin {
+pub struct ClockPlugin {
     limit_frame_rate: bool,
     target_frame_rate: u64,
 }
 
-impl Default for ClockPluggin {
+impl Default for ClockPlugin {
     fn default() -> Self {
         Self {
             limit_frame_rate: true,
@@ -64,7 +64,7 @@ impl Default for ClockPluggin {
     }
 }
 
-impl ClockPluggin {    
+impl ClockPlugin {    
     pub fn new(limit_frame_rate: bool, target_frame_rate: u64) -> Self {
         Self {
             limit_frame_rate,
@@ -73,7 +73,7 @@ impl ClockPluggin {
     }
 }
 
-impl Pluggable for ClockPluggin {
+impl Pluggable for ClockPlugin {
     fn configure(&self, app: &mut crate::app::App) {
         app.world.add_unique(Clock::new(
             self.limit_frame_rate,

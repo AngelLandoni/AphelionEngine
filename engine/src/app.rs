@@ -86,8 +86,6 @@ impl<'app> App<'app> {
     /// A function what must be called everytime there is an event. In case
     /// of inmediate mode it must be called once per frame.
     pub fn tick(&mut self, event: &Event) {
-        start_frame_workload(self); 
-        init_frame_workload(self); 
 
         match event {
             Event::Window(w_event) => {
@@ -97,6 +95,9 @@ impl<'app> App<'app> {
                     }
                     
                     WindowEvent::RequestRedraw => {
+                        start_frame_workload(self); 
+                        init_frame_workload(self); 
+
                         run_update_workload(self);
 
                         run_before_request_redraw_workload(self);
@@ -104,6 +105,8 @@ impl<'app> App<'app> {
                         run_after_request_redraw_workload(self);
 
                         run_submit_queue_workload(self);
+
+                        finish_frame_workload(self); 
                     }
 
                     WindowEvent::CursorMoved(x, y) => {
@@ -123,7 +126,6 @@ impl<'app> App<'app> {
             Event::UnknownOrNotImplemented => {}
         }
 
-        finish_frame_workload(self); 
     }
 
     /// Setups the main `RunLoop`.

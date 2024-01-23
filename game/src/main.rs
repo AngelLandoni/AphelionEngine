@@ -1,23 +1,33 @@
 use egui_demo_lib::DemoWindows;
+
 use engine::{
     plugin::{
         Pluggable,
         host::window::WinitWindowPlugin,
         graphics::renderer::WgpuRendererPlugin,
-        graphics::egui::{EguiPlugin, EguiContext}, core::clock::{Clock, ClockPluggin},
+        graphics::egui::{
+            EguiPlugin,
+            EguiContext
+        },
+        core::clock::{
+            Clock,
+            ClockPlugin
+        }, 
+        scene::scene_plugin::ScenePlugin,
     },
     schedule::Schedule,
     app::App,
+    shipyard::{
+        Component,
+        EntitiesViewMut,
+        ViewMut,
+        Workload,
+        IntoWorkload,
+        UniqueView,
+        Unique,
+        UniqueViewMut,
+    }, scene::camera::Camera
 };
-
-use engine::shipyard::{
-    Component,
-    EntitiesViewMut,
-    ViewMut,
-    Workload,
-    IntoWorkload
-};
-use shipyard::{UniqueView, Unique, UniqueViewMut};
 
 #[derive(Unique)]
 struct Demo(DemoWindows);
@@ -34,7 +44,7 @@ fn create_ints(mut _entities: EntitiesViewMut, mut _vm_vel: ViewMut<Pos>) {
 fn delete_ints(mut _vm_vel: ViewMut<Pos>) {
 }
 
-fn set_ui(egui: UniqueView<EguiContext>, mut demo: UniqueViewMut<Demo>, clock: UniqueView<Clock>) {
+fn set_ui(egui: UniqueView<EguiContext>, mut demo: UniqueViewMut<Demo>, clock: UniqueView<Clock>, mut camera: UniqueViewMut<Camera>) {
     let delta: String = format!("{}", clock.delta_milliseconds()).chars().take(4).collect();
     
     let window = engine::egui::Window::new("Delta time")
@@ -62,6 +72,40 @@ fn set_ui(egui: UniqueView<EguiContext>, mut demo: UniqueViewMut<Demo>, clock: U
                 });
             });
     });
+
+    engine::egui::Window::new("Streamline CFD")
+        // .vscroll(true)
+        .default_open(true)
+        //.max_width(1000.0)
+        //.max_height(800.0)
+        //.default_width(800.0)
+        .resizable(true)
+        //.anchor(Align2::LEFT_TOP, [0.0, 0.0])
+        .show(&egui.0, |mut ui| {
+            if ui.add(engine::egui::Button::new("Far")).clicked() {
+                camera.add_translation(
+                    engine::nalgebra::Vector3::new(0.0, 0.0, 1.0), 10.0 * clock.delta_seconds() as f32
+                );
+                camera.add_target_translation(
+                    engine::nalgebra::Vector3::new(0.0, 0.0, 1.0), 10.0 * clock.delta_seconds() as f32
+                );
+            }
+
+            if ui.add(engine::egui::Button::new("Near")).clicked() {
+                camera.add_translation(
+                    engine::nalgebra::Vector3::new(0.0, 0.0, -1.0),10.0 * clock.delta_seconds() as f32
+                );
+                camera.add_target_translation(
+                    engine::nalgebra::Vector3::new(0.0, 0.0, -1.0),10.0 * clock.delta_seconds() as f32
+                );
+            }
+
+            ui.label("Slider");
+            // ui.add(egui::Slider::new(_, 0..=120).text("age"));
+            ui.end_row();
+
+            // proto_scene.egui(ui);
+        });
 
     //demo.0.ui(&egui.0);
 }
@@ -96,8 +140,9 @@ pub fn main() {
             1024,
             800,
         ))
+        .add_plugin(ScenePlugin)
         .add_plugin(WgpuRendererPlugin)
-        .add_plugin(ClockPluggin::default())
+        .add_plugin(ClockPlugin::default())
         .add_plugin(EguiPlugin)
         .add_plugin(PlayerPlugin)
         .run();

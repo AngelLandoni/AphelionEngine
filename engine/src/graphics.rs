@@ -4,6 +4,7 @@ pub(crate) mod components;
 pub(crate) mod rendering;
 pub(crate) mod vertex;
 pub(crate) mod pipelines;
+pub(crate) mod uniforms;
 
 use shipyard::Unique;
 use wgpu::CommandBuffer;
