@@ -3,16 +3,14 @@ use std::borrow::BorrowMut;
 use shipyard::UniqueViewMut;
 
 use crate::{
-    app::App,
-    host::{
-        components::{
-            UniqueCursor,
-            UniqueWindow
-        },
+    app::App, host::{
+        components::UniqueWindow,
         events::KeyboardEvent
     },
+    scene::mouse::Cursor,
     schedule::Schedule
 };
+
 /// Coordinates all the update systems.
 pub(crate) fn run_before_request_redraw_workload(app: &App) {
     // Update events.
@@ -104,9 +102,9 @@ pub(crate) fn finish_frame_workload(app: &App) {
 
 pub(crate) fn update_cursor_position(app: &mut App, x: &f64, y: &f64) {
     let storage = app.world.borrow_mut();
-    
-    let mut cursor: UniqueViewMut<UniqueCursor> = storage
-        .borrow::<UniqueViewMut<UniqueCursor>>()
+
+    let mut cursor: UniqueViewMut<Cursor> = storage
+        .borrow::<UniqueViewMut<Cursor>>()
         .expect("Unable to adquire cursor");
 
     cursor.x = *x;

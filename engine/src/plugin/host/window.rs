@@ -156,7 +156,9 @@ fn map_winit_events<T>(event: &Event<T>) -> host::events::Event {
                     }                   
                 , .. } => host::events::Event::Keyboard(KeyboardEvent::Released(map_keyboard_input(key))),
                 WindowEvent::Resized(size ) => host::events::Event::Window(host::events::WindowEvent::Resized(size.width, size.height)),
-                WindowEvent::CursorMoved { device_id: _, position } => host::events::Event::Window(host::events::WindowEvent::CursorMoved(position.x, position.y)),
+                WindowEvent::CursorMoved { device_id: _, position } => {
+                    host::events::Event::Window(host::events::WindowEvent::CursorMoved(position.x, position.y))
+                },
                 WindowEvent::CloseRequested => host::events::Event::Window(host::events::WindowEvent::CloseRequested),
                 WindowEvent::RedrawRequested => host::events::Event::Window(host::events::WindowEvent::RequestRedraw),
                 _ => host::events::Event::Window(host::events::WindowEvent::UnknownOrNotImplemented),

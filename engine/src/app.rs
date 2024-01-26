@@ -1,17 +1,28 @@
 use shipyard::World;
 
 use crate::{
-    host::{events::{
+    host::events::{
         Event,
         WindowEvent,
-    }, components::UniqueCursor},
+    },
     plugin::Pluggable,
     schedule::{
         Scheduler,
         Schedule
     }, 
     workload::{
-        finish_frame_workload, init_frame_workload, run_after_request_redraw_workload, run_before_request_redraw_workload, run_request_redraw_workload, run_submit_queue_workload, run_update_workload, run_window_event_workload, start_frame_workload, update_cursor_position, update_keyboard_events, update_window_size
+        finish_frame_workload,
+        init_frame_workload,
+        run_after_request_redraw_workload,
+        run_before_request_redraw_workload,
+        run_request_redraw_workload,
+        run_submit_queue_workload,
+        run_update_workload,
+        run_window_event_workload,
+        start_frame_workload,
+        update_cursor_position,
+        update_keyboard_events,
+        update_window_size,
     },
 };
 
@@ -43,7 +54,6 @@ impl<'app> App<'app> {
         // TODO(Angel): Find a better place for this.
 
         let world = World::new();
-        world.add_unique(UniqueCursor { x: 0.0, y: 0.0 });
 
         App {
             world,
@@ -76,7 +86,6 @@ impl<'app> App<'app> {
     /// A function what must be called everytime there is an event. In case
     /// of inmediate mode it must be called once per frame.
     pub fn tick(&mut self, event: &Event) {
-
         match event {
             Event::Window(w_event) => {
                 match w_event {
@@ -112,7 +121,7 @@ impl<'app> App<'app> {
 
                 run_window_event_workload(self);
             }
-
+            
             Event::Keyboard(event) => {
                 update_keyboard_events(self, event);
             }

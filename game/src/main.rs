@@ -15,7 +15,17 @@ use engine::{
             ClockPlugin
         }, 
         scene::scene_plugin::ScenePlugin,
-    }, scene::{camera::Camera, keyboard::{KeyCode, Keyboard}}, schedule::Schedule, shipyard::{
+    },
+    scene::{
+        camera::Camera,
+        keyboard::{
+            KeyCode,
+            Keyboard
+        },
+        mouse::Cursor
+    },
+    schedule::Schedule,
+    shipyard::{
         Component,
         EntitiesViewMut,
         ViewMut,
@@ -42,7 +52,13 @@ fn create_ints(mut _entities: EntitiesViewMut, mut _vm_vel: ViewMut<Pos>) {
 fn delete_ints(mut _vm_vel: ViewMut<Pos>) {
 }
 
-fn set_ui(egui: UniqueView<EguiContext>, mut demo: UniqueViewMut<Demo>, clock: UniqueView<Clock>, mut camera: UniqueViewMut<Camera>) {
+fn set_ui(
+    egui: UniqueView<EguiContext>,
+    mut demo: UniqueViewMut<Demo>,
+    clock: UniqueView<Clock>,
+    mut camera: UniqueViewMut<Camera>,
+    mouse_position: UniqueView<Cursor>
+) {
     let delta: String = format!("{}", clock.delta_milliseconds()).chars().take(4).collect();
     
     let window = engine::egui::Window::new("Delta time")
@@ -66,6 +82,10 @@ fn set_ui(egui: UniqueView<EguiContext>, mut demo: UniqueViewMut<Demo>, clock: U
                             ui.label("Delta: ");
                             ui.label(delta);
                             ui.end_row();
+
+                            ui.label("Position: ");
+                            ui.label(format!("x: {}, y: {}", mouse_position.x, mouse_position.y));
+                            ui.end_row();                           
                         });
                 });
             });
@@ -154,6 +174,10 @@ fn camera_system(
             engine::nalgebra::Vector3::new(1.0, 0.0, 0.0), -2.0 * clock.delta_seconds() as f32
         );
     }
+}
+
+fn mouse_tracker_system() {
+    
 }
 
 struct PlayerPlugin;

@@ -3,6 +3,7 @@ use crate::{
     scene::{
         camera::Camera,
         keyboard::Keyboard,
+        mouse::Cursor,
         perspective::Perspective
     },
     app::App, 
@@ -17,7 +18,7 @@ impl Pluggable for ScenePlugin {
         // Setup the perspective componente, this component will be used in
         // conjuntion with the camera.
         app.world.add_unique(Perspective::default());
-        // Setups the Keyboard.
         app.world.add_unique(Keyboard::default());
+        app.world.add_unique(Cursor::default());
     }
 }
