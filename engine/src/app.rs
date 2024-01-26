@@ -11,17 +11,7 @@ use crate::{
         Schedule
     }, 
     workload::{
-        run_update_workload,
-        run_submit_queue_workload,
-        update_cursor_position,
-        run_window_event_workload,
-        update_window_size,
-        init_frame_workload,
-        finish_frame_workload,
-        start_frame_workload, 
-        run_request_redraw_workload, 
-        run_before_request_redraw_workload,
-        run_after_request_redraw_workload,
+        finish_frame_workload, init_frame_workload, run_after_request_redraw_workload, run_before_request_redraw_workload, run_request_redraw_workload, run_submit_queue_workload, run_update_workload, run_window_event_workload, start_frame_workload, update_cursor_position, update_keyboard_events, update_window_size
     },
 };
 
@@ -121,6 +111,10 @@ impl<'app> App<'app> {
                 }
 
                 run_window_event_workload(self);
+            }
+
+            Event::Keyboard(event) => {
+                update_keyboard_events(self, event);
             }
 
             Event::UnknownOrNotImplemented => {}

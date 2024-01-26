@@ -4,11 +4,14 @@ use shipyard::UniqueViewMut;
 
 use crate::{
     app::App,
-    schedule::Schedule, 
-    host::components::{
-        UniqueCursor,
-        UniqueWindow
+    host::{
+        components::{
+            UniqueCursor,
+            UniqueWindow
+        },
+        events::KeyboardEvent
     },
+    schedule::Schedule
 };
 /// Coordinates all the update systems.
 pub(crate) fn run_before_request_redraw_workload(app: &App) {
@@ -126,5 +129,18 @@ pub(crate) fn update_window_size(app: &mut App, width: &u32, height: &u32) {
         for func in w_u_fns {
             func(&app.world);
         }
+    }
+}
+
+/// Updates the state of the keys in the globat keyboard state.
+pub(crate) fn update_keyboard_events(app: &mut App, keyboard: &KeyboardEvent) {
+    let mut k = app
+        .world
+        .borrow::<UniqueViewMut<crate::scene::keyboard::Keyboard>>()
+        .expect("Unable to acquire Keyboard resource");
+
+    match keyboard {
+        KeyboardEvent::Pressed(key) => k.register_key(key.clone()),
+        KeyboardEvent::Released(key) => k.remove_key(key),
     }
 }

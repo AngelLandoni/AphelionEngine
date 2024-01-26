@@ -1,5 +1,3 @@
-use std::time::{Instant, Duration};
-
 use raw_window_handle::{
     HasRawWindowHandle,
     HasRawDisplayHandle
@@ -7,24 +5,35 @@ use raw_window_handle::{
 
 use shipyard::{
     Unique,
-    UniqueViewMut, UniqueView
+    UniqueViewMut,
 };
 
 use winit::{
+    dpi::LogicalSize,
+    event::{
+        ElementState,
+        Event,
+        KeyEvent,
+        WindowEvent
+    },
     event_loop::EventLoop,
-    window::WindowBuilder, 
-    event::{Event, WindowEvent},
-    dpi::LogicalSize, 
+    keyboard::PhysicalKey,
+    window::WindowBuilder 
 };
 
 use crate::{
     host,
-    plugin::{Pluggable, core::clock::Clock},
+    plugin::Pluggable,
     app::App, 
     host::{
         components::UniqueWindow,
-        window::{Window, WindowInfoAccessible},
+        events::KeyboardEvent,
+        window::{
+            Window,
+            WindowInfoAccessible
+        }
     },
+    scene::keyboard::KeyCode,
     types::Size,
 };
 
@@ -132,6 +141,20 @@ fn map_winit_events<T>(event: &Event<T>) -> host::events::Event {
     match event {
         Event::WindowEvent { window_id: _, event } => {
             match event {
+                WindowEvent::KeyboardInput { 
+                    event: KeyEvent {
+                        physical_key: key,
+                        state: ElementState::Pressed,
+                        ..
+                    }                   
+                , .. } => host::events::Event::Keyboard(KeyboardEvent::Pressed(map_keyboard_input(key))),
+                WindowEvent::KeyboardInput { 
+                    event: KeyEvent {
+                        physical_key: key,
+                        state: ElementState::Released,
+                        ..
+                    }                   
+                , .. } => host::events::Event::Keyboard(KeyboardEvent::Released(map_keyboard_input(key))),
                 WindowEvent::Resized(size ) => host::events::Event::Window(host::events::WindowEvent::Resized(size.width, size.height)),
                 WindowEvent::CursorMoved { device_id: _, position } => host::events::Event::Window(host::events::WindowEvent::CursorMoved(position.x, position.y)),
                 WindowEvent::CloseRequested => host::events::Event::Window(host::events::WindowEvent::CloseRequested),
@@ -141,5 +164,26 @@ fn map_winit_events<T>(event: &Event<T>) -> host::events::Event {
         }
 
         _ => host::events::Event::UnknownOrNotImplemented,
+    }
+}
+
+/// Contains the range of the position of the letters in the winit environment.
+const WINIT_KEYCODE_LETTERS_RANGE: std::ops::Range<u32> = 18..45;
+/// Contains the range of the position of the arrows in the winit environment.
+const WINIT_KEYCODE_ARROWS_RANGE: std::ops::Range<u32> = 79..82;
+
+fn map_keyboard_input(key: &PhysicalKey) -> KeyCode {
+    match key {
+        PhysicalKey::Code(key) => {
+            let key_code: u32 = *key as u32;
+            // Check if it is a letter.
+            if WINIT_KEYCODE_LETTERS_RANGE.contains(&key_code) {
+                return KeyCode::from_u32(key_code -  19)
+            } 
+
+            // TODO(Angel): Add support for the rest of keys.
+            KeyCode::Unknown
+        },
+        PhysicalKey::Unidentified(_) => KeyCode::Unknown,
     }
 }

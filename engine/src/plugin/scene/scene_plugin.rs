@@ -1,7 +1,10 @@
 use crate::{
     plugin::Pluggable,
-    scene::{camera::Camera, perspective::Perspective},
-    schedule::Schedule,
+    scene::{
+        camera::Camera,
+        keyboard::Keyboard,
+        perspective::Perspective
+    },
     app::App, 
 };
 
@@ -14,6 +17,7 @@ impl Pluggable for ScenePlugin {
         // Setup the perspective componente, this component will be used in
         // conjuntion with the camera.
         app.world.add_unique(Perspective::default());
+        // Setups the Keyboard.
+        app.world.add_unique(Keyboard::default());
     }
 }
-

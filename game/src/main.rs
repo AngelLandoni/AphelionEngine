@@ -1,6 +1,7 @@
 use egui_demo_lib::DemoWindows;
 
 use engine::{
+    app::App,
     plugin::{
         Pluggable,
         host::window::WinitWindowPlugin,
@@ -14,10 +15,7 @@ use engine::{
             ClockPlugin
         }, 
         scene::scene_plugin::ScenePlugin,
-    },
-    schedule::Schedule,
-    app::App,
-    shipyard::{
+    }, scene::{camera::Camera, keyboard::{KeyCode, Keyboard}}, schedule::Schedule, shipyard::{
         Component,
         EntitiesViewMut,
         ViewMut,
@@ -26,7 +24,7 @@ use engine::{
         UniqueView,
         Unique,
         UniqueViewMut,
-    }, scene::camera::Camera
+    }
 };
 
 #[derive(Unique)]
@@ -114,6 +112,50 @@ fn int_cycle() -> Workload {
     (create_ints, delete_ints).into_workload()
 }
 
+fn camera_system(
+    keyboard: UniqueView<Keyboard>,
+    mut camera: UniqueViewMut<Camera>,
+    clock: UniqueView<Clock>,
+) {
+
+
+    if keyboard.is_key_down(&KeyCode::W) {
+        camera.add_translation(
+            engine::nalgebra::Vector3::new(0.0, 0.0, 1.0), 2.0 * clock.delta_seconds() as f32
+        );
+        camera.add_target_translation(
+            engine::nalgebra::Vector3::new(0.0, 0.0, 1.0), 2.0 * clock.delta_seconds() as f32
+        );
+    }
+
+    if keyboard.is_key_down(&KeyCode::S) {
+        camera.add_translation(
+            engine::nalgebra::Vector3::new(0.0, 0.0, 1.0), -2.0 * clock.delta_seconds() as f32
+        );
+        camera.add_target_translation(
+            engine::nalgebra::Vector3::new(0.0, 0.0, 1.0), -2.0 * clock.delta_seconds() as f32
+        );
+    }
+
+    if keyboard.is_key_down(&KeyCode::A) {
+        camera.add_translation(
+            engine::nalgebra::Vector3::new(1.0, 0.0, 0.0), 2.0 * clock.delta_seconds() as f32
+        );
+        camera.add_target_translation(
+            engine::nalgebra::Vector3::new(1.0, 0.0, 0.0), 2.0 * clock.delta_seconds() as f32
+        );
+    }
+
+    if keyboard.is_key_down(&KeyCode::D) {
+        camera.add_translation(
+            engine::nalgebra::Vector3::new(1.0, 0.0, 0.0), -2.0 * clock.delta_seconds() as f32
+        );
+        camera.add_target_translation(
+            engine::nalgebra::Vector3::new(1.0, 0.0, 0.0), -2.0 * clock.delta_seconds() as f32
+        );
+    }
+}
+
 struct PlayerPlugin;
 
 impl Pluggable for PlayerPlugin {
@@ -128,6 +170,7 @@ impl Pluggable for PlayerPlugin {
         });
 
         app.schedule(Schedule::Update, |world| {
+            world.run(camera_system);
             world.run_workload(int_cycle).unwrap();
         });
     }

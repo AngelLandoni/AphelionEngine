@@ -1,6 +1,9 @@
+use crate::scene::keyboard::KeyCode;
+
 /// A generic global event.
 pub enum Event {
     Window(WindowEvent),
+    Keyboard(KeyboardEvent),
     UnknownOrNotImplemented,
 }
 
@@ -13,4 +16,9 @@ pub enum WindowEvent {
     RequestRedraw,
     Resized(u32, u32),
     UnknownOrNotImplemented,
+}
+
+pub enum KeyboardEvent {
+    Pressed(KeyCode),
+    Released(KeyCode)
 }
