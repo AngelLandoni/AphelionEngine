@@ -11,10 +11,7 @@ use shipyard::{
 use winit::{
     dpi::LogicalSize,
     event::{
-        ElementState,
-        Event,
-        KeyEvent,
-        WindowEvent
+        DeviceEvent, ElementState, Event, KeyEvent, WindowEvent
     },
     event_loop::EventLoop,
     keyboard::PhysicalKey,
@@ -121,7 +118,10 @@ impl Pluggable for WinitWindowPlugin {
                             _ => {}
                         }
 
-                        let mut w_e = app.world.borrow::<UniqueViewMut<UniqueWinitEvent>>().unwrap();
+                        let mut w_e = app
+                            .world
+                            .borrow::<UniqueViewMut<UniqueWinitEvent>>()
+                            .unwrap();
                         w_e.inner = Some(event);                        
                     }
 
@@ -164,6 +164,9 @@ fn map_winit_events<T>(event: &Event<T>) -> host::events::Event {
                 _ => host::events::Event::Window(host::events::WindowEvent::UnknownOrNotImplemented),
             }
         }
+
+        Event::DeviceEvent { event: DeviceEvent::MouseMotion { delta }, .. } =>
+            host::events::Event::CursorMotion(delta.0, delta.1),
 
         _ => host::events::Event::UnknownOrNotImplemented,
     }

@@ -16,7 +16,7 @@ pub struct Camera {
 impl Default for Camera {
     fn default() -> Self {
         Self::new(
-            Point3::new(0.0, 0.0, 5.0),
+            Point3::new(0.0, 0.0, 0.0),
             Point3::new(0.0, 0.0, -1.0),
             Vector3::new(0.0, 1.0, 0.0),
         )

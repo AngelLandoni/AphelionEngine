@@ -17,6 +17,8 @@ pub enum Schedule {
     WindowResize,
 
     EndFrame,
+
+    CursorDelta,
 }
 
 /// Holds a collection of `Workload`s to be executed alongside information about

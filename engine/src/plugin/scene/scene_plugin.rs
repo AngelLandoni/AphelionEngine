@@ -3,7 +3,7 @@ use crate::{
     scene::{
         camera::Camera,
         keyboard::Keyboard,
-        mouse::Cursor,
+        mouse::{Cursor, CursorDelta},
         perspective::Perspective
     },
     app::App, 
@@ -20,5 +20,6 @@ impl Pluggable for ScenePlugin {
         app.world.add_unique(Perspective::default());
         app.world.add_unique(Keyboard::default());
         app.world.add_unique(Cursor::default());
+        app.world.add_unique(CursorDelta::default());
     }
 }

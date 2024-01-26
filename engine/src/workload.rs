@@ -7,7 +7,7 @@ use crate::{
         components::UniqueWindow,
         events::KeyboardEvent
     },
-    scene::mouse::Cursor,
+    scene::mouse::{Cursor, CursorDelta},
     schedule::Schedule
 };
 
@@ -140,5 +140,25 @@ pub(crate) fn update_keyboard_events(app: &mut App, keyboard: &KeyboardEvent) {
     match keyboard {
         KeyboardEvent::Pressed(key) => k.register_key(key.clone()),
         KeyboardEvent::Released(key) => k.remove_key(key),
+    }
+}
+
+pub(crate) fn update_cursor_delta(app: &mut App, x: &f64, y: &f64) {
+    // Capture and release the cursor delta to allow subsequent events to also 
+    // take a mutable reference.
+    {
+        let mut c_d = app
+            .world
+            .borrow::<UniqueViewMut<CursorDelta>>()
+            .expect("Unable to acquire Keyboard resource");
+
+        c_d.x = x.clone();
+        c_d.y = y.clone();
+    }
+    
+    if let Some(w_u_fns) = app.scheduler.schedules.get(&Schedule::CursorDelta) {
+        for func in w_u_fns {
+            func(&app.world);
+        }
     }
 }

@@ -4,6 +4,7 @@ use crate::scene::keyboard::KeyCode;
 pub enum Event {
     Window(WindowEvent),
     Keyboard(KeyboardEvent),
+    CursorMotion(f64, f64),
     UnknownOrNotImplemented,
 }
 
