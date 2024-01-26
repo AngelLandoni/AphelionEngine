@@ -30,7 +30,7 @@ use crate::{
             WindowInfoAccessible
         }
     },
-    scene::keyboard::KeyCode,
+    scene::{keyboard::KeyCode, mouse::CursorDelta},
     types::Size,
 };
 
@@ -101,6 +101,17 @@ impl Pluggable for WinitWindowPlugin {
 
         app.world.add_unique(UniqueWinitEvent {
             inner: None,
+        });
+
+        // Winit does not provide a way to know when the delta finished so
+        // we need to clean it at the end of each frame.
+        app.schedule(crate::schedule::Schedule::EndFrame, |world| {
+            let mut cursor_delta = world
+                .borrow::<UniqueViewMut<CursorDelta>>()
+                .expect("Unable to acquire cursor delta");
+
+            cursor_delta.x = 0.0;
+            cursor_delta.y = 0.0;
         });
 
         app.set_run_loop(move |app: &mut App| {

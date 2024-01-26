@@ -262,10 +262,10 @@ impl Pluggable for PlayerPlugin {
         });
 
         app.schedule(Schedule::CursorDelta, |world| {
-            world.run(fly_camera_system);
         });
 
         app.schedule(Schedule::Update, |world| {
+            world.run(fly_camera_system);
             world.run(camera_system);
             world.run_workload(int_cycle).unwrap();
         });
