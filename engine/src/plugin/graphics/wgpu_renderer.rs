@@ -5,7 +5,6 @@ use crate::{
     app::App, graphics::{
         gpu::Gpu,
         components::{
-            UniqueRenderer,
             ScreenTexture,
             ScreenFrame,
         },
@@ -55,9 +54,7 @@ impl Pluggable for WgpuRendererPlugin {
             setup_camera(&world, &gpu);
             setup_pipelines(&world, &gpu);
 
-            world.add_unique(UniqueRenderer {
-                gpu
-            });
+            world.add_unique(gpu);
         }
         
         // Setup scheludes.
@@ -133,13 +130,13 @@ fn setup_pipelines(world: &World, gpu: &Gpu) {
 
 /// Calls the sync camera method.
 fn sync_camera_perspective_uniform_system(
-    gpu: UniqueView<UniqueRenderer>,
+    gpu: UniqueView<Gpu>,
     camera: UniqueView<Camera>,
     perspective: UniqueView<Perspective>,
     c_uniform: UniqueView<CameraUniform>
 ) {
     sync_camera_perspective_uniform(
-        &gpu.gpu,
+        &gpu,
         &camera,
         &perspective,
         &c_uniform.0

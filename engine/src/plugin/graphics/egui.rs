@@ -7,13 +7,11 @@ use wgpu::{RenderPassDescriptor, RenderPassColorAttachment, Operations};
 
 use crate::{
     app::App, graphics::{
-        components::{
-            UniqueRenderer,
-            ScreenTexture
-        },
+        components::ScreenTexture,
+        gpu::Gpu,
         CommandQueue,
-        OrderCommandBuffer,
-        CommandSubmitOrder
+        CommandSubmitOrder,
+        OrderCommandBuffer
     }, 
     host::window::Window,
     plugin::{
@@ -61,7 +59,7 @@ impl Pluggable for EguiPlugin {
 
             let gpu = app
                 .world
-                .borrow::<UniqueView<UniqueRenderer>>()
+                .borrow::<UniqueView<Gpu>>()
                 .expect("Unable to adquire gpu");
 
             let state = egui_winit::State::new(
@@ -73,8 +71,8 @@ impl Pluggable for EguiPlugin {
             );
 
             let renderer = egui_wgpu::renderer::Renderer::new(
-                &gpu.gpu.device,
-                gpu.gpu.texture_format,
+                &gpu.device,
+                gpu.texture_format,
                 None,
                 1,
             );
@@ -122,7 +120,7 @@ fn egui_generate_full_output(
 }
 
 fn egui_render_system(
-    gpu: UniqueView<UniqueRenderer>,
+    gpu: UniqueView<Gpu>,
     window: UniqueView<Window>,
     s_texture: UniqueView<ScreenTexture>,
     queue: UniqueView<CommandQueue>,
@@ -156,15 +154,14 @@ fn egui_render_system(
     
     for (id, image_delta) in &output.textures_delta.set {
         egui.renderer.update_texture(
-            &gpu.gpu.device,
-            &gpu.gpu.queue,
+            &gpu.device,
+            &gpu.queue,
             *id,
             image_delta
         )
     }
 
     let mut encoder = gpu
-        .gpu
         .device
         .create_command_encoder(&wgpu::CommandEncoderDescriptor {
             label: None
@@ -172,8 +169,8 @@ fn egui_render_system(
 
     let screen_descriptor = ScreenDescriptor {
         size_in_pixels: [
-            gpu.gpu.surface_config.width,
-            gpu.gpu.surface_config.height,
+            gpu.surface_config.width,
+            gpu.surface_config.height,
         ],
         pixels_per_point: window.accesor.scale_factor() as f32,
     };
@@ -181,8 +178,8 @@ fn egui_render_system(
     egui
         .renderer
         .update_buffers(
-            &gpu.gpu.device,
-            &gpu.gpu.queue,
+            &gpu.device,
+            &gpu.queue,
             &mut encoder,
             &tris,
             &screen_descriptor,
