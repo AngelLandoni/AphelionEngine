@@ -1,10 +1,8 @@
-use shipyard::{UniqueView, UniqueViewMut, World, Unique};
-use wgpu::{Buffer, BufferUsages};
+use shipyard::{UniqueView, UniqueViewMut, World};
+use wgpu::BufferUsages;
 
 use crate::{
-    app::App,
-    schedule::Schedule,
-    graphics::{
+    app::App, graphics::{
         gpu::Gpu,
         components::{
             UniqueRenderer,
@@ -27,8 +25,11 @@ use crate::{
         },
         MAX_NUMBER_IF_COMMANDS_PER_FRAME,
     },
-    host::components::UniqueWindow,
-    plugin::Pluggable, scene::{camera::Camera, perspective::Perspective},
+    host::window::Window,
+    plugin::Pluggable, scene::{
+        camera::Camera,
+        perspective::Perspective
+    }, schedule::Schedule
 };
 
 pub struct WgpuRendererPlugin;
@@ -37,11 +38,11 @@ impl Pluggable for WgpuRendererPlugin {
     fn configure(&self, app: &mut App) {
         let window_resource = app
             .world
-            .borrow::<UniqueView<UniqueWindow>>()
+            .borrow::<UniqueView<Window>>()
             .expect("Configure the window context before setting up the renderer"); 
 
         let gpu = futures_lite::future::block_on(
-            Gpu::new(&window_resource.host_window)
+            Gpu::new(&window_resource.as_ref())
         );
 
         drop(window_resource);

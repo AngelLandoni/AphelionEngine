@@ -10,18 +10,19 @@ use crate::{
             ScreenFrame,
             ScreenTexture,
         }
-    }, host::components::UniqueWindow
+    },
+    host::window::Window
 };
 
 pub fn reconfigure_surface_if_needed_system(
     mut gpu: UniqueViewMut<UniqueRenderer>,
-    window: UniqueView<UniqueWindow>
+    window: UniqueView<Window>
 ) {
-    if gpu.gpu.surface_config.width != window.host_window.size.width ||
-       gpu.gpu.surface_config.height != window.host_window.size.height {
+    if gpu.gpu.surface_config.width != window.size.width ||
+       gpu.gpu.surface_config.height != window.size.height {
 
-        gpu.gpu.surface_config.width = window.host_window.size.width;
-        gpu.gpu.surface_config.height = window.host_window.size.height;
+        gpu.gpu.surface_config.width = window.size.width;
+        gpu.gpu.surface_config.height = window.size.height;
 
         gpu.gpu.surface.configure(&gpu.gpu.device, &gpu.gpu.surface_config);
     }

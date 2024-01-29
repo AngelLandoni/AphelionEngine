@@ -8,7 +8,7 @@ use engine::{
     plugin::{
         Pluggable,
         host::window::WinitWindowPlugin,
-        graphics::renderer::WgpuRendererPlugin,
+        graphics::wgpu_renderer::WgpuRendererPlugin,
         graphics::egui::{
             EguiPlugin,
             EguiContext

@@ -3,9 +3,9 @@ use std::borrow::BorrowMut;
 use shipyard::UniqueViewMut;
 
 use crate::{
-    app::App, host::{
-        components::UniqueWindow,
-        events::KeyboardEvent
+    app::App,
+    host::{
+        events::KeyboardEvent, window::Window
     },
     scene::mouse::{Cursor, CursorDelta},
     schedule::Schedule
@@ -116,11 +116,11 @@ pub(crate) fn update_window_size(app: &mut App, width: &u32, height: &u32) {
         let storage = app.world.borrow_mut();
 
         let mut size = storage
-            .borrow::<UniqueViewMut<UniqueWindow>>()
+            .borrow::<UniqueViewMut<Window>>()
             .expect("Unable to adquire cursor");
         
-        size.host_window.size.width = *width;
-        size.host_window.size.height = *height;
+        size.size.width = *width;
+        size.size.height = *height;
     }
     
     if let Some(w_u_fns) = app.scheduler.schedules.get(&Schedule::WindowResize) {

@@ -1,3 +1,5 @@
+use shipyard::Unique;
+
 use downcast_rs::{Downcast, impl_downcast};
 
 use raw_window_handle::{
@@ -19,6 +21,7 @@ impl_downcast!(WindowInfoAccessible);
 /// support multiple windows, and there are no immediate plans to do so. However,
 /// in future projects, this abstraction may evolve to accommodate the need for
 /// multiple windows.
+#[derive(Unique)]
 pub struct Window {
     pub(crate) accesor: Box<dyn WindowInfoAccessible>,
     pub(crate) size: Size<u32>,

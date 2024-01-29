@@ -1,5 +1,10 @@
 use wgpu::{VertexBufferLayout, VertexAttribute, BufferAddress};
 
+/// Represents a `Vertex` that can be efficiently transferred to the GPU for 
+/// rendering and serves as a fundamental building block for rendering geometry 
+/// on the screen.
+#[repr(C)]
+#[derive(Copy, Clone, Debug)]
 pub struct Vertex {
     pos: [f32; 3],
     col: [f32; 3],
