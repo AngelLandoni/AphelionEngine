@@ -16,7 +16,7 @@ use wgpu::{
     Buffer, BindGroup
 };
 
-use crate::graphics::gpu::Gpu;
+use crate::wgpu_graphics::gpu::Gpu;
 
 #[derive(Unique)]
 pub struct TriangleTestPipeline {

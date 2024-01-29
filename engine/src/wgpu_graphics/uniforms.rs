@@ -2,7 +2,7 @@ use shipyard::Unique;
 use wgpu::Buffer;
 
 use crate::{
-    graphics::gpu::Gpu,
+    wgpu_graphics::gpu::Gpu,
     scene::{
         camera::Camera,
         perspective::Perspective

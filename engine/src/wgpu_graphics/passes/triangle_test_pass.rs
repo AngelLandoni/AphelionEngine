@@ -1,7 +1,7 @@
 use shipyard::UniqueView;
 use wgpu::{CommandEncoderDescriptor, Operations};
 
-use crate::graphics::{
+use crate::wgpu_graphics::{
     components::ScreenTexture,
     gpu::Gpu,
     pipelines::traingle_test_pipeline::TriangleTestPipeline,

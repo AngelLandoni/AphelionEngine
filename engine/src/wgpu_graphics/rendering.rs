@@ -2,15 +2,15 @@ use shipyard::{UniqueView, UniqueViewMut};
 use wgpu::CommandBuffer;
 
 use crate::{
-    graphics::{
+    wgpu_graphics::{
         CommandQueue,
         OrderCommandBuffer,
         components::{
             ScreenFrame,
             ScreenTexture,
-        }
+        },
+        gpu::Gpu,
     },
-    graphics::gpu::Gpu,
     host::window::Window
 };
 

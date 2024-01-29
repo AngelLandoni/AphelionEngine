@@ -6,7 +6,7 @@ use shipyard::{Unique, UniqueView, UniqueViewMut};
 use wgpu::{RenderPassDescriptor, RenderPassColorAttachment, Operations};
 
 use crate::{
-    app::App, graphics::{
+    app::App, wgpu_graphics::{
         components::ScreenTexture,
         gpu::Gpu,
         CommandQueue,
