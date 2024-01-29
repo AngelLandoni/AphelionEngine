@@ -6,34 +6,34 @@ use crate::{
         CommandQueue,
         OrderCommandBuffer,
         components::{
-            UniqueRenderer,
             ScreenFrame,
             ScreenTexture,
         }
     },
+    graphics::gpu::Gpu,
     host::window::Window
 };
 
-pub fn reconfigure_surface_if_needed_system(
-    mut gpu: UniqueViewMut<UniqueRenderer>,
+pub(crate) fn reconfigure_surface_if_needed_system(
+    mut gpu: UniqueViewMut<Gpu>,
     window: UniqueView<Window>
 ) {
-    if gpu.gpu.surface_config.width != window.size.width ||
-       gpu.gpu.surface_config.height != window.size.height {
+    if gpu.surface_config.width != window.size.width ||
+       gpu.surface_config.height != window.size.height {
 
-        gpu.gpu.surface_config.width = window.size.width;
-        gpu.gpu.surface_config.height = window.size.height;
+        gpu.surface_config.width = window.size.width;
+        gpu.surface_config.height = window.size.height;
 
-        gpu.gpu.surface.configure(&gpu.gpu.device, &gpu.gpu.surface_config);
+        gpu.surface.configure(&gpu.device, &gpu.surface_config);
     }
 }
 
 /// Setups the screen texture into the world.
 // TODO(Angel): Remove panic, to support headless.
-pub fn acquire_screen_texture(u_gpu: UniqueView<UniqueRenderer>, 
+pub(crate) fn acquire_screen_texture(u_gpu: UniqueView<Gpu>, 
                               mut s_frame: UniqueViewMut<ScreenFrame>,
                               mut s_texture: UniqueViewMut<ScreenTexture>) {
-    if let Ok(frame) = u_gpu.gpu.surface.get_current_texture() {
+    if let Ok(frame) = u_gpu.surface.get_current_texture() {
         let view = frame
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
@@ -58,8 +58,10 @@ pub fn present_screen_texture(mut s_frame: UniqueViewMut<ScreenFrame>) {
     }
 }
 
-pub fn submit_commands_in_order(u_gpu: UniqueView<UniqueRenderer>,
-                                c_queue: UniqueView<CommandQueue>) {
+pub(crate) fn submit_commands_in_order(
+    u_gpu: UniqueView<Gpu>,
+    c_queue: UniqueView<CommandQueue>
+) {
     let mut commands = Vec::<OrderCommandBuffer>::with_capacity(
         c_queue.0.len(),
     );
@@ -75,5 +77,5 @@ pub fn submit_commands_in_order(u_gpu: UniqueView<UniqueRenderer>,
         wgpu_commands.push(c.command);
     }
 
-    u_gpu.gpu.queue.submit(wgpu_commands);
+    u_gpu.queue.submit(wgpu_commands);
 }

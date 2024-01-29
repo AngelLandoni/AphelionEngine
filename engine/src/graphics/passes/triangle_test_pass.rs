@@ -2,13 +2,17 @@ use shipyard::UniqueView;
 use wgpu::{CommandEncoderDescriptor, Operations};
 
 use crate::graphics::{
+    components::ScreenTexture,
+    gpu::Gpu,
     pipelines::traingle_test_pipeline::TriangleTestPipeline,
-    components::{UniqueRenderer, ScreenTexture}, CommandQueue, CommandSubmitOrder, OrderCommandBuffer
+    CommandQueue,
+    CommandSubmitOrder,
+    OrderCommandBuffer,
 };
 
 /// Renders the triangle test.
-pub fn triangle_test_pass_system(
-    gpu: UniqueView<UniqueRenderer>,
+pub(crate) fn triangle_test_pass_system(
+    gpu: UniqueView<Gpu>,
     triangle_pipeline: UniqueView<TriangleTestPipeline>,
     screen_texture: UniqueView<ScreenTexture>,
     queue: UniqueView<CommandQueue>
@@ -19,7 +23,6 @@ pub fn triangle_test_pass_system(
     };
 
     let mut encoder = gpu
-        .gpu
         .device
         .create_command_encoder(&CommandEncoderDescriptor {
             label: Some("Tirangle test encoder")

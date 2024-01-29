@@ -1,4 +1,5 @@
 use bytemuck::{Pod, AnyBitPattern};
+use shipyard::Unique;
 use wgpu::{
     Surface,
     Adapter,
@@ -17,6 +18,7 @@ use wgpu::{
 use crate::host::window::Window;
 
 /// Holds all the essential information required for GPU interaction.
+#[derive(Unique)]
 pub(crate) struct Gpu {
     pub surface: Surface,
     /// Represents a physical GPU device available in the system.
