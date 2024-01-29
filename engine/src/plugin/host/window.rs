@@ -23,7 +23,6 @@ use crate::{
     plugin::Pluggable,
     app::App, 
     host::{
-        components::UniqueWindow,
         events::KeyboardEvent,
         window::{
             Window,
@@ -95,9 +94,7 @@ impl Pluggable for WinitWindowPlugin {
         );
 
         // Add the window as a resource; ensure the `winit_window` is kept alive.
-        app.world.add_unique(UniqueWindow {
-            host_window,
-        });
+        app.world.add_unique(host_window);
 
         app.world.add_unique(UniqueWinitEvent {
             inner: None,

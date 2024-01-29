@@ -1,7 +1,4 @@
-
-
-
-use egui::{Context, Visuals, epaint::Shadow};
+use egui::{epaint::Shadow, Context, Visuals};
 use egui_winit::State;
 use egui_wgpu::{Renderer, renderer::ScreenDescriptor};
 
@@ -9,17 +6,7 @@ use shipyard::{Unique, UniqueView, UniqueViewMut};
 use wgpu::{RenderPassDescriptor, RenderPassColorAttachment, Operations};
 
 use crate::{
-    app::App,
-    plugin::{
-        Pluggable,
-        host::window::{
-            WinitWindowWrapper,
-            UniqueWinitEvent,
-        },
-    },
-    schedule::Schedule,
-    host::components::UniqueWindow,
-    graphics::{
+    app::App, graphics::{
         components::{
             UniqueRenderer,
             ScreenTexture
@@ -27,7 +14,15 @@ use crate::{
         CommandQueue,
         OrderCommandBuffer,
         CommandSubmitOrder
-    },
+    }, 
+    host::window::Window,
+    plugin::{
+        Pluggable,
+        host::window::{
+            WinitWindowWrapper,
+            UniqueWinitEvent,
+        },
+    }, schedule::Schedule
 };
 
 #[derive(Unique)]
@@ -61,7 +56,7 @@ impl Pluggable for EguiPlugin {
 
             let u_window = app
                 .world
-                .borrow::<UniqueView<UniqueWindow>>()
+                .borrow::<UniqueView<Window>>()
                 .expect("Unable to adquire Window");
 
             let gpu = app
@@ -72,7 +67,7 @@ impl Pluggable for EguiPlugin {
             let state = egui_winit::State::new(
                 context.clone(),
                 id,
-                &u_window.host_window,
+                &u_window.as_ref(),
                 None,
                 None
             );
@@ -109,11 +104,11 @@ impl Pluggable for EguiPlugin {
 }
 
 fn egui_generate_full_output(
-    window: UniqueView<UniqueWindow>,
+    window: UniqueView<Window>,
     mut egui: UniqueViewMut<EguiRenderer>,
     egui_ctx: UniqueView<EguiContext>,
 ) {
-    let w = match window.host_window.accesor.downcast_ref::<WinitWindowWrapper>() {
+    let w = match window.accesor.downcast_ref::<WinitWindowWrapper>() {
         Some(w) => w,
         None => {
             // TODO(Angel): Use logger.
@@ -128,13 +123,13 @@ fn egui_generate_full_output(
 
 fn egui_render_system(
     gpu: UniqueView<UniqueRenderer>,
-    window: UniqueView<UniqueWindow>,
+    window: UniqueView<Window>,
     s_texture: UniqueView<ScreenTexture>,
     queue: UniqueView<CommandQueue>,
     mut egui: UniqueViewMut<EguiRenderer>,
     egui_ctx: UniqueView<EguiContext>,
 ) {
-    let w = match window.host_window.accesor.downcast_ref::<WinitWindowWrapper>() {
+    let w = match window.accesor.downcast_ref::<WinitWindowWrapper>() {
         Some(w) => w,
         None => {
             // TODO(Angel): Use logger.
@@ -180,7 +175,7 @@ fn egui_render_system(
             gpu.gpu.surface_config.width,
             gpu.gpu.surface_config.height,
         ],
-        pixels_per_point: window.host_window.accesor.scale_factor() as f32,
+        pixels_per_point: window.accesor.scale_factor() as f32,
     };
     
     egui
@@ -229,10 +224,10 @@ fn egui_render_system(
 
 fn egui_handle_events_system(
     mut egui: UniqueViewMut<EguiRenderer>,
-    window: UniqueView<UniqueWindow>,
+    window: UniqueView<Window>,
     winit_event: UniqueView<UniqueWinitEvent>
 ) {
-    let w = match window.host_window.accesor.downcast_ref::<WinitWindowWrapper>() {
+    let w = match window.accesor.downcast_ref::<WinitWindowWrapper>() {
         Some(w) => w,
         None => {
             // TODO(Angel): Use logger.
