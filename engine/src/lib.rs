@@ -3,7 +3,7 @@ pub mod plugin;
 pub mod schedule;
 pub mod host;
 pub mod scene;
-mod graphics;
+mod wgpu_graphics;
 mod workload;
 mod types;
 

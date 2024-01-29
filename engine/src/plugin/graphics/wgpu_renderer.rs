@@ -2,7 +2,7 @@ use shipyard::{UniqueView, UniqueViewMut, World};
 use wgpu::BufferUsages;
 
 use crate::{
-    app::App, graphics::{
+    app::App, wgpu_graphics::{
         gpu::Gpu,
         components::{
             ScreenTexture,
