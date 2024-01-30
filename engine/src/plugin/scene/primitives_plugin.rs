@@ -40,6 +40,7 @@ impl Pluggable for PrimitivesPlugin {
             };
         
         configure_pentagon_primitive(&gpu, &mut a_server);
+        configure_cube_primitive(&gpu, &mut a_server);
     }
 }
 
@@ -77,6 +78,71 @@ fn configure_pentagon_primitive(gpu: &AbstractGpu, a_server: &mut AssetServer) {
         v_buffer,
         i_buffer,
         PENTAGON_INDICES.len() as u32
+    );
+
+    a_server.register_mesh(PENTAGON_PRIMITIVE_ID, mesh);
+}
+
+const CUBE_PRIMITIVE_ID: &str = "PENTAGON_PRIMITIVE_MESH";
+
+const CUBE_VERTICES: &[Vertex] = &[
+    Vertex { pos: [ -1.0, -1.0, 1.0 ], col: [0.0, 0.0, 1.0] },
+    Vertex { pos: [ 1.0, -1.0, 1.0 ], col: [1.0, 0.0, 1.0] },
+    Vertex { pos: [ 1.0, 1.0, 1.0 ], col: [1.0, 1.0, 1.0] },
+    Vertex { pos: [ -1.0, 1.0, 1.0 ], col: [0.0, 1.0, 1.0] },
+    // Bottom face.
+    Vertex { pos: [ -1.0, 1.0, -1.0 ], col: [1.0, 0.0, 1.0] },
+    Vertex { pos: [ 1.0, 1.0, -1.0 ], col: [0.0, 0.0, 1.0] },
+    Vertex { pos: [ 1.0, -1.0, -1.0 ], col: [0.0, 1.0, 1.0] },
+    Vertex { pos: [ -1.0, -1.0, -1.0 ], col: [1.0, 1.0, 1.0] },
+    // Right face.
+    Vertex { pos: [ 1.0, -1.0, -1.0 ], col: [0.0, 0.0, 1.0] },
+    Vertex { pos: [ 1.0, 1.0, -1.0 ], col: [1.0, 0.0, 1.0] },
+    Vertex { pos: [ 1.0, 1.0, 1.0 ], col: [1.0, 1.0, 1.0] },
+    Vertex { pos: [ 1.0, -1.0, 1.0 ], col: [0.0, 1.0, 1.0] },
+    // Left face.
+    Vertex { pos: [ -1.0, -1.0, 1.0 ], col: [1.0, 0.0, 1.0] },
+    Vertex { pos: [ -1.0, 1.0, 1.0 ], col: [0.0, 0.0, 1.0] },
+    Vertex { pos: [ -1.0, 1.0, -1.0 ], col: [0.0, 1.0, 1.0] },
+    Vertex { pos: [ -1.0, -1.0, -1.0 ], col: [1.0, 1.0, 1.0] },
+    // Front face.
+    Vertex { pos: [ 1.0, 1.0, -1.0 ], col: [1.0, 0.0, 1.0] },
+    Vertex { pos: [ -1.0, 1.0, -1.0 ], col: [0.0, 0.0, 1.0] },
+    Vertex { pos: [ -1.0, 1.0, 1.0 ], col: [0.0, 1.0, 1.0] },
+    Vertex { pos: [ 1.0, 1.0, 1.0 ], col: [1.0, 1.0, 1.0] },
+    // Back face.
+    Vertex { pos: [ 1.0, -1.0, 1.0 ], col: [0.0, 0.0, 1.0] },
+    Vertex { pos: [ -1.0, -1.0, 1.0 ], col: [1.0, 0.0, 1.0] },
+    Vertex { pos: [ -1.0, -1.0, -1.0 ], col: [1.0, 1.0, 1.0] },
+    Vertex { pos: [ 1.0, -1.0, -1.0], col:  [0.0, 1.0, 1.0] },
+];
+
+const CUBE_INDICES: &[u16] = &[
+    0, 1, 2, 2, 3, 0, // top
+    4, 5, 6, 6, 7, 4, // bottom
+    8, 9, 10, 10, 11, 8, // right
+    12, 13, 14, 14, 15, 12, // left
+    16, 17, 18, 18, 19, 16, // front
+    20, 21, 22, 22, 23, 20, // back
+];
+
+pub const CUBE_MESH_RESOURCE_ID: MeshResourceID = MeshResourceID(CUBE_PRIMITIVE_ID);
+
+fn configure_cube_primitive(gpu: &AbstractGpu, a_server: &mut AssetServer) {
+    let v_buffer = gpu.allocate_vertex_buffer(
+        "Cube primitive vertices",
+        bytemuck::cast_slice(CUBE_VERTICES),
+    );
+
+    let i_buffer = gpu.allocate_index_buffer(
+        "Cube primitive indices",
+        bytemuck::cast_slice(CUBE_INDICES),
+    );
+
+    let mesh = Mesh::new(
+        v_buffer,
+        i_buffer,
+        CUBE_INDICES.len() as u32
     );
 
     a_server.register_mesh(PENTAGON_PRIMITIVE_ID, mesh);

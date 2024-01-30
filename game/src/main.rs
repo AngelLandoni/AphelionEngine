@@ -3,7 +3,7 @@ use egui_demo_lib::DemoWindows;
 use engine::components::MeshComponent;
 use engine::nalgebra::{Point3, Vector3};
 
-use engine::plugin::scene::primitives_plugin::{PrimitivesPlugin, PENTAGON_MESH_RESOURCE_ID};
+use engine::plugin::scene::primitives_plugin::{PrimitivesPlugin, CUBE_MESH_RESOURCE_ID, PENTAGON_MESH_RESOURCE_ID};
 use engine::scene::asset_server::MeshResourceID;
 use engine::scene::mouse::CursorDelta;
 use engine::{
@@ -245,7 +245,8 @@ impl Pluggable for PlayerPlugin {
         app.world.add_unique(Demo(demo));
         app.world.add_unique(FlyCamera::default());
 
-        app.world.add_entity(MeshComponent(PENTAGON_MESH_RESOURCE_ID));
+        //app.world.add_entity(MeshComponent(PENTAGON_MESH_RESOURCE_ID));
+        app.world.add_entity(MeshComponent(CUBE_MESH_RESOURCE_ID));
 
         app.schedule(Schedule::RequestRedraw, |world| {
             world.run(set_ui);
