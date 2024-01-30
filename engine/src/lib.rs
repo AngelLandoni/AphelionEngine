@@ -1,4 +1,5 @@
 pub mod app;
+pub mod graphics;
 pub mod plugin;
 pub mod schedule;
 pub mod host;

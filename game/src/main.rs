@@ -69,12 +69,6 @@ impl Default for FlyCamera {
 #[derive(Component, Debug)]
 struct Pos(f32, f32);
 
-fn create_ints(mut _entities: EntitiesViewMut, mut _vm_vel: ViewMut<Pos>) {
-}
-
-fn delete_ints(mut _vm_vel: ViewMut<Pos>) {
-}
-
 fn set_ui(
     egui: UniqueView<EguiContext>,
     mut demo: UniqueViewMut<Demo>,
@@ -165,10 +159,6 @@ fn set_ui(
     //demo.0.ui(&egui.0);
 }
 
-fn int_cycle() -> Workload {
-    (create_ints, delete_ints).into_workload()
-}
-
 fn camera_system(
     keyboard: UniqueView<Keyboard>,
     mut camera: UniqueViewMut<Camera>,
@@ -253,7 +243,6 @@ impl Pluggable for PlayerPlugin {
     fn configure(&self, app: &mut App) {
         let demo = egui_demo_lib::DemoWindows::default();
 
-        app.world.add_workload(int_cycle); 
         app.world.add_unique(Demo(demo));
         app.world.add_unique(FlyCamera::default());
 
@@ -267,7 +256,6 @@ impl Pluggable for PlayerPlugin {
         app.schedule(Schedule::Update, |world| {
             world.run(fly_camera_system);
             world.run(camera_system);
-            world.run_workload(int_cycle).unwrap();
         });
     }
 }

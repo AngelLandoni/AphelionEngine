@@ -1,6 +1,7 @@
 use crate::{
     plugin::Pluggable,
     scene::{
+        asset_server::AssetServer,
         camera::Camera,
         keyboard::Keyboard,
         mouse::{Cursor, CursorDelta},
@@ -18,5 +19,6 @@ impl Pluggable for ScenePlugin {
         app.world.add_unique(Keyboard::default());
         app.world.add_unique(Cursor::default());
         app.world.add_unique(CursorDelta::default());
+        app.world.add_unique(AssetServer::default());
     }
 }

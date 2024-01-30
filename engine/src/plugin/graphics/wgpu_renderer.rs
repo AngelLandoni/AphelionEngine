@@ -2,7 +2,10 @@ use shipyard::{UniqueView, UniqueViewMut, World};
 use wgpu::BufferUsages;
 
 use crate::{
-    app::App, wgpu_graphics::{
+    app::App, graphics::gpu::AbstractGpu, host::window::Window, plugin::Pluggable, scene::{
+        camera::Camera,
+        perspective::Perspective
+    }, schedule::Schedule, wgpu_graphics::{
         gpu::Gpu,
         components::{
             ScreenTexture,
@@ -23,12 +26,7 @@ use crate::{
             sync_camera_perspective_uniform,
         },
         MAX_NUMBER_IF_COMMANDS_PER_FRAME,
-    },
-    host::window::Window,
-    plugin::Pluggable, scene::{
-        camera::Camera,
-        perspective::Perspective
-    }, schedule::Schedule
+    }
 };
 
 pub struct WgpuRendererPlugin;
@@ -54,7 +52,7 @@ impl Pluggable for WgpuRendererPlugin {
             setup_camera(&world, &gpu);
             setup_pipelines(&world, &gpu);
 
-            world.add_unique(gpu);
+            world.add_unique(AbstractGpu(Box::new(gpu)));
         }
         
         // Setup scheludes.
@@ -130,11 +128,15 @@ fn setup_pipelines(world: &World, gpu: &Gpu) {
 
 /// Calls the sync camera method.
 fn sync_camera_perspective_uniform_system(
-    gpu: UniqueView<Gpu>,
+    gpu: UniqueView<AbstractGpu>,
     camera: UniqueView<Camera>,
     perspective: UniqueView<Perspective>,
     c_uniform: UniqueView<CameraUniform>
 ) {
+    let gpu = gpu
+        .downcast_ref::<Gpu>()
+        .expect("Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu");
+
     sync_camera_perspective_uniform(
         &gpu,
         &camera,

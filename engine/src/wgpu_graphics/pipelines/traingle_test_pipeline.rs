@@ -1,22 +1,9 @@
 use shipyard::Unique;
 use wgpu::{
-    RenderPipeline,
-    PipelineLayoutDescriptor,
-    RenderPipelineDescriptor,
-    VertexState,
-    PrimitiveState,
-    MultisampleState,
-    FragmentState,
-    ColorTargetState,
-    BlendComponent,
-    ColorWrites,
-    BindGroupLayoutDescriptor,
-    BindGroupLayoutEntry,
-    ShaderStages,
-    Buffer, BindGroup
+    vertex_attr_array, BindGroup, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BlendComponent, Buffer, ColorTargetState, ColorWrites, FragmentState, MultisampleState, PipelineLayoutDescriptor, PrimitiveState, RenderPipeline, RenderPipelineDescriptor, ShaderStages, VertexBufferLayout, VertexState
 };
 
-use crate::wgpu_graphics::gpu::Gpu;
+use crate::{graphics::vertex::Vertex, wgpu_graphics::gpu::Gpu};
 
 #[derive(Unique)]
 pub struct TriangleTestPipeline {
@@ -79,7 +66,16 @@ impl TriangleTestPipeline {
                 vertex: VertexState {
                     module: &program,
                     entry_point: "vs_main",
-                    buffers: &[],
+                    buffers: &[
+
+                        // Defines the `Vertex` layout format.
+                        /*VertexBufferLayout {
+                            array_stride: std::mem::size_of::<Vertex> as wgpu::BufferAddress,
+                            step_mode: wgpu::VertexStepMode::Vertex,
+                            attributes: &vertex_attr_array![0 => Float32x3, 1 => Float32x3],
+                        }*/
+
+                    ],
                 },
                 primitive: PrimitiveState {
                     topology: wgpu::PrimitiveTopology::TriangleList,
