@@ -43,7 +43,7 @@ impl AssetServer {
         self
             .data
             .read()
-            .expect("TODO")
+            .expect("Unable to acquire read lock")
             .meshes
             .get(mesh.0)
             .expect("Mesh not found")
