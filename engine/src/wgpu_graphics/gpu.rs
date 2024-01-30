@@ -153,7 +153,7 @@ impl ShaderHandler for Gpu {
 
 impl BufferCreator for Gpu {
     /// Stores the information into the GPU RAM and returns a reference to it.
-    fn create_vertex_buffer(
+    fn allocate_vertex_buffer(
         &self,
         label: &str,
         data: &[u8]
@@ -168,7 +168,7 @@ impl BufferCreator for Gpu {
     }
 
     /// Stores the information into the GPU RAM and returns a reference to it.
-    fn create_index_buffer(
+    fn allocate_index_buffer(
         &self, label: &str,
         data: &[u8]
     ) -> Box<dyn IndexBuffer> {

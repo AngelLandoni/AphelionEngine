@@ -69,11 +69,11 @@ impl TriangleTestPipeline {
                     buffers: &[
 
                         // Defines the `Vertex` layout format.
-                        /*VertexBufferLayout {
-                            array_stride: std::mem::size_of::<Vertex> as wgpu::BufferAddress,
+                        VertexBufferLayout {
+                            array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
                             step_mode: wgpu::VertexStepMode::Vertex,
                             attributes: &vertex_attr_array![0 => Float32x3, 1 => Float32x3],
-                        }*/
+                        }
 
                     ],
                 },

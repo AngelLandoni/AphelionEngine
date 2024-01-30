@@ -1,15 +1,9 @@
-use shipyard::UniqueView;
+use shipyard::{IntoIter, UniqueView, View};
 use wgpu::{CommandEncoderDescriptor, Operations};
 
 use crate::{
-    graphics::gpu::AbstractGpu,
-    wgpu_graphics::{
-        components::ScreenTexture,
-        gpu::Gpu,
-        pipelines::traingle_test_pipeline::TriangleTestPipeline,
-        CommandQueue,
-        CommandSubmitOrder,
-        OrderCommandBuffer,
+    components::MeshComponent, graphics::gpu::AbstractGpu, scene::asset_server::AssetServer, wgpu_graphics::{
+        buffer::{WgpuIndexBuffer, WgpuVertexBuffer}, components::ScreenTexture, gpu::Gpu, pipelines::traingle_test_pipeline::TriangleTestPipeline, CommandQueue, CommandSubmitOrder, OrderCommandBuffer
     }
 };
 
@@ -18,7 +12,9 @@ pub(crate) fn triangle_test_pass_system(
     gpu: UniqueView<AbstractGpu>,
     triangle_pipeline: UniqueView<TriangleTestPipeline>,
     screen_texture: UniqueView<ScreenTexture>,
-    queue: UniqueView<CommandQueue>
+    queue: UniqueView<CommandQueue>,
+    asset_server: UniqueView<AssetServer>,
+    meshes: View<MeshComponent>,
 ) {
     let gpu = gpu
         .downcast_ref::<Gpu>()
@@ -34,6 +30,13 @@ pub(crate) fn triangle_test_pass_system(
         .create_command_encoder(&CommandEncoderDescriptor {
             label: Some("Tirangle test encoder")
         });
+
+    // Filter meshes.
+    // TODO(Angel): This needs some optimization iterate over the meshes
+    // twice is just unnecessssary, but we need Rust to stop complaining.
+    let mesh_holder = meshes.iter().map(|m| {
+        asset_server.load_mesh(m)
+    }).collect::<Vec<_>>();
 
     {
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -64,7 +67,22 @@ pub(crate) fn triangle_test_pass_system(
         pass.set_pipeline(&triangle_pipeline.pipeline);
         // Camera position.
         pass.set_bind_group(0, &triangle_pipeline.camera_bind_group, &[]);
-        pass.draw(0..3, 0..1);
+
+        for mesh in mesh_holder.iter() {
+            let v_buffer = mesh
+                .vertex_buffer
+                .downcast_ref::<WgpuVertexBuffer>()
+                .expect("Incorrect vertex buffer type, expecting WGPU vertex buffer");
+
+            let i_buffer = mesh
+                .index_buffer
+                .downcast_ref::<WgpuIndexBuffer>()
+                .expect("Incorrect vertex buffer type, expecting WGPU index buffer");
+
+            pass.set_vertex_buffer(0, v_buffer.0.slice(..));
+            pass.set_index_buffer(i_buffer.0.slice(..), wgpu::IndexFormat::Uint16);
+            pass.draw_indexed(0..mesh.index_count, 0, 0..1);
+        }
     }
     
     let _ = queue.0.push(OrderCommandBuffer::new(
