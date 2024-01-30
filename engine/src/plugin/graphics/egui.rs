@@ -19,8 +19,7 @@ use crate::{
     schedule::Schedule,
     wgpu_graphics::{
         components::ScreenTexture,
-        gpu::Gpu,
-        CommandQueue,
+        gpu::Gpu, CommandQueue,
         CommandSubmitOrder,
         OrderCommandBuffer
     }

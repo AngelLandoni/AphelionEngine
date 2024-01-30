@@ -4,6 +4,6 @@
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]
 pub struct Vertex {
-    pos: [f32; 3],
-    col: [f32; 3],
+    pub pos: [f32; 3],
+    pub col: [f32; 3],
 }

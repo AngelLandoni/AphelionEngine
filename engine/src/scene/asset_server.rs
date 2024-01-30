@@ -1,8 +1,9 @@
 use std::{
-    collections::HashMap, default, sync::{
+    collections::HashMap,
+    ops::Deref,
+    sync::{
         Arc,
         RwLock,
-        atomic::{AtomicU64, Ordering}
     }
 };
 
@@ -10,21 +11,43 @@ use shipyard::Unique;
 
 use crate::graphics::mesh::Mesh;
 
-type AssetResourceID = u64;
+type AssetResourceID = &'static str;
 
-pub struct MeshResourceID(AssetResourceID);
+pub struct MeshResourceID(pub(crate) AssetResourceID);
+
+impl Deref for MeshResourceID {
+    type Target = AssetResourceID;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
 
 /// Conatins all the assets which a `Scene` can use.
 #[derive(Unique)]
 pub struct AssetServer {
-    data: Arc<AssetServerData>,
+    data: Arc<RwLock<AssetServerData>>,
 }
 
 impl Default for AssetServer {
     fn default() -> Self {
         Self { 
-            data: Arc::new(AssetServerData::default()),
+            data: Arc::new(RwLock::new(AssetServerData::default())),
         }
+    }
+}
+
+impl AssetServer {
+    /// Retrieves a particular `Mesh`.
+    pub fn load_mesh(&self, mesh: &MeshResourceID) -> Arc<Mesh> {
+        self
+            .data
+            .read()
+            .expect("TODO")
+            .meshes
+            .get(mesh.0)
+            .expect("Mesh not found")
+            .clone()
     }
 }
 
@@ -34,33 +57,27 @@ unsafe impl Send for AssetServer {}
 unsafe impl Sync for AssetServer {}
 
 struct AssetServerData {
-    // Used to store and retrieve the last id used. The only purpose of this is
-    // to generate unique ids.
-    resouce_id_counter: AtomicU64,
-    meshes: RwLock<HashMap<AssetResourceID, Mesh>>,
+    meshes: HashMap<AssetResourceID, Arc<Mesh>>,
 }
 
 impl Default for AssetServerData {
     fn default() -> Self {
         Self {
-            resouce_id_counter: AtomicU64::new(0),
-            meshes: RwLock::new(HashMap::new()),
+            meshes: HashMap::new(),
         }
     }
 }
 
 impl AssetServer {
     /// Registers a mesh into the Asset Server.
-    pub fn register_mesh(&mut self, mesh: Mesh) -> MeshResourceID {
-        let id = self.data.resouce_id_counter.fetch_add(1, Ordering::Relaxed);
-
+    pub fn register_mesh(
+        &mut self, id: AssetResourceID, mesh: Mesh
+    ) {
         self
             .data
-            .meshes
             .write()
-            .expect("Unable to take mesh lock")
-            .insert(id, mesh);
-
-        MeshResourceID(id)
+            .expect("Unable to acquire write lock")
+            .meshes
+            .insert(id, Arc::new(mesh));
     }
 }

@@ -1,7 +1,10 @@
 use egui_demo_lib::DemoWindows;
 
+use engine::components::MeshComponent;
 use engine::nalgebra::{Point3, Vector3};
 
+use engine::plugin::scene::primitives_plugin::{PrimitivesPlugin, PENTAGON_MESH_RESOURCE_ID};
+use engine::scene::asset_server::MeshResourceID;
 use engine::scene::mouse::CursorDelta;
 use engine::{
     app::App,
@@ -30,10 +33,6 @@ use engine::{
     schedule::Schedule,
     shipyard::{
         Component,
-        EntitiesViewMut,
-        ViewMut,
-        Workload,
-        IntoWorkload,
         UniqueView,
         Unique,
         UniqueViewMut,
@@ -246,6 +245,8 @@ impl Pluggable for PlayerPlugin {
         app.world.add_unique(Demo(demo));
         app.world.add_unique(FlyCamera::default());
 
+        app.world.add_entity(MeshComponent(PENTAGON_MESH_RESOURCE_ID));
+
         app.schedule(Schedule::RequestRedraw, |world| {
             world.run(set_ui);
         });
@@ -270,6 +271,7 @@ pub fn main() {
         .add_plugin(ScenePlugin)
         .add_plugin(WgpuRendererPlugin)
         .add_plugin(ClockPlugin::default())
+        .add_plugin(PrimitivesPlugin)
         .add_plugin(EguiPlugin)
         .add_plugin(PlayerPlugin)
         .run();
