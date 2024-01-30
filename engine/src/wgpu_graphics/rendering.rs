@@ -2,7 +2,7 @@ use shipyard::{UniqueView, UniqueViewMut};
 use wgpu::CommandBuffer;
 
 use crate::{
-    wgpu_graphics::{
+    graphics::gpu::AbstractGpu, host::window::Window, wgpu_graphics::{
         CommandQueue,
         OrderCommandBuffer,
         components::{
@@ -10,14 +10,17 @@ use crate::{
             ScreenTexture,
         },
         gpu::Gpu,
-    },
-    host::window::Window
+    }
 };
 
 pub(crate) fn reconfigure_surface_if_needed_system(
-    mut gpu: UniqueViewMut<Gpu>,
+    mut gpu: UniqueViewMut<AbstractGpu>,
     window: UniqueView<Window>
 ) {
+    let gpu = gpu
+        .downcast_mut::<Gpu>()
+        .expect("Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu");
+
     if gpu.surface_config.width != window.size.width ||
        gpu.surface_config.height != window.size.height {
 
@@ -30,10 +33,16 @@ pub(crate) fn reconfigure_surface_if_needed_system(
 
 /// Setups the screen texture into the world.
 // TODO(Angel): Remove panic, to support headless.
-pub(crate) fn acquire_screen_texture(u_gpu: UniqueView<Gpu>, 
-                              mut s_frame: UniqueViewMut<ScreenFrame>,
-                              mut s_texture: UniqueViewMut<ScreenTexture>) {
-    if let Ok(frame) = u_gpu.surface.get_current_texture() {
+pub(crate) fn acquire_screen_texture(
+    gpu: UniqueView<AbstractGpu>, 
+    mut s_frame: UniqueViewMut<ScreenFrame>,
+    mut s_texture: UniqueViewMut<ScreenTexture>
+) {
+    let gpu = gpu
+        .downcast_ref::<Gpu>()
+        .expect("Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu");
+
+    if let Ok(frame) = gpu.surface.get_current_texture() {
         let view = frame
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
@@ -59,9 +68,13 @@ pub fn present_screen_texture(mut s_frame: UniqueViewMut<ScreenFrame>) {
 }
 
 pub(crate) fn submit_commands_in_order(
-    u_gpu: UniqueView<Gpu>,
+    gpu: UniqueView<AbstractGpu>,
     c_queue: UniqueView<CommandQueue>
 ) {
+    let gpu = gpu
+        .downcast_ref::<Gpu>()
+        .expect("Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu");
+
     let mut commands = Vec::<OrderCommandBuffer>::with_capacity(
         c_queue.0.len(),
     );
@@ -77,5 +90,5 @@ pub(crate) fn submit_commands_in_order(
         wgpu_commands.push(c.command);
     }
 
-    u_gpu.queue.submit(wgpu_commands);
+    gpu.queue.submit(wgpu_commands);
 }

@@ -12,13 +12,25 @@ use wgpu::{
     SurfaceConfiguration,
     TextureUsages,
     ShaderModule, 
-    TextureFormat, Buffer, BufferAddress, COPY_BUFFER_ALIGNMENT, BufferUsages, BufferDescriptor, util::{DeviceExt, BufferInitDescriptor},
+    TextureFormat,
+    Buffer,
+    BufferAddress,
+    BufferUsages,
+    BufferDescriptor,
+    util::{DeviceExt, BufferInitDescriptor},
+    COPY_BUFFER_ALIGNMENT,
 };
 
-use crate::host::window::Window;
+use crate::{
+    graphics::{
+        gpu::GpuAbstractor, BufferCreator, IndexBuffer, ShaderHandler, VertexBuffer
+    }, 
+    host::window::Window
+};
+
+use super::buffer::{WgpuIndexBuffer, WgpuVertexBuffer};
 
 /// Holds all the essential information required for GPU interaction.
-#[derive(Unique)]
 pub(crate) struct Gpu {
     pub surface: Surface,
     /// Represents a physical GPU device available in the system.
@@ -128,5 +140,44 @@ impl Gpu {
             contents: bytemuck::cast_slice(&[content]),
             usage,
         })
+    }
+}
+
+impl GpuAbstractor for Gpu {}
+
+impl ShaderHandler for Gpu {
+    fn compile_program(&self) {
+        
+    }
+}
+
+impl BufferCreator for Gpu {
+    /// Stores the information into the GPU RAM and returns a reference to it.
+    fn create_vertex_buffer(
+        &self,
+        label: &str,
+        data: &[u8]
+    ) -> Box<dyn VertexBuffer> {
+        let buffer = self.device.create_buffer_init(&BufferInitDescriptor {
+            label: Some(label),
+            contents: data,
+            usage: BufferUsages::VERTEX,
+        });
+
+        Box::new(WgpuVertexBuffer(buffer))
+    }
+
+    /// Stores the information into the GPU RAM and returns a reference to it.
+    fn create_index_buffer(
+        &self, label: &str,
+        data: &[u8]
+    ) -> Box<dyn IndexBuffer> {
+        let buffer = self.device.create_buffer_init(&BufferInitDescriptor {
+            label: Some(label),
+            contents: data,
+            usage: BufferUsages::INDEX,
+        });
+
+        Box::new(WgpuIndexBuffer(buffer))
     }
 }
