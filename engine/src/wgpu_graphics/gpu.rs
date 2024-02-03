@@ -1,5 +1,4 @@
 use bytemuck::{Pod, AnyBitPattern};
-use shipyard::Unique;
 use wgpu::{
     Surface,
     Adapter,

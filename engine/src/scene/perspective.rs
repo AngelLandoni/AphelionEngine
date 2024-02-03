@@ -26,6 +26,12 @@ impl Perspective {
         Perspective { aspect_ratio, fov, znear, zfar }
     }
 
+    /// Updates the aspect ratio. This is normaly used when the window/surface 
+    /// is resized.
+    pub fn update_aspect_ratio(&mut self, aspect_ratio: f32) {
+        self.aspect_ratio = aspect_ratio
+    }
+
     /// Returns the perspective in form of matrix.
     pub fn matrix(&self) -> Matrix4<f32> {
         Matrix4::new_perspective(
