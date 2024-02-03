@@ -1,6 +1,6 @@
 use std::ops::Deref;
-
 use shipyard::Component;
+use nalgebra::Point3;
 
 use crate::scene::asset_server::MeshResourceID;
 
