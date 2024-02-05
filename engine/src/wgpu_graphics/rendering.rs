@@ -11,12 +11,12 @@ use crate::{
     },
 };
 
-/// DepthTexture: After the window is resized or the resolution changes the 
+/// DepthTexture: After the window is resized or the resolution changes the
 /// depth texture must be updated to match resolutions.
 pub(crate) fn reconfigure_main_textures_if_needed_system(
     mut gpu: UniqueViewMut<AbstractGpu>,
     window: UniqueView<Window>,
-    mut depth_t: UniqueViewMut<DepthTexture>
+    mut depth_t: UniqueViewMut<DepthTexture>,
 ) {
     let gpu = gpu
         .downcast_mut::<Gpu>()

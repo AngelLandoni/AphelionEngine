@@ -1,10 +1,15 @@
 use bytemuck::{AnyBitPattern, Pod};
 use wgpu::{
-    util::{BufferInitDescriptor, DeviceExt}, Adapter, Buffer, BufferUsages, Device, DeviceDescriptor, Extent3d, Features, Limits, Queue, RequestAdapterOptions, SamplerDescriptor, ShaderModule, Surface, SurfaceConfiguration, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor
+    util::{BufferInitDescriptor, DeviceExt},
+    Adapter, Buffer, BufferUsages, Device, DeviceDescriptor, Extent3d, Features, Limits, Queue,
+    RequestAdapterOptions, SamplerDescriptor, ShaderModule, Surface, SurfaceConfiguration,
+    TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor,
 };
 
 use crate::{
-    graphics::{gpu::GpuAbstractor, BufferCreator, IndexBuffer, ShaderHandler, VertexBuffer, Texture},
+    graphics::{
+        gpu::GpuAbstractor, BufferCreator, IndexBuffer, ShaderHandler, Texture, VertexBuffer,
+    },
     host::window::Window,
 };
 
@@ -178,8 +183,7 @@ impl BufferCreator for Gpu {
             sample_count: 1,
             dimension: TextureDimension::D2,
             format: DEPTH_TEXTURE_FORMAT,
-            usage: TextureUsages::RENDER_ATTACHMENT |
-                   TextureUsages::TEXTURE_BINDING,
+            usage: TextureUsages::RENDER_ATTACHMENT | TextureUsages::TEXTURE_BINDING,
             view_formats: &[],
         });
 

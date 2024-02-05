@@ -10,7 +10,6 @@ pub struct WgpuIndexBuffer(pub(crate) Buffer);
 
 impl IndexBuffer for WgpuIndexBuffer {}
 
-
 pub struct WGPUTexture {
     pub(crate) texture: wgpu::Texture,
     pub(crate) view: wgpu::TextureView,

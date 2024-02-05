@@ -5,10 +5,7 @@ use wgpu::{Buffer, BufferUsages};
 
 use crate::{
     app::App,
-    graphics::components::{
-        MeshComponent,
-        DepthTexture,
-    },
+    graphics::components::{DepthTexture, MeshComponent},
     graphics::{gpu::AbstractGpu, BufferCreator},
     host::window::Window,
     plugin::Pluggable,
@@ -23,7 +20,8 @@ use crate::{
         passes::triangle_test_pass::triangle_test_pass_system,
         pipelines::traingle_test_pipeline::TriangleTestPipeline,
         rendering::{
-            acquire_screen_texture, present_screen_texture, reconfigure_main_textures_if_needed_system, submit_commands_in_order
+            acquire_screen_texture, present_screen_texture,
+            reconfigure_main_textures_if_needed_system, submit_commands_in_order,
         },
         uniforms::{sync_camera_perspective_uniform, CameraUniform},
         CommandQueue, OrderCommandQueue, MAX_NUMBER_IF_COMMANDS_PER_FRAME,

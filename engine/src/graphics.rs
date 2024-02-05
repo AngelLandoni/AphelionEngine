@@ -1,10 +1,10 @@
 use downcast_rs::{impl_downcast, Downcast};
 
 pub mod buffer;
+pub mod components;
 pub mod gpu;
 pub mod mesh;
 pub mod vertex;
-pub mod components;
 
 pub trait VertexBuffer: Downcast {}
 impl_downcast!(VertexBuffer);
