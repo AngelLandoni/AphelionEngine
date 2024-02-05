@@ -317,7 +317,7 @@ pub fn main() {
         .add_plugin(WinitWindowPlugin::new("My game", 1024, 800))
         .add_plugin(ScenePlugin)
         .add_plugin(WgpuRendererPlugin)
-        .add_plugin(ClockPlugin::default())
+        .add_plugin(ClockPlugin)
         .add_plugin(PrimitivesPlugin)
         .add_plugin(EguiPlugin)
         .add_plugin(PlayerPlugin)

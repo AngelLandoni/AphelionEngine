@@ -1,9 +1,9 @@
 use bytemuck::{AnyBitPattern, Pod};
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
-    Adapter, Buffer, BufferAddress, BufferDescriptor, BufferUsages, Device, DeviceDescriptor,
-    Features, Limits, Queue, RequestAdapterOptions, ShaderModule, Surface, SurfaceConfiguration,
-    TextureFormat, TextureUsages, COPY_BUFFER_ALIGNMENT,
+    Adapter, Buffer, BufferUsages, Device, DeviceDescriptor, Features, Limits, Queue,
+    RequestAdapterOptions, ShaderModule, Surface, SurfaceConfiguration, TextureFormat,
+    TextureUsages,
 };
 
 use crate::{
@@ -17,6 +17,7 @@ use super::buffer::{WgpuIndexBuffer, WgpuVertexBuffer};
 pub(crate) struct Gpu {
     pub surface: Surface,
     /// Represents a physical GPU device available in the system.
+    #[allow(dead_code)]
     pub adapter: Adapter,
     /// Represents a logical device that facilitates interaction with the
     /// underlying physical GPU (Adapter).
@@ -58,7 +59,7 @@ impl Gpu {
         let swapchain_capabilities = surface.get_capabilities(&adapter);
         let texture_format = swapchain_capabilities.formats[0];
 
-        let size = window.accesor.inner_size();
+        let size = window.inner_size();
 
         let surface_config = SurfaceConfiguration {
             usage: TextureUsages::RENDER_ATTACHMENT,
@@ -91,8 +92,7 @@ impl Gpu {
             })
     }
 
-    /// Allocates a buffer in the GPU RAM and returns a reference to it.
-    pub(crate) fn allocate_buffer(&self, label: &str, size: u64, usage: BufferUsages) -> Buffer {
+    /*pub(crate) fn allocate_buffer(&self, label: &str, size: u64, usage: BufferUsages) -> Buffer {
         // Convert the size from the provided one into one that WGPU handles.
         let unpadded_size: BufferAddress = size as BufferAddress;
         // Make sure the size is 4 bytes aligned.
@@ -108,7 +108,7 @@ impl Gpu {
             usage,
             mapped_at_creation: true,
         })
-    }
+    }*/
 
     /// Allocates and initilizes a chunk of memory on the GPU.
     pub(crate) fn allocate_buffer_init<T: Pod + AnyBitPattern>(
@@ -133,14 +133,6 @@ impl Gpu {
         self.device.create_buffer_init(&BufferInitDescriptor {
             label: Some(label),
             contents: content,
-            usage,
-        })
-    }
-
-    pub(crate) fn allocate_empty_buffer(&self, label: &str, usage: BufferUsages) -> Buffer {
-        self.device.create_buffer_init(&BufferInitDescriptor {
-            label: Some(label),
-            contents: &[],
             usage,
         })
     }

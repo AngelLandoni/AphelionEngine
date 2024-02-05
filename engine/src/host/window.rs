@@ -45,10 +45,6 @@ impl Window {
     pub(crate) fn inner_size(&self) -> Size<u32> {
         self.accesor.inner_size()
     }
-
-    pub(crate) fn scale_factor(&self) -> f64 {
-        self.accesor.scale_factor()
-    }
 }
 
 /// TODO(Angel): Ensure thread safety for everything inside this block.

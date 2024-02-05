@@ -30,6 +30,7 @@ impl CommandSubmitOrder {
 /// Wraps a `wgpu` `CommandBuffer` and includes information about the position
 /// at which the command should be executed.
 pub(crate) struct OrderCommandBuffer {
+    #[allow(dead_code)]
     pub(crate) label: Option<String>,
     pub(crate) order: usize,
     pub(crate) command: CommandBuffer,
