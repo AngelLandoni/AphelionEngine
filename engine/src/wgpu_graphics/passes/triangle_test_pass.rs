@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use shipyard::UniqueView;
-use wgpu::{Buffer, CommandEncoderDescriptor, DepthStencilState, Operations, RenderPassDepthStencilAttachment};
+use wgpu::{Buffer, CommandEncoderDescriptor, Operations, RenderPassDepthStencilAttachment};
 
 use crate::{
     graphics::{components::DepthTexture, gpu::AbstractGpu, mesh::Mesh},

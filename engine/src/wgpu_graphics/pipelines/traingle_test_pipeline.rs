@@ -3,11 +3,16 @@ use std::collections::HashMap;
 use shipyard::Unique;
 
 use wgpu::{
-    vertex_attr_array, BindGroup, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BlendComponent, Buffer, BufferAddress, ColorTargetState, ColorWrites, DepthBiasState, DepthStencilState, FragmentState, MultisampleState, PipelineLayoutDescriptor, PrimitiveState, RenderPipeline, RenderPipelineDescriptor, ShaderStages, StencilState, VertexBufferLayout, VertexState
+    vertex_attr_array, BindGroup, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BlendComponent,
+    Buffer, BufferAddress, ColorTargetState, ColorWrites, DepthBiasState, DepthStencilState,
+    FragmentState, MultisampleState, PipelineLayoutDescriptor, PrimitiveState, RenderPipeline,
+    RenderPipelineDescriptor, ShaderStages, StencilState, VertexBufferLayout, VertexState,
 };
 
 use crate::{
-    graphics::vertex::Vertex, scene::asset_server::MeshResourceID, wgpu_graphics::{gpu::{Gpu, DEPTH_TEXTURE_FORMAT}},
+    graphics::vertex::Vertex,
+    scene::asset_server::MeshResourceID,
+    wgpu_graphics::gpu::{Gpu, DEPTH_TEXTURE_FORMAT},
 };
 
 #[derive(Unique)]
