@@ -2,7 +2,7 @@ use shipyard::{UniqueView, UniqueViewMut};
 use wgpu::CommandBuffer;
 
 use crate::{
-    graphics::gpu::AbstractGpu,
+    graphics::{components::DepthTexture, gpu::AbstractGpu, BufferCreator},
     host::window::Window,
     wgpu_graphics::{
         components::{ScreenFrame, ScreenTexture},
@@ -11,9 +11,12 @@ use crate::{
     },
 };
 
-pub(crate) fn reconfigure_surface_if_needed_system(
+/// DepthTexture: After the window is resized or the resolution changes the 
+/// depth texture must be updated to match resolutions.
+pub(crate) fn reconfigure_main_textures_if_needed_system(
     mut gpu: UniqueViewMut<AbstractGpu>,
     window: UniqueView<Window>,
+    mut depth_t: UniqueViewMut<DepthTexture>
 ) {
     let gpu = gpu
         .downcast_mut::<Gpu>()
@@ -26,6 +29,8 @@ pub(crate) fn reconfigure_surface_if_needed_system(
         gpu.surface_config.height = window.size.height;
 
         gpu.surface.configure(&gpu.device, &gpu.surface_config);
+
+        depth_t.0 = gpu.allocate_depth_texture("Global depth texture");
     }
 }
 
