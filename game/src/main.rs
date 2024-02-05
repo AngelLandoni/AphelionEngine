@@ -264,6 +264,26 @@ impl Pluggable for PlayerPlugin {
             scale: Vector3::new(2.0, 1.0, 1.0),
         }));
 
+        let axis = Unit::new_normalize(Vector3::new(1.0, 2.0, 3.0));
+        let rot = UnitQuaternion::from_axis_angle(&axis, 0.0);
+
+        app.world.add_entity((MeshComponent(CUBE_MESH_RESOURCE_ID), Transform {
+            position: Vector3::new(10.0, 0.0, 0.0),
+            rotation: rot,
+            scale: Vector3::new(2.0, 1.0, 1.0),
+        }));
+
+
+        for i in 0..10 {
+            for j in 0..10 {
+                app.world.add_entity((MeshComponent(CUBE_MESH_RESOURCE_ID), Transform {
+                    position: Vector3::new(10.0 + i as f32 * 5.0, 0.0, j as f32 * 5.0),
+                    rotation: rot,
+                    scale: Vector3::new(1.0, 1.0, 1.0),
+                }));
+            }
+        }
+
         app.world.add_entity((MeshComponent(PENTAGON_MESH_RESOURCE_ID), Transform {
             position: Vector3::new(8.0, 0.0, 0.0),
             rotation: rot,
