@@ -1,9 +1,17 @@
+use std::collections::HashMap;
+
+use egui::InputState;
 use shipyard::Unique;
+
 use wgpu::{
-    vertex_attr_array, BindGroup, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BlendComponent, Buffer, ColorTargetState, ColorWrites, FragmentState, MultisampleState, PipelineLayoutDescriptor, PrimitiveState, RenderPipeline, RenderPipelineDescriptor, ShaderStages, VertexBufferLayout, VertexState
+    vertex_attr_array, BindGroup, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BlendComponent, Buffer, BufferAddress, BufferUsages, ColorTargetState, ColorWrites, FragmentState, MultisampleState, PipelineLayoutDescriptor, PrimitiveState, RenderPipeline, RenderPipelineDescriptor, ShaderStages, VertexBufferLayout, VertexState
 };
 
-use crate::{graphics::vertex::Vertex, wgpu_graphics::gpu::Gpu};
+use crate::{
+    graphics::vertex::Vertex,
+    scene::asset_server::MeshResourceID,
+    wgpu_graphics::gpu::Gpu
+};
 
 #[derive(Unique)]
 pub struct TriangleTestPipeline {
@@ -11,6 +19,8 @@ pub struct TriangleTestPipeline {
     pub(crate) pipeline: RenderPipeline,
     /// Conaints the associated bind group.
     pub(crate) camera_bind_group: BindGroup,
+    /// Contains the buffer which holds the transform information.
+    pub(crate) mesh_transform_buffers: HashMap<MeshResourceID, (Buffer, u32)>,
 }
 
 impl TriangleTestPipeline {
@@ -53,7 +63,7 @@ impl TriangleTestPipeline {
             .create_pipeline_layout(&PipelineLayoutDescriptor {
                 label: Some("Triangle test pipeline layout"),
                 bind_group_layouts: &[
-                    &camera_bind_group_layout
+                    &camera_bind_group_layout,
                 ],
                 push_constant_ranges: &[],
             });
@@ -73,7 +83,19 @@ impl TriangleTestPipeline {
                             array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
                             step_mode: wgpu::VertexStepMode::Vertex,
                             attributes: &vertex_attr_array![0 => Float32x3, 1 => Float32x3],
-                        }
+                        },
+
+                        // Defines the Vertex transform.
+                        VertexBufferLayout {
+                            array_stride: std::mem::size_of::<[[f32; 4]; 4]>() as BufferAddress,
+                            step_mode: wgpu::VertexStepMode::Instance,
+                            attributes: &vertex_attr_array![
+                                2 => Float32x4,
+                                3 => Float32x4,
+                                4 => Float32x4,
+                                5 => Float32x4,
+                            ]
+                        },
 
                     ],
                 },
@@ -112,6 +134,7 @@ impl TriangleTestPipeline {
         TriangleTestPipeline {
             pipeline,
             camera_bind_group,
+            mesh_transform_buffers: HashMap::new(),
         }
     }
 }
