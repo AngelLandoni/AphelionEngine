@@ -2,10 +2,7 @@ use std::time::Instant;
 
 use shipyard::{Unique, UniqueViewMut};
 
-use crate::{
-    plugin::Pluggable,
-    schedule::Schedule
-};
+use crate::{plugin::Pluggable, schedule::Schedule};
 
 #[derive(Unique)]
 pub struct Clock {
@@ -21,7 +18,7 @@ pub struct Clock {
 
 impl Clock {
     fn new(limit_frame_rate: bool, target_frame_rate: u64) -> Self {
-        Clock { 
+        Clock {
             last_frame_time: Instant::now(),
             delta: 0.0,
             limit_frame_rate,
@@ -64,7 +61,7 @@ impl Default for ClockPlugin {
     }
 }
 
-impl ClockPlugin {    
+impl ClockPlugin {
     pub fn new(limit_frame_rate: bool, target_frame_rate: u64) -> Self {
         Self {
             limit_frame_rate,
@@ -75,10 +72,8 @@ impl ClockPlugin {
 
 impl Pluggable for ClockPlugin {
     fn configure(&self, app: &mut crate::app::App) {
-        app.world.add_unique(Clock::new(
-            self.limit_frame_rate,
-            self.target_frame_rate,
-        ));
+        app.world
+            .add_unique(Clock::new(self.limit_frame_rate, self.target_frame_rate));
 
         app.schedule(Schedule::BeforeRequestRedraw, |world| {
             world.run(calculate_clock_step_system);

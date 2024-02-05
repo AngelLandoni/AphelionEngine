@@ -1,12 +1,9 @@
 use shipyard::Unique;
 
-use downcast_rs::{Downcast, impl_downcast};
+use downcast_rs::{impl_downcast, Downcast};
 
 use raw_window_handle::{
-    HasRawWindowHandle,
-    HasRawDisplayHandle,
-    RawWindowHandle,
-    RawDisplayHandle,
+    HasRawDisplayHandle, HasRawWindowHandle, RawDisplayHandle, RawWindowHandle,
 };
 
 use crate::types::Size;
@@ -35,7 +32,7 @@ impl Window {
         accesor: Box<A>,
         size: Size<u32>,
         window_handle: RawWindowHandle,
-        display_handle: RawDisplayHandle
+        display_handle: RawDisplayHandle,
     ) -> Self {
         Window {
             accesor,
@@ -45,7 +42,7 @@ impl Window {
         }
     }
 
-    pub(crate) fn inner_size(&self) -> Size<u32> { 
+    pub(crate) fn inner_size(&self) -> Size<u32> {
         self.accesor.inner_size()
     }
 
@@ -66,10 +63,9 @@ unsafe impl HasRawWindowHandle for Window {
         self.window_handle
     }
 }
-    
+
 unsafe impl HasRawDisplayHandle for Window {
     fn raw_display_handle(&self) -> RawDisplayHandle {
         self.display_handle
     }
 }
-    

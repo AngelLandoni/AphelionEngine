@@ -3,30 +3,14 @@ use std::collections::HashMap;
 use shipyard::Unique;
 
 use wgpu::{
-    vertex_attr_array,
-    BindGroup,
-    BindGroupLayoutDescriptor,
-    BindGroupLayoutEntry,
-    BlendComponent,
-    Buffer,
-    BufferAddress,
-    ColorTargetState,
-    ColorWrites,
-    FragmentState,
-    MultisampleState,
-    PipelineLayoutDescriptor,
-    PrimitiveState,
-    RenderPipeline,
-    RenderPipelineDescriptor,
-    ShaderStages,
-    VertexBufferLayout,
-    VertexState
+    vertex_attr_array, BindGroup, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BlendComponent,
+    Buffer, BufferAddress, ColorTargetState, ColorWrites, FragmentState, MultisampleState,
+    PipelineLayoutDescriptor, PrimitiveState, RenderPipeline, RenderPipelineDescriptor,
+    ShaderStages, VertexBufferLayout, VertexState,
 };
 
 use crate::{
-    graphics::vertex::Vertex,
-    scene::asset_server::MeshResourceID,
-    wgpu_graphics::gpu::Gpu
+    graphics::vertex::Vertex, scene::asset_server::MeshResourceID, wgpu_graphics::gpu::Gpu,
 };
 
 #[derive(Unique)]
@@ -44,33 +28,31 @@ impl TriangleTestPipeline {
     pub(crate) fn new(gpu: &Gpu, camera_buffer: &Buffer) -> TriangleTestPipeline {
         let program = gpu.compile_program(
             "triangle_test",
-            include_str!("../shaders/triangle_test.wgsl")
+            include_str!("../shaders/triangle_test.wgsl"),
         );
 
-        let camera_bind_group_layout = gpu.device.create_bind_group_layout(&BindGroupLayoutDescriptor {
-            label: Some("Camera bind group"),
-            entries: &[
-                BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: ShaderStages::VERTEX,
-                    ty: wgpu::BindingType::Buffer { 
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None
-                    },
-                    count: None,
-                }
-            ],
-        });
+        let camera_bind_group_layout =
+            gpu.device
+                .create_bind_group_layout(&BindGroupLayoutDescriptor {
+                    label: Some("Camera bind group"),
+                    entries: &[BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: ShaderStages::VERTEX,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    }],
+                });
 
         let camera_bind_group = gpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
             layout: &camera_bind_group_layout,
-            entries: &[
-                wgpu::BindGroupEntry {
-                    binding: 0,
-                    resource: camera_buffer.as_entire_binding(),
-                }
-            ],
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: camera_buffer.as_entire_binding(),
+            }],
             label: Some("camera_bind_group"),
         });
 
@@ -78,9 +60,7 @@ impl TriangleTestPipeline {
             .device
             .create_pipeline_layout(&PipelineLayoutDescriptor {
                 label: Some("Triangle test pipeline layout"),
-                bind_group_layouts: &[
-                    &camera_bind_group_layout,
-                ],
+                bind_group_layouts: &[&camera_bind_group_layout],
                 push_constant_ranges: &[],
             });
 
@@ -93,14 +73,12 @@ impl TriangleTestPipeline {
                     module: &program,
                     entry_point: "vs_main",
                     buffers: &[
-
                         // Defines the `Vertex` layout format.
                         VertexBufferLayout {
                             array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
                             step_mode: wgpu::VertexStepMode::Vertex,
                             attributes: &vertex_attr_array![0 => Float32x3, 1 => Float32x3],
                         },
-
                         // Defines the Vertex transform.
                         VertexBufferLayout {
                             array_stride: std::mem::size_of::<[[f32; 4]; 4]>() as BufferAddress,
@@ -110,9 +88,8 @@ impl TriangleTestPipeline {
                                 3 => Float32x4,
                                 4 => Float32x4,
                                 5 => Float32x4,
-                            ]
+                            ],
                         },
-
                     ],
                 },
                 primitive: PrimitiveState {
@@ -133,20 +110,18 @@ impl TriangleTestPipeline {
                 fragment: Some(FragmentState {
                     module: &program,
                     entry_point: "fs_main",
-                    targets: &[
-                        Some(ColorTargetState {
-                            format: gpu.surface_config.format,
-                            blend: Some(wgpu::BlendState { 
-                                color: BlendComponent::REPLACE,
-                                alpha: BlendComponent::REPLACE,
-                            }),
-                            write_mask: ColorWrites::ALL,
-                        })
-                    ],
+                    targets: &[Some(ColorTargetState {
+                        format: gpu.surface_config.format,
+                        blend: Some(wgpu::BlendState {
+                            color: BlendComponent::REPLACE,
+                            alpha: BlendComponent::REPLACE,
+                        }),
+                        write_mask: ColorWrites::ALL,
+                    })],
                 }),
                 multiview: None,
             });
-        
+
         TriangleTestPipeline {
             pipeline,
             camera_bind_group,

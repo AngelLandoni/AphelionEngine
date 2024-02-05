@@ -1,28 +1,22 @@
 use egui::{epaint::Shadow, Context, Visuals};
+use egui_wgpu::{renderer::ScreenDescriptor, Renderer};
 use egui_winit::State;
-use egui_wgpu::{Renderer, renderer::ScreenDescriptor};
 
 use shipyard::{Unique, UniqueView, UniqueViewMut};
-use wgpu::{RenderPassDescriptor, RenderPassColorAttachment, Operations};
+use wgpu::{Operations, RenderPassColorAttachment, RenderPassDescriptor};
 
 use crate::{
     app::App,
     graphics::gpu::AbstractGpu,
     host::window::Window,
     plugin::{
-        host::window::{
-            WinitWindowWrapper,
-            UniqueWinitEvent,
-        },
+        host::window::{UniqueWinitEvent, WinitWindowWrapper},
         Pluggable,
     },
     schedule::Schedule,
     wgpu_graphics::{
-        components::ScreenTexture,
-        gpu::Gpu, CommandQueue,
-        CommandSubmitOrder,
-        OrderCommandBuffer
-    }
+        components::ScreenTexture, gpu::Gpu, CommandQueue, CommandSubmitOrder, OrderCommandBuffer,
+    },
 };
 
 #[derive(Unique)]
@@ -64,31 +58,18 @@ impl Pluggable for EguiPlugin {
                 .borrow::<UniqueView<AbstractGpu>>()
                 .expect("Unable to adquire gpu");
 
-            let state = egui_winit::State::new(
-                context.clone(),
-                id,
-                &u_window.as_ref(),
-                None,
-                None
-            );
+            let state = egui_winit::State::new(context.clone(), id, &u_window.as_ref(), None, None);
 
             let gpu = gpu
                 .downcast_ref::<Gpu>()
                 .expect("Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu");
 
-            let renderer = egui_wgpu::renderer::Renderer::new(
-                &gpu.device,
-                gpu.texture_format,
-                None,
-                1,
-            );
+            let renderer =
+                egui_wgpu::renderer::Renderer::new(&gpu.device, gpu.texture_format, None, 1);
 
             app.world.add_unique(EguiContext(context));
-            
-            app.world.add_unique(EguiRenderer {
-                state,
-                renderer,
-            });
+
+            app.world.add_unique(EguiRenderer { state, renderer });
         }
 
         {
@@ -117,7 +98,7 @@ fn egui_generate_full_output(
         None => {
             // TODO(Angel): Use logger.
             println!("Unable to find Winit Window");
-            return
+            return;
         }
     };
 
@@ -134,12 +115,11 @@ fn egui_render_system(
     egui_ctx: UniqueView<EguiContext>,
 ) {
     let w = match window.accesor.downcast_ref::<WinitWindowWrapper>() {
-
         Some(w) => w,
         None => {
             // TODO(Angel): Use logger.
             println!("Unable to find Winit Window");
-            return
+            return;
         }
     };
 
@@ -153,64 +133,50 @@ fn egui_render_system(
         Some(v) => v,
         None => {
             println!("Unable to find screen texture");
-            return
+            return;
         }
     };
 
-    egui.state.handle_platform_output(&w.0, output.platform_output);
+    egui.state
+        .handle_platform_output(&w.0, output.platform_output);
 
     let tris = egui_ctx
         .0
         .tessellate(output.shapes, output.pixels_per_point);
-    
+
     for (id, image_delta) in &output.textures_delta.set {
-        egui.renderer.update_texture(
-            &gpu.device,
-            &gpu.queue,
-            *id,
-            image_delta
-        )
+        egui.renderer
+            .update_texture(&gpu.device, &gpu.queue, *id, image_delta)
     }
 
     let mut encoder = gpu
         .device
-        .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-            label: None
-        });
+        .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
     let screen_descriptor = ScreenDescriptor {
-        size_in_pixels: [
-            gpu.surface_config.width,
-            gpu.surface_config.height,
-        ],
+        size_in_pixels: [gpu.surface_config.width, gpu.surface_config.height],
         pixels_per_point: window.accesor.scale_factor() as f32,
     };
-    
-    egui
-        .renderer
-        .update_buffers(
-            &gpu.device,
-            &gpu.queue,
-            &mut encoder,
-            &tris,
-            &screen_descriptor,
-        );
+
+    egui.renderer.update_buffers(
+        &gpu.device,
+        &gpu.queue,
+        &mut encoder,
+        &tris,
+        &screen_descriptor,
+    );
 
     {
         let mut r_pass = encoder.begin_render_pass(&RenderPassDescriptor {
             label: Some("Egui render pass"),
-            color_attachments: &[
-                Some(
-                    RenderPassColorAttachment {
-                        view,
-                        resolve_target: None,
-                        ops: Operations {
-                            load: wgpu::LoadOp::Load,
-                            store: wgpu::StoreOp::Store,
-                        },
-                    }
-                )
-            ],
+            color_attachments: &[Some(RenderPassColorAttachment {
+                view,
+                resolve_target: None,
+                ops: Operations {
+                    load: wgpu::LoadOp::Load,
+                    store: wgpu::StoreOp::Store,
+                },
+            })],
             depth_stencil_attachment: None,
             timestamp_writes: None,
             occlusion_query_set: None,
@@ -233,14 +199,14 @@ fn egui_render_system(
 fn egui_handle_events_system(
     mut egui: UniqueViewMut<EguiRenderer>,
     window: UniqueView<Window>,
-    winit_event: UniqueView<UniqueWinitEvent>
+    winit_event: UniqueView<UniqueWinitEvent>,
 ) {
     let w = match window.accesor.downcast_ref::<WinitWindowWrapper>() {
         Some(w) => w,
         None => {
             // TODO(Angel): Use logger.
             println!("Unable to find Winit Window");
-            return
+            return;
         }
     };
 
@@ -248,7 +214,7 @@ fn egui_handle_events_system(
         Some(e) => e,
         None => {
             println!("Unable to find winit event");
-            return
+            return;
         }
     };
 

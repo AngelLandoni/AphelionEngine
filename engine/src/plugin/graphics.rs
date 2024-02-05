@@ -1,2 +1,2 @@
-pub mod wgpu_renderer;
 pub mod egui;
+pub mod wgpu_renderer;

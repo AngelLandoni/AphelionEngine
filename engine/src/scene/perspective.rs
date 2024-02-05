@@ -11,22 +11,22 @@ pub struct Perspective {
 
 impl Default for Perspective {
     fn default() -> Self {
-        Self::new(1.0,45.0, 0.1,100.0)
+        Self::new(1.0, 45.0, 0.1, 100.0)
     }
 }
 
-impl Perspective {    
-    /// Creates and returns a new `Perspective` using the provided 
-    pub fn new(
-        aspect_ratio: f32,
-        fov: f32,
-        znear: f32,
-        zfar: f32,
-    ) -> Self {
-        Perspective { aspect_ratio, fov, znear, zfar }
+impl Perspective {
+    /// Creates and returns a new `Perspective` using the provided
+    pub fn new(aspect_ratio: f32, fov: f32, znear: f32, zfar: f32) -> Self {
+        Perspective {
+            aspect_ratio,
+            fov,
+            znear,
+            zfar,
+        }
     }
 
-    /// Updates the aspect ratio. This is normaly used when the window/surface 
+    /// Updates the aspect ratio. This is normaly used when the window/surface
     /// is resized.
     pub fn update_aspect_ratio(&mut self, aspect_ratio: f32) {
         self.aspect_ratio = aspect_ratio
@@ -38,7 +38,7 @@ impl Perspective {
             self.aspect_ratio,
             self.fov.to_radians(),
             self.znear,
-            self.zfar
+            self.zfar,
         )
     }
 }

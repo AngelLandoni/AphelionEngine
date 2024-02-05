@@ -1,9 +1,6 @@
 use shipyard::Unique;
 
-use wgpu::{
-    SurfaceTexture,
-    TextureView
-};
+use wgpu::{SurfaceTexture, TextureView};
 
 #[derive(Unique)]
 pub struct ScreenFrame(pub(crate) Option<SurfaceTexture>);

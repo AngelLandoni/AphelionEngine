@@ -6,9 +6,6 @@ pub struct Size<T> {
 
 impl<T> Size<T> {
     pub fn new(width: T, height: T) -> Self {
-        Self {
-            width,
-            height,
-        }
+        Self { width, height }
     }
 }
