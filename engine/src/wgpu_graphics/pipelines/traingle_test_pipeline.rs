@@ -1,10 +1,26 @@
 use std::collections::HashMap;
 
-use egui::InputState;
 use shipyard::Unique;
 
 use wgpu::{
-    vertex_attr_array, BindGroup, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BlendComponent, Buffer, BufferAddress, BufferUsages, ColorTargetState, ColorWrites, FragmentState, MultisampleState, PipelineLayoutDescriptor, PrimitiveState, RenderPipeline, RenderPipelineDescriptor, ShaderStages, VertexBufferLayout, VertexState
+    vertex_attr_array,
+    BindGroup,
+    BindGroupLayoutDescriptor,
+    BindGroupLayoutEntry,
+    BlendComponent,
+    Buffer,
+    BufferAddress,
+    ColorTargetState,
+    ColorWrites,
+    FragmentState,
+    MultisampleState,
+    PipelineLayoutDescriptor,
+    PrimitiveState,
+    RenderPipeline,
+    RenderPipelineDescriptor,
+    ShaderStages,
+    VertexBufferLayout,
+    VertexState
 };
 
 use crate::{
