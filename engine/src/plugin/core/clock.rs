@@ -10,19 +10,13 @@ pub struct Clock {
     last_frame_time: Instant,
     /// Contains the delta time calculated based on the current time.
     delta: f64,
-    /// Determines if the engine should be limited or not.
-    limit_frame_rate: bool,
-    /// Defines the execution limit per seconds.
-    target_frame_rate: f64,
 }
 
 impl Clock {
-    fn new(limit_frame_rate: bool, target_frame_rate: u64) -> Self {
+    fn new() -> Self {
         Clock {
             last_frame_time: Instant::now(),
             delta: 0.0,
-            limit_frame_rate,
-            target_frame_rate: 1.0 / target_frame_rate as f64,
         }
     }
 }
@@ -47,33 +41,11 @@ impl Clock {
 
 /// Traks the elapsed time between frames. This can be used to know the delta
 /// time.
-pub struct ClockPlugin {
-    limit_frame_rate: bool,
-    target_frame_rate: u64,
-}
-
-impl Default for ClockPlugin {
-    fn default() -> Self {
-        Self {
-            limit_frame_rate: true,
-            target_frame_rate: 60,
-        }
-    }
-}
-
-impl ClockPlugin {
-    pub fn new(limit_frame_rate: bool, target_frame_rate: u64) -> Self {
-        Self {
-            limit_frame_rate,
-            target_frame_rate,
-        }
-    }
-}
+pub struct ClockPlugin;
 
 impl Pluggable for ClockPlugin {
     fn configure(&self, app: &mut crate::app::App) {
-        app.world
-            .add_unique(Clock::new(self.limit_frame_rate, self.target_frame_rate));
+        app.world.add_unique(Clock::new());
 
         app.schedule(Schedule::BeforeRequestRedraw, |world| {
             world.run(calculate_clock_step_system);

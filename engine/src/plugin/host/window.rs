@@ -188,8 +188,6 @@ fn map_winit_events<T>(event: &Event<T>) -> host::events::Event {
 
 /// Contains the range of the position of the letters in the winit environment.
 const WINIT_KEYCODE_LETTERS_RANGE: std::ops::Range<u32> = 18..45;
-/// Contains the range of the position of the arrows in the winit environment.
-const WINIT_KEYCODE_ARROWS_RANGE: std::ops::Range<u32> = 79..82;
 
 fn map_keyboard_input(key: &PhysicalKey) -> KeyCode {
     match key {
