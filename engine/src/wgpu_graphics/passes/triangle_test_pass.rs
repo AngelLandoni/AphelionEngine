@@ -4,20 +4,15 @@ use shipyard::UniqueView;
 use wgpu::{Buffer, CommandEncoderDescriptor, Operations};
 
 use crate::{
-    graphics::{
-        mesh::Mesh,
-        gpu::AbstractGpu
-    },
+    graphics::{gpu::AbstractGpu, mesh::Mesh},
     scene::asset_server::AssetServer,
     wgpu_graphics::{
         buffer::{WgpuIndexBuffer, WgpuVertexBuffer},
         components::ScreenTexture,
         gpu::Gpu,
         pipelines::traingle_test_pipeline::TriangleTestPipeline,
-        CommandQueue,
-        CommandSubmitOrder,
-        OrderCommandBuffer
-    }
+        CommandQueue, CommandSubmitOrder, OrderCommandBuffer,
+    },
 };
 
 /// Renders the triangle test.
@@ -40,22 +35,19 @@ pub(crate) fn triangle_test_pass_system(
     let mut encoder = gpu
         .device
         .create_command_encoder(&CommandEncoderDescriptor {
-            label: Some("Tirangle test encoder")
+            label: Some("Tirangle test encoder"),
         });
-    
+
     let preload_meshes: Vec<(Arc<Mesh>, &Buffer, &u32)> = triangle_pipeline
         .mesh_transform_buffers
         .iter()
-        .map(|(mesh_id, (buffer, count))| {
-            (asset_server.load_mesh(mesh_id), buffer, count)
-        })
+        .map(|(mesh_id, (buffer, count))| (asset_server.load_mesh(mesh_id), buffer, count))
         .collect::<Vec<_>>();
 
     {
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Tirangle test pass"),
             color_attachments: &[
-
                 // @location(0)
                 Some(wgpu::RenderPassColorAttachment {
                     view: s_texture,
@@ -69,12 +61,11 @@ pub(crate) fn triangle_test_pass_system(
                         }),
                         store: wgpu::StoreOp::Store,
                     },
-                })
-
+                }),
             ],
             depth_stencil_attachment: None,
             timestamp_writes: None,
-            occlusion_query_set: None 
+            occlusion_query_set: None,
         });
 
         pass.set_pipeline(&triangle_pipeline.pipeline);
@@ -116,7 +107,7 @@ pub(crate) fn triangle_test_pass_system(
             pass.draw_indexed(0..mesh.index_count, 0, 0..1);
         }*/
     }
-    
+
     let _ = queue.0.push(OrderCommandBuffer::new(
         Some("Render egui".to_owned()),
         CommandSubmitOrder::TriangleTest,

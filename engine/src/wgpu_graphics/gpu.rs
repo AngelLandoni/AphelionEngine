@@ -1,30 +1,14 @@
-use bytemuck::{Pod, AnyBitPattern};
+use bytemuck::{AnyBitPattern, Pod};
 use wgpu::{
-    Surface,
-    Adapter,
-    Device,
-    Queue,
-    RequestAdapterOptions,
-    Features,
-    Limits,
-    DeviceDescriptor,
-    SurfaceConfiguration,
-    TextureUsages,
-    ShaderModule, 
-    TextureFormat,
-    Buffer,
-    BufferAddress,
-    BufferUsages,
-    BufferDescriptor,
-    util::{DeviceExt, BufferInitDescriptor},
-    COPY_BUFFER_ALIGNMENT,
+    util::{BufferInitDescriptor, DeviceExt},
+    Adapter, Buffer, BufferAddress, BufferDescriptor, BufferUsages, Device, DeviceDescriptor,
+    Features, Limits, Queue, RequestAdapterOptions, ShaderModule, Surface, SurfaceConfiguration,
+    TextureFormat, TextureUsages, COPY_BUFFER_ALIGNMENT,
 };
 
 use crate::{
-    graphics::{
-        gpu::GpuAbstractor, BufferCreator, IndexBuffer, ShaderHandler, VertexBuffer
-    }, 
-    host::window::Window
+    graphics::{gpu::GpuAbstractor, BufferCreator, IndexBuffer, ShaderHandler, VertexBuffer},
+    host::window::Window,
 };
 
 use super::buffer::{WgpuIndexBuffer, WgpuVertexBuffer};
@@ -39,7 +23,7 @@ pub(crate) struct Gpu {
     pub device: Device,
     pub queue: Queue,
     pub surface_config: SurfaceConfiguration,
-    pub texture_format: TextureFormat
+    pub texture_format: TextureFormat,
 }
 
 impl Gpu {
@@ -47,28 +31,29 @@ impl Gpu {
     pub async fn new(window: &Window) -> Self {
         let instance = wgpu::Instance::default();
 
-        let surface = unsafe {
-            instance.create_surface(window)
-        }
-        .expect("Unable to acquire the `wgpu` surface.");
+        let surface = unsafe { instance.create_surface(window) }
+            .expect("Unable to acquire the `wgpu` surface.");
 
-        let adapter = instance.request_adapter(&RequestAdapterOptions {
-            power_preference: wgpu::PowerPreference::default(),
-            force_fallback_adapter: false,
-            compatible_surface: Some(&surface),
-        })
-        .await
-        .expect("Unable to acquire the `wgpu` adapter");
+        let adapter = instance
+            .request_adapter(&RequestAdapterOptions {
+                power_preference: wgpu::PowerPreference::default(),
+                force_fallback_adapter: false,
+                compatible_surface: Some(&surface),
+            })
+            .await
+            .expect("Unable to acquire the `wgpu` adapter");
 
-        let (device, queue) = adapter.request_device(&DeviceDescriptor {
-            label: None,
-            features: Features::empty(),
-            limits: Limits::default()
-                .using_resolution(adapter.limits())
-            }, None
-        )
-        .await
-        .expect("Unable to acquire the wgpu device and/or queue");
+        let (device, queue) = adapter
+            .request_device(
+                &DeviceDescriptor {
+                    label: None,
+                    features: Features::empty(),
+                    limits: Limits::default().using_resolution(adapter.limits()),
+                },
+                None,
+            )
+            .await
+            .expect("Unable to acquire the wgpu device and/or queue");
 
         let swapchain_capabilities = surface.get_capabilities(&adapter);
         let texture_format = swapchain_capabilities.formats[0];
@@ -99,10 +84,11 @@ impl Gpu {
 
     /// Reads a shader file and generate a module.
     pub(crate) fn compile_program(&self, label: &str, shader_code: &str) -> ShaderModule {
-        self.device.create_shader_module(wgpu::ShaderModuleDescriptor {
-            label: Some(label),
-            source: wgpu::ShaderSource::Wgsl(shader_code.into()),
-        })
+        self.device
+            .create_shader_module(wgpu::ShaderModuleDescriptor {
+                label: Some(label),
+                source: wgpu::ShaderSource::Wgsl(shader_code.into()),
+            })
     }
 
     /// Allocates a buffer in the GPU RAM and returns a reference to it.
@@ -110,10 +96,7 @@ impl Gpu {
         // Convert the size from the provided one into one that WGPU handles.
         let unpadded_size: BufferAddress = size as BufferAddress;
         // Make sure the size is 4 bytes aligned.
-        let padding: BufferAddress = 
-            COPY_BUFFER_ALIGNMENT -
-            unpadded_size %
-            COPY_BUFFER_ALIGNMENT;
+        let padding: BufferAddress = COPY_BUFFER_ALIGNMENT - unpadded_size % COPY_BUFFER_ALIGNMENT;
 
         // Final padding, the size now is memory aligned.
         let padded_size: BufferAddress = unpadded_size + padding;
@@ -132,7 +115,7 @@ impl Gpu {
         &self,
         label: &str,
         content: T,
-        usage: BufferUsages
+        usage: BufferUsages,
     ) -> Buffer {
         self.device.create_buffer_init(&BufferInitDescriptor {
             label: Some(label),
@@ -145,7 +128,7 @@ impl Gpu {
         &self,
         label: &str,
         content: &[u8],
-        usage: BufferUsages
+        usage: BufferUsages,
     ) -> Buffer {
         self.device.create_buffer_init(&BufferInitDescriptor {
             label: Some(label),
@@ -154,11 +137,7 @@ impl Gpu {
         })
     }
 
-    pub(crate) fn allocate_empty_buffer(
-        &self,
-        label: &str,
-        usage: BufferUsages
-    ) -> Buffer {
+    pub(crate) fn allocate_empty_buffer(&self, label: &str, usage: BufferUsages) -> Buffer {
         self.device.create_buffer_init(&BufferInitDescriptor {
             label: Some(label),
             contents: &[],
@@ -170,18 +149,12 @@ impl Gpu {
 impl GpuAbstractor for Gpu {}
 
 impl ShaderHandler for Gpu {
-    fn compile_program(&self) {
-        
-    }
+    fn compile_program(&self) {}
 }
 
 impl BufferCreator for Gpu {
     /// Stores the information into the GPU RAM and returns a reference to it.
-    fn allocate_vertex_buffer(
-        &self,
-        label: &str,
-        data: &[u8]
-    ) -> Box<dyn VertexBuffer> {
+    fn allocate_vertex_buffer(&self, label: &str, data: &[u8]) -> Box<dyn VertexBuffer> {
         let buffer = self.device.create_buffer_init(&BufferInitDescriptor {
             label: Some(label),
             contents: data,
@@ -192,10 +165,7 @@ impl BufferCreator for Gpu {
     }
 
     /// Stores the information into the GPU RAM and returns a reference to it.
-    fn allocate_index_buffer(
-        &self, label: &str,
-        data: &[u8]
-    ) -> Box<dyn IndexBuffer> {
+    fn allocate_index_buffer(&self, label: &str, data: &[u8]) -> Box<dyn IndexBuffer> {
         let buffer = self.device.create_buffer_init(&BufferInitDescriptor {
             label: Some(label),
             contents: data,

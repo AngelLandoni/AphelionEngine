@@ -4,11 +4,9 @@ use shipyard::UniqueViewMut;
 
 use crate::{
     app::App,
-    host::{
-        events::KeyboardEvent, window::Window
-    },
+    host::{events::KeyboardEvent, window::Window},
     scene::mouse::{Cursor, CursorDelta},
-    schedule::Schedule
+    schedule::Schedule,
 };
 
 /// Coordinates all the update systems.
@@ -72,7 +70,7 @@ pub(crate) fn run_submit_queue_workload(app: &App) {
         for func in fsq_fns {
             func(&app.world);
         }
-    } 
+    }
 }
 
 pub(crate) fn start_frame_workload(app: &App) {
@@ -80,7 +78,7 @@ pub(crate) fn start_frame_workload(app: &App) {
         for func in s_fns {
             func(&app.world);
         }
-    } 
+    }
 }
 
 pub(crate) fn init_frame_workload(app: &App) {
@@ -88,7 +86,7 @@ pub(crate) fn init_frame_workload(app: &App) {
         for func in if_fns {
             func(&app.world);
         }
-    } 
+    }
 }
 
 pub(crate) fn finish_frame_workload(app: &App) {
@@ -96,9 +94,8 @@ pub(crate) fn finish_frame_workload(app: &App) {
         for func in ef_fns {
             func(&app.world);
         }
-    } 
+    }
 }
-
 
 pub(crate) fn update_cursor_position(app: &mut App, x: &f64, y: &f64) {
     let storage = app.world.borrow_mut();
@@ -118,11 +115,11 @@ pub(crate) fn update_window_size(app: &mut App, width: &u32, height: &u32) {
         let mut size = storage
             .borrow::<UniqueViewMut<Window>>()
             .expect("Unable to adquire cursor");
-        
+
         size.size.width = *width;
         size.size.height = *height;
     }
-    
+
     if let Some(w_u_fns) = app.scheduler.schedules.get(&Schedule::WindowResize) {
         for func in w_u_fns {
             func(&app.world);
@@ -138,13 +135,13 @@ pub(crate) fn update_keyboard_events(app: &mut App, keyboard: &KeyboardEvent) {
         .expect("Unable to acquire Keyboard resource");
 
     match keyboard {
-        KeyboardEvent::Pressed(key) => k.register_key(key.clone()),
+        KeyboardEvent::Pressed(key) => k.register_key(*key),
         KeyboardEvent::Released(key) => k.remove_key(key),
     }
 }
 
 pub(crate) fn update_cursor_delta(app: &mut App, x: &f64, y: &f64) {
-    // Capture and release the cursor delta to allow subsequent events to also 
+    // Capture and release the cursor delta to allow subsequent events to also
     // take a mutable reference.
     {
         let mut c_d = app
@@ -152,10 +149,10 @@ pub(crate) fn update_cursor_delta(app: &mut App, x: &f64, y: &f64) {
             .borrow::<UniqueViewMut<CursorDelta>>()
             .expect("Unable to acquire Keyboard resource");
 
-        c_d.x = x.clone();
-        c_d.y = y.clone();
+        c_d.x = *x;
+        c_d.y = *y;
     }
-    
+
     if let Some(w_u_fns) = app.scheduler.schedules.get(&Schedule::CursorDelta) {
         for func in w_u_fns {
             func(&app.world);

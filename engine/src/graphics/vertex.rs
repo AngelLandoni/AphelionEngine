@@ -1,5 +1,5 @@
-/// Represents a `Vertex` that can be efficiently transferred to the GPU for 
-/// rendering and serves as a fundamental building block for rendering geometry 
+/// Represents a `Vertex` that can be efficiently transferred to the GPU for
+/// rendering and serves as a fundamental building block for rendering geometry
 /// on the screen.
 #[repr(C)]
 #[derive(Copy, Clone, Debug, bytemuck::Pod, bytemuck::Zeroable)]

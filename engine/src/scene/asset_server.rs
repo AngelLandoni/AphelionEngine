@@ -1,10 +1,7 @@
 use std::{
     collections::HashMap,
     ops::Deref,
-    sync::{
-        Arc,
-        RwLock,
-    }
+    sync::{Arc, RwLock},
 };
 
 use shipyard::Unique;
@@ -32,7 +29,7 @@ pub struct AssetServer {
 
 impl Default for AssetServer {
     fn default() -> Self {
-        Self { 
+        Self {
             data: Arc::new(RwLock::new(AssetServerData::default())),
         }
     }
@@ -41,8 +38,7 @@ impl Default for AssetServer {
 impl AssetServer {
     /// Retrieves a particular `Mesh`.
     pub fn load_mesh(&self, mesh: &MeshResourceID) -> Arc<Mesh> {
-        self
-            .data
+        self.data
             .read()
             .expect("Unable to acquire read lock")
             .meshes
@@ -57,25 +53,15 @@ impl AssetServer {
 unsafe impl Send for AssetServer {}
 unsafe impl Sync for AssetServer {}
 
+#[derive(Default)]
 struct AssetServerData {
     meshes: HashMap<AssetResourceID, Arc<Mesh>>,
 }
 
-impl Default for AssetServerData {
-    fn default() -> Self {
-        Self {
-            meshes: HashMap::new(),
-        }
-    }
-}
-
 impl AssetServer {
     /// Registers a mesh into the Asset Server.
-    pub fn register_mesh(
-        &mut self, id: AssetResourceID, mesh: Mesh
-    ) {
-        self
-            .data
+    pub fn register_mesh(&mut self, id: AssetResourceID, mesh: Mesh) {
+        self.data
             .write()
             .expect("Unable to acquire write lock")
             .meshes

@@ -1,6 +1,6 @@
-use std::ops::{Deref, DerefMut};
-use downcast_rs::{Downcast, impl_downcast};
+use downcast_rs::{impl_downcast, Downcast};
 use shipyard::Unique;
+use std::ops::{Deref, DerefMut};
 
 use crate::graphics::{BufferCreator, ShaderHandler};
 

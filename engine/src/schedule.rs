@@ -1,5 +1,5 @@
-use std::collections::HashMap;
 use shipyard::World;
+use std::collections::HashMap;
 
 /// Specifies the various steps comprising the application lifecycle.
 #[derive(Eq, PartialEq, Hash)]
@@ -24,13 +24,13 @@ pub enum Schedule {
 /// Holds a collection of `Workload`s to be executed alongside information about
 /// when each should be triggered.
 pub(crate) struct Scheduler<'a> {
-    pub(crate) schedules: HashMap<Schedule, Vec<Box<dyn Fn(&World) + 'a>>>
+    pub(crate) schedules: HashMap<Schedule, Vec<Box<dyn Fn(&World) + 'a>>>,
 }
 
 impl<'a> Scheduler<'a> {
     /// Creates a new instance of `Scheduler`.
     pub(crate) fn new() -> Self {
-        Scheduler { 
+        Scheduler {
             schedules: HashMap::new(),
         }
     }

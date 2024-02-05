@@ -1,6 +1,6 @@
 use wgpu::Buffer;
 
-use crate::graphics::{VertexBuffer, IndexBuffer};
+use crate::graphics::{IndexBuffer, VertexBuffer};
 
 pub struct WgpuVertexBuffer(pub(crate) Buffer);
 

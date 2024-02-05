@@ -1,9 +1,9 @@
 use downcast_rs::{impl_downcast, Downcast};
 
-pub mod mesh;
-pub mod vertex;
 pub mod buffer;
 pub mod gpu;
+pub mod mesh;
+pub mod vertex;
 
 pub trait VertexBuffer: Downcast {}
 impl_downcast!(VertexBuffer);

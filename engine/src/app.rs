@@ -1,29 +1,14 @@
 use shipyard::World;
 
 use crate::{
-    host::events::{
-        Event,
-        WindowEvent,
-    },
+    host::events::{Event, WindowEvent},
     plugin::Pluggable,
-    schedule::{
-        Scheduler,
-        Schedule
-    }, 
+    schedule::{Schedule, Scheduler},
     workload::{
-        finish_frame_workload,
-        init_frame_workload,
-        run_after_request_redraw_workload,
-        run_before_request_redraw_workload,
-        run_request_redraw_workload,
-        run_submit_queue_workload,
-        run_update_workload,
-        run_window_event_workload,
-        start_frame_workload,
-        update_cursor_delta,
-        update_cursor_position,
-        update_keyboard_events,
-        update_window_size
+        finish_frame_workload, init_frame_workload, run_after_request_redraw_workload,
+        run_before_request_redraw_workload, run_request_redraw_workload, run_submit_queue_workload,
+        run_update_workload, run_window_event_workload, start_frame_workload, update_cursor_delta,
+        update_cursor_position, update_keyboard_events, update_window_size,
     },
 };
 
@@ -60,7 +45,7 @@ impl<'app> App<'app> {
             world,
             run_loop: Box::new(dummy_run_loop),
             plugins: Vec::new(),
-            scheduler: Scheduler::new()
+            scheduler: Scheduler::new(),
         }
     }
 
@@ -71,15 +56,10 @@ impl<'app> App<'app> {
         // discarded as they are no longer needed.
         let plugins = std::mem::take(&mut self.plugins);
         // Configure all pluggins.
-        plugins
-            .iter()
-            .for_each(|p| p.configure(&mut self));
+        plugins.iter().for_each(|p| p.configure(&mut self));
 
         // Take ownership of the run loop and execute it.
-        let run_loop = std::mem::replace(
-            &mut self.run_loop,
-            Box::new(dummy_run_loop)
-        );
+        let run_loop = std::mem::replace(&mut self.run_loop, Box::new(dummy_run_loop));
 
         run_loop(&mut self);
     }
@@ -93,10 +73,10 @@ impl<'app> App<'app> {
                     WindowEvent::CloseRequested => {
                         println!("Close window");
                     }
-                    
+
                     WindowEvent::RequestRedraw => {
-                        start_frame_workload(self); 
-                        init_frame_workload(self); 
+                        start_frame_workload(self);
+                        init_frame_workload(self);
 
                         run_update_workload(self);
 
@@ -106,7 +86,7 @@ impl<'app> App<'app> {
 
                         run_submit_queue_workload(self);
 
-                        finish_frame_workload(self); 
+                        finish_frame_workload(self);
                     }
 
                     WindowEvent::CursorMoved(x, y) => {
@@ -122,7 +102,7 @@ impl<'app> App<'app> {
 
                 run_window_event_workload(self);
             }
-            
+
             Event::Keyboard(event) => {
                 update_keyboard_events(self, event);
             }
@@ -133,29 +113,24 @@ impl<'app> App<'app> {
 
             Event::UnknownOrNotImplemented => {}
         }
-
     }
 
     /// Setups the main `RunLoop`.
-    pub(crate) fn set_run_loop(&mut self,
-                               run_loop: impl FnOnce(&mut App) + 'app) {
+    pub(crate) fn set_run_loop(&mut self, run_loop: impl FnOnce(&mut App) + 'app) {
         self.run_loop = Box::new(run_loop);
     }
-    
-    /// Configures the system. This function must always be invoked from a 
+
+    /// Configures the system. This function must always be invoked from a
     /// plugin.
-    pub fn schedule(&mut self, 
-                    schedule: Schedule,
-                    configurator: impl Fn(&World) + 'app) {
+    pub fn schedule(&mut self, schedule: Schedule, configurator: impl Fn(&World) + 'app) {
         self.scheduler.add_schedule(schedule, configurator);
     }
-    
+
     /// Inserts a new `Plugin` into the application.
     pub fn add_plugin(mut self, plugin: impl Pluggable + 'app) -> Self {
         self.plugins.push(Box::new(plugin));
         self
     }
-
 }
 
 /// Dummy free function, serves as a replacement to remove the actual run loop.

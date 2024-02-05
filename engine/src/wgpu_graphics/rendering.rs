@@ -2,28 +2,26 @@ use shipyard::{UniqueView, UniqueViewMut};
 use wgpu::CommandBuffer;
 
 use crate::{
-    graphics::gpu::AbstractGpu, host::window::Window, wgpu_graphics::{
-        CommandQueue,
-        OrderCommandBuffer,
-        components::{
-            ScreenFrame,
-            ScreenTexture,
-        },
+    graphics::gpu::AbstractGpu,
+    host::window::Window,
+    wgpu_graphics::{
+        components::{ScreenFrame, ScreenTexture},
         gpu::Gpu,
-    }
+        CommandQueue, OrderCommandBuffer,
+    },
 };
 
 pub(crate) fn reconfigure_surface_if_needed_system(
     mut gpu: UniqueViewMut<AbstractGpu>,
-    window: UniqueView<Window>
+    window: UniqueView<Window>,
 ) {
     let gpu = gpu
         .downcast_mut::<Gpu>()
         .expect("Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu");
 
-    if gpu.surface_config.width != window.size.width ||
-       gpu.surface_config.height != window.size.height {
-
+    if gpu.surface_config.width != window.size.width
+        || gpu.surface_config.height != window.size.height
+    {
         gpu.surface_config.width = window.size.width;
         gpu.surface_config.height = window.size.height;
 
@@ -34,9 +32,9 @@ pub(crate) fn reconfigure_surface_if_needed_system(
 /// Setups the screen texture into the world.
 // TODO(Angel): Remove panic, to support headless.
 pub(crate) fn acquire_screen_texture(
-    gpu: UniqueView<AbstractGpu>, 
+    gpu: UniqueView<AbstractGpu>,
     mut s_frame: UniqueViewMut<ScreenFrame>,
-    mut s_texture: UniqueViewMut<ScreenTexture>
+    mut s_texture: UniqueViewMut<ScreenTexture>,
 ) {
     let gpu = gpu
         .downcast_ref::<Gpu>()
@@ -56,7 +54,7 @@ pub(crate) fn acquire_screen_texture(
 // TODO(Angel): Remove panic, to support headless.
 pub fn present_screen_texture(mut s_frame: UniqueViewMut<ScreenFrame>) {
     // `present` takes ownership of the frame so we need to take
-    // it out. I assume it is becase the frame is ending and it 
+    // it out. I assume it is becase the frame is ending and it
     // is not required any more and keeping it could lead to problems.
     let frame = std::mem::take(&mut s_frame.0);
 
@@ -69,15 +67,13 @@ pub fn present_screen_texture(mut s_frame: UniqueViewMut<ScreenFrame>) {
 
 pub(crate) fn submit_commands_in_order(
     gpu: UniqueView<AbstractGpu>,
-    c_queue: UniqueView<CommandQueue>
+    c_queue: UniqueView<CommandQueue>,
 ) {
     let gpu = gpu
         .downcast_ref::<Gpu>()
         .expect("Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu");
 
-    let mut commands = Vec::<OrderCommandBuffer>::with_capacity(
-        c_queue.0.len(),
-    );
+    let mut commands = Vec::<OrderCommandBuffer>::with_capacity(c_queue.0.len());
 
     while let Some(c) = c_queue.0.pop() {
         commands.push(c);

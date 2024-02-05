@@ -1,33 +1,31 @@
-use std::{borrow::BorrowMut, collections::HashMap};
+use std::collections::HashMap;
 
 use shipyard::{IntoIter, UniqueView, UniqueViewMut, View, World};
 use wgpu::{Buffer, BufferUsages};
 
 use crate::{
-    app::App, components::MeshComponent, graphics::{gpu::AbstractGpu, mesh}, host::window::Window, plugin::Pluggable, scene::{
-        asset_server::MeshResourceID, camera::Camera, components::Transform, perspective::Perspective
-    }, schedule::Schedule, wgpu_graphics::{
+    app::App,
+    components::MeshComponent,
+    graphics::gpu::AbstractGpu,
+    host::window::Window,
+    plugin::Pluggable,
+    scene::{
+        asset_server::MeshResourceID, camera::Camera, components::Transform,
+        perspective::Perspective,
+    },
+    schedule::Schedule,
+    wgpu_graphics::{
+        components::{ScreenFrame, ScreenTexture},
         gpu::Gpu,
-        components::{
-            ScreenTexture,
-            ScreenFrame,
-        },
-        rendering::{
-            acquire_screen_texture,
-            present_screen_texture,
-            submit_commands_in_order,
-            reconfigure_surface_if_needed_system
-        },
-        CommandQueue,
-        OrderCommandQueue,
-        pipelines::traingle_test_pipeline::TriangleTestPipeline,
         passes::triangle_test_pass::triangle_test_pass_system,
-        uniforms::{
-            CameraUniform,
-            sync_camera_perspective_uniform,
+        pipelines::traingle_test_pipeline::TriangleTestPipeline,
+        rendering::{
+            acquire_screen_texture, present_screen_texture, reconfigure_surface_if_needed_system,
+            submit_commands_in_order,
         },
-        MAX_NUMBER_IF_COMMANDS_PER_FRAME,
-    }, workload
+        uniforms::{sync_camera_perspective_uniform, CameraUniform},
+        CommandQueue, OrderCommandQueue, MAX_NUMBER_IF_COMMANDS_PER_FRAME,
+    },
 };
 
 pub struct WgpuRendererPlugin;
@@ -37,25 +35,23 @@ impl Pluggable for WgpuRendererPlugin {
         let window_resource = app
             .world
             .borrow::<UniqueView<Window>>()
-            .expect("Configure the window context before setting up the renderer"); 
+            .expect("Configure the window context before setting up the renderer");
 
-        let gpu = futures_lite::future::block_on(
-            Gpu::new(&window_resource.as_ref())
-        );
+        let gpu = futures_lite::future::block_on(Gpu::new(window_resource.as_ref()));
 
         drop(window_resource);
 
         // Setup all the unique resources.
         {
             let world = &app.world;
-            
-            setup_screen_texture_and_queue(&world);
-            setup_camera(&world, &gpu);
-            setup_pipelines(&world, &gpu);
+
+            setup_screen_texture_and_queue(world);
+            setup_camera(world, &gpu);
+            setup_pipelines(world, &gpu);
 
             world.add_unique(AbstractGpu(Box::new(gpu)));
         }
-        
+
         // Setup scheludes.
         {
             app.schedule(Schedule::Start, |world| {
@@ -81,28 +77,31 @@ impl Pluggable for WgpuRendererPlugin {
 
             app.schedule(Schedule::EndFrame, |world| {
                 world.run(present_screen_texture);
-                world.run(|mut texture: UniqueViewMut<ScreenTexture>, mut s_frame: UniqueViewMut<ScreenFrame>| {
-                    texture.0 = None;
-                    s_frame.0 = None;
-                })
+                world.run(
+                    |mut texture: UniqueViewMut<ScreenTexture>,
+                     mut s_frame: UniqueViewMut<ScreenFrame>| {
+                        texture.0 = None;
+                        s_frame.0 = None;
+                    },
+                )
             });
         }
     }
 }
 
-/// Setups the screen texture (the texture that will be presented over the 
+/// Setups the screen texture (the texture that will be presented over the
 /// screen), and the queue user to submit all the encoder commands.
 fn setup_screen_texture_and_queue(world: &World) {
     world.add_unique(ScreenTexture(None));
     world.add_unique(ScreenFrame(None));
-    
-    world.add_unique(CommandQueue(
-        OrderCommandQueue::new(MAX_NUMBER_IF_COMMANDS_PER_FRAME)
-    ));
+
+    world.add_unique(CommandQueue(OrderCommandQueue::new(
+        MAX_NUMBER_IF_COMMANDS_PER_FRAME,
+    )));
 }
 
 /// Allocates space in the gpu to handle the camera proj and submits the buffer
-/// ref to the world. 
+/// ref to the world.
 fn setup_camera(world: &World, gpu: &Gpu) {
     let camera = world
         .borrow::<UniqueView<Camera>>()
@@ -125,10 +124,7 @@ fn setup_pipelines(world: &World, gpu: &Gpu) {
         .borrow::<UniqueView<CameraUniform>>()
         .expect("Unable to acquire camera uniform");
 
-    world.add_unique(TriangleTestPipeline::new(
-        &gpu,
-        &camera_uniform.0,
-    ));
+    world.add_unique(TriangleTestPipeline::new(gpu, &camera_uniform.0));
 }
 
 /// Calls the sync camera method.
@@ -136,18 +132,13 @@ fn sync_camera_perspective_uniform_system(
     gpu: UniqueView<AbstractGpu>,
     camera: UniqueView<Camera>,
     perspective: UniqueView<Perspective>,
-    c_uniform: UniqueView<CameraUniform>
+    c_uniform: UniqueView<CameraUniform>,
 ) {
     let gpu = gpu
         .downcast_ref::<Gpu>()
         .expect("Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu");
 
-    sync_camera_perspective_uniform(
-        &gpu,
-        &camera,
-        &perspective,
-        &c_uniform.0
-    );
+    sync_camera_perspective_uniform(gpu, &camera, &perspective, &c_uniform.0);
 }
 
 /// Recreates the transformation buffer and pass the transform information.
@@ -179,7 +170,7 @@ fn sync_dynamic_entities_position(
             bytemuck::cast_slice(transforms.as_slice()),
             BufferUsages::VERTEX | BufferUsages::COPY_DST,
         );
-        
+
         buffers.insert(mesh, (buffer, transforms.len() as u32));
     }
 

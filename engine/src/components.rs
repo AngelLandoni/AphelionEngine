@@ -1,6 +1,5 @@
-use std::ops::Deref;
 use shipyard::Component;
-use nalgebra::Point3;
+use std::ops::Deref;
 
 use crate::scene::asset_server::MeshResourceID;
 
@@ -12,6 +11,6 @@ impl Deref for MeshComponent {
     type Target = MeshResourceID;
 
     fn deref(&self) -> &Self::Target {
-        &self.0        
+        &self.0
     }
 }

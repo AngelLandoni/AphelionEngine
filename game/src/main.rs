@@ -3,41 +3,29 @@ use egui_demo_lib::DemoWindows;
 use engine::components::MeshComponent;
 use engine::nalgebra::{Point3, Unit, UnitQuaternion, Vector3};
 
-use engine::plugin::scene::primitives_plugin::{PrimitivesPlugin, CUBE_MESH_RESOURCE_ID, PENTAGON_MESH_RESOURCE_ID};
-use engine::scene::asset_server::MeshResourceID;
+use engine::plugin::scene::primitives_plugin::{
+    PrimitivesPlugin, CUBE_MESH_RESOURCE_ID, PENTAGON_MESH_RESOURCE_ID,
+};
+
 use engine::scene::components::Transform;
 use engine::scene::mouse::CursorDelta;
 use engine::{
     app::App,
     plugin::{
-        Pluggable,
-        host::window::WinitWindowPlugin,
+        core::clock::{Clock, ClockPlugin},
+        graphics::egui::{EguiContext, EguiPlugin},
         graphics::wgpu_renderer::WgpuRendererPlugin,
-        graphics::egui::{
-            EguiPlugin,
-            EguiContext
-        },
-        core::clock::{
-            Clock,
-            ClockPlugin
-        }, 
+        host::window::WinitWindowPlugin,
         scene::scene_plugin::ScenePlugin,
+        Pluggable,
     },
     scene::{
         camera::Camera,
-        keyboard::{
-            KeyCode,
-            Keyboard
-        },
-        mouse::Cursor
+        keyboard::{KeyCode, Keyboard},
+        mouse::Cursor,
     },
     schedule::Schedule,
-    shipyard::{
-        Component,
-        UniqueView,
-        Unique,
-        UniqueViewMut,
-    }
+    shipyard::{Component, Unique, UniqueView, UniqueViewMut},
 };
 
 #[derive(Unique)]
@@ -51,7 +39,7 @@ pub struct FlyCamera {
     pub yaw: f64,
     pub pitch: f64,
     pub direction: Vector3<f32>,
-    pub right_direction: engine::nalgebra::Vector3<f32>
+    pub right_direction: engine::nalgebra::Vector3<f32>,
 }
 
 impl Default for FlyCamera {
@@ -71,13 +59,16 @@ struct Pos(f32, f32);
 
 fn set_ui(
     egui: UniqueView<EguiContext>,
-    mut demo: UniqueViewMut<Demo>,
+    _demo: UniqueViewMut<Demo>,
     clock: UniqueView<Clock>,
     mut camera: UniqueViewMut<Camera>,
-    mouse_position: UniqueView<Cursor>
+    mouse_position: UniqueView<Cursor>,
 ) {
-    let delta: String = format!("{}", clock.delta_milliseconds()).chars().take(4).collect();
-    
+    let delta: String = format!("{}", clock.delta_milliseconds())
+        .chars()
+        .take(4)
+        .collect();
+
     let window = engine::egui::Window::new("Delta time")
         .id(engine::egui::Id::new("delta_window"))
         .resizable(false);
@@ -86,7 +77,7 @@ fn set_ui(
     engine::egui::TopBottomPanel::top("wrap_app_top_bar").show(&egui.0, |ui| {
         engine::egui::menu::bar(ui, |ui| {
             // Create 'File' menu.
-            engine::egui::menu::menu_button(ui, "File", |ui| {                
+            engine::egui::menu::menu_button(ui, "File", |ui| {
                 ui.separator();
 
                 if ui.add(engine::egui::Button::new("❌ Exit")).clicked() {
@@ -116,7 +107,7 @@ fn set_ui(
 
                             ui.label("Position: ");
                             ui.label(format!("x: {}, y: {}", mouse_position.x, mouse_position.y));
-                            ui.end_row();                           
+                            ui.end_row();
                         });
                 });
             });
@@ -130,22 +121,26 @@ fn set_ui(
         //.default_width(800.0)
         .resizable(true)
         //.anchor(Align2::LEFT_TOP, [0.0, 0.0])
-        .show(&egui.0, |mut ui| {
+        .show(&egui.0, |ui| {
             if ui.add(engine::egui::Button::new("Far")).clicked() {
                 camera.add_translation(
-                    engine::nalgebra::Vector3::new(0.0, 0.0, 1.0), 10.0 * clock.delta_seconds() as f32
+                    engine::nalgebra::Vector3::new(0.0, 0.0, 1.0),
+                    10.0 * clock.delta_seconds() as f32,
                 );
                 camera.add_target_translation(
-                    engine::nalgebra::Vector3::new(0.0, 0.0, 1.0), 10.0 * clock.delta_seconds() as f32
+                    engine::nalgebra::Vector3::new(0.0, 0.0, 1.0),
+                    10.0 * clock.delta_seconds() as f32,
                 );
             }
 
             if ui.add(engine::egui::Button::new("Near")).clicked() {
                 camera.add_translation(
-                    engine::nalgebra::Vector3::new(0.0, 0.0, -1.0),10.0 * clock.delta_seconds() as f32
+                    engine::nalgebra::Vector3::new(0.0, 0.0, -1.0),
+                    10.0 * clock.delta_seconds() as f32,
                 );
                 camera.add_target_translation(
-                    engine::nalgebra::Vector3::new(0.0, 0.0, -1.0),10.0 * clock.delta_seconds() as f32
+                    engine::nalgebra::Vector3::new(0.0, 0.0, -1.0),
+                    10.0 * clock.delta_seconds() as f32,
                 );
             }
 
@@ -199,20 +194,21 @@ fn fly_camera_system(
     clock: UniqueView<Clock>,
     mut fly_camera: UniqueViewMut<FlyCamera>,
 ) {
-    if !keyboard.is_key_down(&KeyCode::W) &&
-       !keyboard.is_key_down(&KeyCode::S) &&
-       !keyboard.is_key_down(&KeyCode::A) &&
-       !keyboard.is_key_down(&KeyCode::D) &&
-       !keyboard.is_key_down(&KeyCode::G) {
+    if !keyboard.is_key_down(&KeyCode::W)
+        && !keyboard.is_key_down(&KeyCode::S)
+        && !keyboard.is_key_down(&KeyCode::A)
+        && !keyboard.is_key_down(&KeyCode::D)
+        && !keyboard.is_key_down(&KeyCode::G)
+    {
         return;
     }
 
     // Update the yaw angle base on the delta.
     fly_camera.yaw += c_delta.x * clock.delta_seconds() * -3.0;
     fly_camera.pitch += c_delta.y * clock.delta_seconds() * -3.0;
-    
+
     let rad_yaw = grados_a_radianes(fly_camera.yaw);
-    let rad_pitch =  grados_a_radianes(fly_camera.pitch);
+    let rad_pitch = grados_a_radianes(fly_camera.pitch);
 
     let dir = Vector3::new(
         rad_yaw.sin() as f32 * rad_pitch.cos() as f32,
@@ -229,12 +225,11 @@ fn fly_camera_system(
     let parallel_direction = Vector3::new(
         (rad_yaw - PI / 2.0).sin() as f32,
         0.0,
-        (rad_yaw - PI / 2.0).cos() as f32
+        (rad_yaw - PI / 2.0).cos() as f32,
     );
 
     fly_camera.direction = dir;
     fly_camera.right_direction = parallel_direction;
-
 }
 
 struct PlayerPlugin;
@@ -249,53 +244,66 @@ impl Pluggable for PlayerPlugin {
         let axis = Unit::new_normalize(Vector3::new(1.0, 2.0, 3.0));
         let rot = UnitQuaternion::from_axis_angle(&axis, 1.78);
 
-        app.world.add_entity((MeshComponent(CUBE_MESH_RESOURCE_ID), Transform {
-            position: Vector3::new(0.0, 0.0, 0.0),
-            rotation: rot,
-            scale: Vector3::new(1.0, 1.0, 1.0),
-        }));
+        app.world.add_entity((
+            MeshComponent(CUBE_MESH_RESOURCE_ID),
+            Transform {
+                position: Vector3::new(0.0, 0.0, 0.0),
+                rotation: rot,
+                scale: Vector3::new(1.0, 1.0, 1.0),
+            },
+        ));
 
         let axis = Unit::new_normalize(Vector3::new(1.0, 2.0, 3.0));
         let rot = UnitQuaternion::from_axis_angle(&axis, 0.0);
 
-        app.world.add_entity((MeshComponent(CUBE_MESH_RESOURCE_ID), Transform {
-            position: Vector3::new(5.0, 0.0, 0.0),
-            rotation: rot,
-            scale: Vector3::new(2.0, 1.0, 1.0),
-        }));
+        app.world.add_entity((
+            MeshComponent(CUBE_MESH_RESOURCE_ID),
+            Transform {
+                position: Vector3::new(5.0, 0.0, 0.0),
+                rotation: rot,
+                scale: Vector3::new(2.0, 1.0, 1.0),
+            },
+        ));
 
         let axis = Unit::new_normalize(Vector3::new(1.0, 2.0, 3.0));
         let rot = UnitQuaternion::from_axis_angle(&axis, 0.0);
 
-        app.world.add_entity((MeshComponent(CUBE_MESH_RESOURCE_ID), Transform {
-            position: Vector3::new(10.0, 0.0, 0.0),
-            rotation: rot,
-            scale: Vector3::new(2.0, 1.0, 1.0),
-        }));
-
+        app.world.add_entity((
+            MeshComponent(CUBE_MESH_RESOURCE_ID),
+            Transform {
+                position: Vector3::new(10.0, 0.0, 0.0),
+                rotation: rot,
+                scale: Vector3::new(2.0, 1.0, 1.0),
+            },
+        ));
 
         for i in 0..10 {
             for j in 0..10 {
-                app.world.add_entity((MeshComponent(CUBE_MESH_RESOURCE_ID), Transform {
-                    position: Vector3::new(10.0 + i as f32 * 5.0, 0.0, j as f32 * 5.0),
-                    rotation: rot,
-                    scale: Vector3::new(1.0, 1.0, 1.0),
-                }));
+                app.world.add_entity((
+                    MeshComponent(CUBE_MESH_RESOURCE_ID),
+                    Transform {
+                        position: Vector3::new(10.0 + i as f32 * 5.0, 0.0, j as f32 * 5.0),
+                        rotation: rot,
+                        scale: Vector3::new(1.0, 1.0, 1.0),
+                    },
+                ));
             }
         }
 
-        app.world.add_entity((MeshComponent(PENTAGON_MESH_RESOURCE_ID), Transform {
-            position: Vector3::new(8.0, 0.0, 0.0),
-            rotation: rot,
-            scale: Vector3::new(1.0, 1.0, 1.0),
-        }));
+        app.world.add_entity((
+            MeshComponent(PENTAGON_MESH_RESOURCE_ID),
+            Transform {
+                position: Vector3::new(8.0, 0.0, 0.0),
+                rotation: rot,
+                scale: Vector3::new(1.0, 1.0, 1.0),
+            },
+        ));
 
         app.schedule(Schedule::RequestRedraw, |world| {
             world.run(set_ui);
         });
 
-        app.schedule(Schedule::CursorDelta, |world| {
-        });
+        app.schedule(Schedule::CursorDelta, |_world| {});
 
         app.schedule(Schedule::Update, |world| {
             world.run(fly_camera_system);
@@ -306,11 +314,7 @@ impl Pluggable for PlayerPlugin {
 
 pub fn main() {
     App::new()
-        .add_plugin(WinitWindowPlugin::new(
-            "My game",
-            1024,
-            800,
-        ))
+        .add_plugin(WinitWindowPlugin::new("My game", 1024, 800))
         .add_plugin(ScenePlugin)
         .add_plugin(WgpuRendererPlugin)
         .add_plugin(ClockPlugin::default())

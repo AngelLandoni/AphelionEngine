@@ -1,34 +1,23 @@
-use raw_window_handle::{
-    HasRawWindowHandle,
-    HasRawDisplayHandle
-};
+use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
 
-use shipyard::{
-    Unique,
-    UniqueViewMut,
-};
+use shipyard::{Unique, UniqueViewMut};
 
 use winit::{
     dpi::LogicalSize,
-    event::{
-        DeviceEvent, ElementState, Event, KeyEvent, WindowEvent
-    },
+    event::{DeviceEvent, ElementState, Event, KeyEvent, WindowEvent},
     event_loop::EventLoop,
     keyboard::PhysicalKey,
-    window::WindowBuilder 
+    window::WindowBuilder,
 };
 
 use crate::{
+    app::App,
     host,
-    plugin::Pluggable,
-    app::App, 
     host::{
         events::KeyboardEvent,
-        window::{
-            Window,
-            WindowInfoAccessible
-        }
+        window::{Window, WindowInfoAccessible},
     },
+    plugin::Pluggable,
     scene::{keyboard::KeyCode, mouse::CursorDelta},
     types::Size,
 };
@@ -37,7 +26,7 @@ pub struct WinitWindowWrapper(pub(crate) winit::window::Window);
 
 impl WindowInfoAccessible for WinitWindowWrapper {
     fn inner_size(&self) -> Size<u32> {
-        Size::new(self.0.inner_size().width, self.0.inner_size().height)        
+        Size::new(self.0.inner_size().width, self.0.inner_size().height)
     }
 
     fn scale_factor(&self) -> f64 {
@@ -47,7 +36,7 @@ impl WindowInfoAccessible for WinitWindowWrapper {
 
 #[derive(Unique)]
 pub(crate) struct UniqueWinitEvent {
-    pub(crate) inner: Option<WindowEvent>
+    pub(crate) inner: Option<WindowEvent>,
 }
 
 pub struct WinitWindowPlugin {
@@ -62,14 +51,13 @@ impl WinitWindowPlugin {
             title: title.to_string(),
             size: Size { width, height },
         }
-    }    
+    }
 }
 
 impl Pluggable for WinitWindowPlugin {
     /// Spawns the main window and triggers the `winit` run loop.
     fn configure(&self, app: &mut App) {
-        let event_loop = EventLoop::new()
-            .expect("Unable to initialize `Winit` main run loop");
+        let event_loop = EventLoop::new().expect("Unable to initialize `Winit` main run loop");
 
         let title = self.title.clone();
         let width = self.size.width;
@@ -96,9 +84,7 @@ impl Pluggable for WinitWindowPlugin {
         // Add the window as a resource; ensure the `winit_window` is kept alive.
         app.world.add_unique(host_window);
 
-        app.world.add_unique(UniqueWinitEvent {
-            inner: None,
-        });
+        app.world.add_unique(UniqueWinitEvent { inner: None });
 
         // Winit does not provide a way to know when the delta finished so
         // we need to clean it at the end of each frame.
@@ -114,32 +100,36 @@ impl Pluggable for WinitWindowPlugin {
         app.set_run_loop(move |app: &mut App| {
             event_loop.set_control_flow(winit::event_loop::ControlFlow::Poll);
 
-            event_loop.run(move |event, elwt| {
-                elwt.set_control_flow(winit::event_loop::ControlFlow::Poll);
+            event_loop
+                .run(move |event, elwt| {
+                    elwt.set_control_flow(winit::event_loop::ControlFlow::Poll);
 
-                // Iced_winit needs the event to behave correctly.
-                match event.clone() {
-                    Event::WindowEvent { window_id: _, event } => {
-                        match event {
-                            WindowEvent::CloseRequested => elwt.exit(),
+                    // Iced_winit needs the event to behave correctly.
+                    match event.clone() {
+                        Event::WindowEvent {
+                            window_id: _,
+                            event,
+                        } => {
+                            match event {
+                                WindowEvent::CloseRequested => elwt.exit(),
 
-                            _ => {}
+                                _ => {}
+                            }
+
+                            let mut w_e = app
+                                .world
+                                .borrow::<UniqueViewMut<UniqueWinitEvent>>()
+                                .unwrap();
+                            w_e.inner = Some(event);
                         }
 
-                        let mut w_e = app
-                            .world
-                            .borrow::<UniqueViewMut<UniqueWinitEvent>>()
-                            .unwrap();
-                        w_e.inner = Some(event);                        
+                        _ => {}
                     }
 
-                    _ => {}
-                }
-
-                let host_event = map_winit_events(&event);
-                app.tick(&host_event);
-            })
-            .expect("Unable to lunch `Winit` event loop");
+                    let host_event = map_winit_events(&event);
+                    app.tick(&host_event);
+                })
+                .expect("Unable to lunch `Winit` event loop");
         });
     }
 }
@@ -147,34 +137,50 @@ impl Pluggable for WinitWindowPlugin {
 /// Maps the Winit events to host event.
 fn map_winit_events<T>(event: &Event<T>) -> host::events::Event {
     match event {
-        Event::WindowEvent { window_id: _, event } => {
-            match event {
-                WindowEvent::KeyboardInput { 
-                    event: KeyEvent {
+        Event::WindowEvent {
+            window_id: _,
+            event,
+        } => match event {
+            WindowEvent::KeyboardInput {
+                event:
+                    KeyEvent {
                         physical_key: key,
                         state: ElementState::Pressed,
                         ..
-                    }                   
-                , .. } => host::events::Event::Keyboard(KeyboardEvent::Pressed(map_keyboard_input(key))),
-                WindowEvent::KeyboardInput { 
-                    event: KeyEvent {
+                    },
+                ..
+            } => host::events::Event::Keyboard(KeyboardEvent::Pressed(map_keyboard_input(key))),
+            WindowEvent::KeyboardInput {
+                event:
+                    KeyEvent {
                         physical_key: key,
                         state: ElementState::Released,
                         ..
-                    }                   
-                , .. } => host::events::Event::Keyboard(KeyboardEvent::Released(map_keyboard_input(key))),
-                WindowEvent::Resized(size ) => host::events::Event::Window(host::events::WindowEvent::Resized(size.width, size.height)),
-                WindowEvent::CursorMoved { device_id: _, position } => {
-                    host::events::Event::Window(host::events::WindowEvent::CursorMoved(position.x, position.y))
-                },
-                WindowEvent::CloseRequested => host::events::Event::Window(host::events::WindowEvent::CloseRequested),
-                WindowEvent::RedrawRequested => host::events::Event::Window(host::events::WindowEvent::RequestRedraw),
-                _ => host::events::Event::Window(host::events::WindowEvent::UnknownOrNotImplemented),
+                    },
+                ..
+            } => host::events::Event::Keyboard(KeyboardEvent::Released(map_keyboard_input(key))),
+            WindowEvent::Resized(size) => host::events::Event::Window(
+                host::events::WindowEvent::Resized(size.width, size.height),
+            ),
+            WindowEvent::CursorMoved {
+                device_id: _,
+                position,
+            } => host::events::Event::Window(host::events::WindowEvent::CursorMoved(
+                position.x, position.y,
+            )),
+            WindowEvent::CloseRequested => {
+                host::events::Event::Window(host::events::WindowEvent::CloseRequested)
             }
-        }
+            WindowEvent::RedrawRequested => {
+                host::events::Event::Window(host::events::WindowEvent::RequestRedraw)
+            }
+            _ => host::events::Event::Window(host::events::WindowEvent::UnknownOrNotImplemented),
+        },
 
-        Event::DeviceEvent { event: DeviceEvent::MouseMotion { delta }, .. } =>
-            host::events::Event::CursorMotion(delta.0, delta.1),
+        Event::DeviceEvent {
+            event: DeviceEvent::MouseMotion { delta },
+            ..
+        } => host::events::Event::CursorMotion(delta.0, delta.1),
 
         _ => host::events::Event::UnknownOrNotImplemented,
     }
@@ -191,12 +197,12 @@ fn map_keyboard_input(key: &PhysicalKey) -> KeyCode {
             let key_code: u32 = *key as u32;
             // Check if it is a letter.
             if WINIT_KEYCODE_LETTERS_RANGE.contains(&key_code) {
-                return KeyCode::from_u32(key_code -  19)
-            } 
+                return KeyCode::from_u32(key_code - 19);
+            }
 
             // TODO(Angel): Add support for the rest of keys.
             KeyCode::Unknown
-        },
+        }
         PhysicalKey::Unidentified(_) => KeyCode::Unknown,
     }
 }

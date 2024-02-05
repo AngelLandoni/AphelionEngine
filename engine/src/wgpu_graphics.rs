@@ -1,19 +1,19 @@
+pub(crate) mod buffer;
+pub(crate) mod components;
 pub(crate) mod gpu;
 pub(crate) mod passes;
-pub(crate) mod components;
-pub(crate) mod rendering;
 pub(crate) mod pipelines;
+pub(crate) mod rendering;
 pub(crate) mod uniforms;
-pub(crate) mod buffer;
 
+use crossbeam_queue::ArrayQueue;
 use shipyard::Unique;
 use wgpu::CommandBuffer;
-use crossbeam_queue::ArrayQueue;
 
 #[derive(Unique)]
 pub struct CommandQueue(pub(crate) OrderCommandQueue);
 
-/// Specifies the rendering order of different passes; a higher value indicates 
+/// Specifies the rendering order of different passes; a higher value indicates
 /// that the pass should be drawn later in the rendering pipeline.
 #[derive(Copy, Clone)]
 pub(crate) enum CommandSubmitOrder {
@@ -27,7 +27,7 @@ impl CommandSubmitOrder {
     }
 }
 
-/// Wraps a `wgpu` `CommandBuffer` and includes information about the position 
+/// Wraps a `wgpu` `CommandBuffer` and includes information about the position
 /// at which the command should be executed.
 pub(crate) struct OrderCommandBuffer {
     pub(crate) label: Option<String>,
@@ -37,13 +37,15 @@ pub(crate) struct OrderCommandBuffer {
 
 impl OrderCommandBuffer {
     /// Creates and returns a new `OrderCommandBuffer`.
-    pub(crate) fn new(label: Option<String>,
-                      order: CommandSubmitOrder,
-                      command: CommandBuffer) -> OrderCommandBuffer {
+    pub(crate) fn new(
+        label: Option<String>,
+        order: CommandSubmitOrder,
+        command: CommandBuffer,
+    ) -> OrderCommandBuffer {
         OrderCommandBuffer {
             label,
             order: order.as_index(),
-            command
+            command,
         }
     }
 }

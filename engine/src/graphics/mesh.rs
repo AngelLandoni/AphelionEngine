@@ -10,7 +10,7 @@ pub struct Mesh {
 }
 
 impl Mesh {
-    /// Creates and returns a new `Mesh` instance which uses the provided 
+    /// Creates and returns a new `Mesh` instance which uses the provided
     /// buffers.
     pub fn new(
         vertex_buffer: Box<dyn VertexBuffer>,

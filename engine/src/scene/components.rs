@@ -1,11 +1,6 @@
 use shipyard::Component;
 
-use nalgebra::{
-    Matrix4,
-    Rotation3,
-    UnitQuaternion,
-    Vector3
-};
+use nalgebra::{Matrix4, Rotation3, UnitQuaternion, Vector3};
 
 /// Represents a trasnformation component.
 ///
@@ -40,12 +35,12 @@ impl Transform {
 }
 
 impl Transform {
-    /// Creates and returns a new 4x4 matrix which contains the position, 
+    /// Creates and returns a new 4x4 matrix which contains the position,
     /// rotation and scale.
     pub fn as_matrix(&self) -> Matrix4<f32> {
-        Matrix4::new_translation(&self.position) *
-        Rotation3::from(self.rotation).to_homogeneous() *
-        Matrix4::new_nonuniform_scaling(&self.scale)
+        Matrix4::new_translation(&self.position)
+            * Rotation3::from(self.rotation).to_homogeneous()
+            * Matrix4::new_nonuniform_scaling(&self.scale)
     }
 
     /// Creates and returns a new 4x4 matrix and returns it in an array form.

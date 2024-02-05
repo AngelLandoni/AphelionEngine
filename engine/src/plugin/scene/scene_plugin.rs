@@ -1,17 +1,17 @@
 use shipyard::{UniqueView, UniqueViewMut};
 
 use crate::{
+    app::App,
+    host::window::Window,
     plugin::Pluggable,
     scene::{
         asset_server::AssetServer,
         camera::Camera,
         keyboard::Keyboard,
         mouse::{Cursor, CursorDelta},
-        perspective::Perspective
+        perspective::Perspective,
     },
-    app::App,
     schedule::Schedule,
-    host::window::Window,
 };
 
 pub struct ScenePlugin;
