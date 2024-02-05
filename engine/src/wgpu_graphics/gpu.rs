@@ -140,6 +140,31 @@ impl Gpu {
             usage,
         })
     }
+
+    pub(crate) fn raw_allocate_buffer_init(
+        &self,
+        label: &str,
+        content: &[u8],
+        usage: BufferUsages
+    ) -> Buffer {
+        self.device.create_buffer_init(&BufferInitDescriptor {
+            label: Some(label),
+            contents: content,
+            usage,
+        })
+    }
+
+    pub(crate) fn allocate_empty_buffer(
+        &self,
+        label: &str,
+        usage: BufferUsages
+    ) -> Buffer {
+        self.device.create_buffer_init(&BufferInitDescriptor {
+            label: Some(label),
+            contents: &[],
+            usage,
+        })
+    }
 }
 
 impl GpuAbstractor for Gpu {}

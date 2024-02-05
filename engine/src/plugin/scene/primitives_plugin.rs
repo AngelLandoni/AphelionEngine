@@ -83,7 +83,7 @@ fn configure_pentagon_primitive(gpu: &AbstractGpu, a_server: &mut AssetServer) {
     a_server.register_mesh(PENTAGON_PRIMITIVE_ID, mesh);
 }
 
-const CUBE_PRIMITIVE_ID: &str = "PENTAGON_PRIMITIVE_MESH";
+const CUBE_PRIMITIVE_ID: &str = "CUBE_PRIMITIVE_MESH";
 
 const CUBE_VERTICES: &[Vertex] = &[
     Vertex { pos: [ -1.0, -1.0, 1.0 ], col: [0.0, 0.0, 1.0] },
@@ -145,5 +145,5 @@ fn configure_cube_primitive(gpu: &AbstractGpu, a_server: &mut AssetServer) {
         CUBE_INDICES.len() as u32
     );
 
-    a_server.register_mesh(PENTAGON_PRIMITIVE_ID, mesh);
+    a_server.register_mesh(CUBE_PRIMITIVE_ID, mesh);
 }

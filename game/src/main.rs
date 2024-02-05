@@ -1,10 +1,11 @@
 use egui_demo_lib::DemoWindows;
 
 use engine::components::MeshComponent;
-use engine::nalgebra::{Point3, Vector3};
+use engine::nalgebra::{Point3, Unit, UnitQuaternion, Vector3};
 
 use engine::plugin::scene::primitives_plugin::{PrimitivesPlugin, CUBE_MESH_RESOURCE_ID, PENTAGON_MESH_RESOURCE_ID};
 use engine::scene::asset_server::MeshResourceID;
+use engine::scene::components::Transform;
 use engine::scene::mouse::CursorDelta;
 use engine::{
     app::App,
@@ -165,23 +166,23 @@ fn camera_system(
     fly_camera: UniqueView<FlyCamera>,
 ) {
     if keyboard.is_key_down(&KeyCode::W) {
-        camera.position += fly_camera.direction * 4.5 * clock.delta_seconds() as f32;
-        camera.target += fly_camera.direction * 4.5 * clock.delta_seconds() as f32;
+        camera.position += fly_camera.direction * 8.5 * clock.delta_seconds() as f32;
+        camera.target += fly_camera.direction * 8.5 * clock.delta_seconds() as f32;
     }
 
     if keyboard.is_key_down(&KeyCode::S) {
-        camera.position -= fly_camera.direction * 4.5 * clock.delta_seconds() as f32;
-        camera.target -= fly_camera.direction * 4.5 * clock.delta_seconds() as f32;
+        camera.position -= fly_camera.direction * 8.5 * clock.delta_seconds() as f32;
+        camera.target -= fly_camera.direction * 8.5 * clock.delta_seconds() as f32;
     }
 
     if keyboard.is_key_down(&KeyCode::A) {
-        camera.position -= fly_camera.right_direction * 4.5 * clock.delta_seconds() as f32;
-        camera.target -= fly_camera.right_direction * 4.5 * clock.delta_seconds() as f32;
+        camera.position -= fly_camera.right_direction * 8.5 * clock.delta_seconds() as f32;
+        camera.target -= fly_camera.right_direction * 8.5 * clock.delta_seconds() as f32;
     }
 
     if keyboard.is_key_down(&KeyCode::D) {
-        camera.position += fly_camera.right_direction * 4.5 * clock.delta_seconds() as f32;
-        camera.target += fly_camera.right_direction * 4.5 * clock.delta_seconds() as f32;
+        camera.position += fly_camera.right_direction * 8.5 * clock.delta_seconds() as f32;
+        camera.target += fly_camera.right_direction * 8.5 * clock.delta_seconds() as f32;
     }
 }
 
@@ -245,8 +246,29 @@ impl Pluggable for PlayerPlugin {
         app.world.add_unique(Demo(demo));
         app.world.add_unique(FlyCamera::default());
 
-        //app.world.add_entity(MeshComponent(PENTAGON_MESH_RESOURCE_ID));
-        app.world.add_entity(MeshComponent(CUBE_MESH_RESOURCE_ID));
+        let axis = Unit::new_normalize(Vector3::new(1.0, 2.0, 3.0));
+        let rot = UnitQuaternion::from_axis_angle(&axis, 1.78);
+
+        app.world.add_entity((MeshComponent(CUBE_MESH_RESOURCE_ID), Transform {
+            position: Vector3::new(0.0, 0.0, 0.0),
+            rotation: rot,
+            scale: Vector3::new(1.0, 1.0, 1.0),
+        }));
+
+        let axis = Unit::new_normalize(Vector3::new(1.0, 2.0, 3.0));
+        let rot = UnitQuaternion::from_axis_angle(&axis, 0.0);
+
+        app.world.add_entity((MeshComponent(CUBE_MESH_RESOURCE_ID), Transform {
+            position: Vector3::new(5.0, 0.0, 0.0),
+            rotation: rot,
+            scale: Vector3::new(2.0, 1.0, 1.0),
+        }));
+
+        app.world.add_entity((MeshComponent(PENTAGON_MESH_RESOURCE_ID), Transform {
+            position: Vector3::new(8.0, 0.0, 0.0),
+            rotation: rot,
+            scale: Vector3::new(1.0, 1.0, 1.0),
+        }));
 
         app.schedule(Schedule::RequestRedraw, |world| {
             world.run(set_ui);
