@@ -3,14 +3,11 @@ use std::collections::HashMap;
 use shipyard::Unique;
 
 use wgpu::{
-    vertex_attr_array, BindGroup, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BlendComponent,
-    Buffer, BufferAddress, ColorTargetState, ColorWrites, FragmentState, MultisampleState,
-    PipelineLayoutDescriptor, PrimitiveState, RenderPipeline, RenderPipelineDescriptor,
-    ShaderStages, VertexBufferLayout, VertexState,
+    vertex_attr_array, BindGroup, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BlendComponent, Buffer, BufferAddress, ColorTargetState, ColorWrites, DepthBiasState, DepthStencilState, FragmentState, MultisampleState, PipelineLayoutDescriptor, PrimitiveState, RenderPipeline, RenderPipelineDescriptor, ShaderStages, StencilState, VertexBufferLayout, VertexState
 };
 
 use crate::{
-    graphics::vertex::Vertex, scene::asset_server::MeshResourceID, wgpu_graphics::gpu::Gpu,
+    graphics::vertex::Vertex, scene::asset_server::MeshResourceID, wgpu_graphics::{gpu::{Gpu, DEPTH_TEXTURE_FORMAT}},
 };
 
 #[derive(Unique)]
@@ -101,7 +98,13 @@ impl TriangleTestPipeline {
                     polygon_mode: wgpu::PolygonMode::Fill,
                     conservative: false,
                 },
-                depth_stencil: None,
+                depth_stencil: Some(DepthStencilState {
+                    format: DEPTH_TEXTURE_FORMAT,
+                    depth_write_enabled: true,
+                    depth_compare: wgpu::CompareFunction::Less,
+                    stencil: StencilState::default(),
+                    bias: DepthBiasState::default(),
+                }),
                 multisample: MultisampleState {
                     count: 1,
                     mask: !0,

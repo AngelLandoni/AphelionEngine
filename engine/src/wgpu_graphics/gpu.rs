@@ -1,17 +1,16 @@
 use bytemuck::{AnyBitPattern, Pod};
 use wgpu::{
-    util::{BufferInitDescriptor, DeviceExt},
-    Adapter, Buffer, BufferUsages, Device, DeviceDescriptor, Features, Limits, Queue,
-    RequestAdapterOptions, ShaderModule, Surface, SurfaceConfiguration, TextureFormat,
-    TextureUsages,
+    util::{BufferInitDescriptor, DeviceExt}, Adapter, Buffer, BufferUsages, Device, DeviceDescriptor, Extent3d, Features, Limits, Queue, RequestAdapterOptions, SamplerDescriptor, ShaderModule, Surface, SurfaceConfiguration, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor
 };
 
 use crate::{
-    graphics::{gpu::GpuAbstractor, BufferCreator, IndexBuffer, ShaderHandler, VertexBuffer},
+    graphics::{gpu::GpuAbstractor, BufferCreator, IndexBuffer, ShaderHandler, VertexBuffer, Texture},
     host::window::Window,
 };
 
-use super::buffer::{WgpuIndexBuffer, WgpuVertexBuffer};
+use super::buffer::{WGPUTexture, WgpuIndexBuffer, WgpuVertexBuffer};
+
+pub(crate) const DEPTH_TEXTURE_FORMAT: TextureFormat = TextureFormat::Depth32Float;
 
 /// Holds all the essential information required for GPU interaction.
 pub(crate) struct Gpu {
@@ -165,5 +164,45 @@ impl BufferCreator for Gpu {
         });
 
         Box::new(WgpuIndexBuffer(buffer))
+    }
+
+    fn allocate_depth_texture(&self, label: &str) -> Box<dyn Texture> {
+        let texture = self.device.create_texture(&TextureDescriptor {
+            label: Some(label),
+            size: Extent3d {
+                width: self.surface_config.width,
+                height: self.surface_config.height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: TextureDimension::D2,
+            format: DEPTH_TEXTURE_FORMAT,
+            usage: TextureUsages::RENDER_ATTACHMENT |
+                   TextureUsages::TEXTURE_BINDING,
+            view_formats: &[],
+        });
+
+        let view = texture.create_view(&TextureViewDescriptor::default());
+
+        let sampler = self.device.create_sampler(&SamplerDescriptor {
+            label: Some(label),
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Linear,
+            mipmap_filter: wgpu::FilterMode::Nearest,
+            compare: Some(wgpu::CompareFunction::LessEqual), // 5.
+            lod_min_clamp: 0.0,
+            lod_max_clamp: 100.0,
+            ..Default::default()
+        });
+
+        Box::new(WGPUTexture {
+            texture,
+            view,
+            sampler,
+        })
     }
 }

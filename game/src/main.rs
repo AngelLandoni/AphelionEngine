@@ -1,6 +1,6 @@
 use egui_demo_lib::DemoWindows;
 
-use engine::components::MeshComponent;
+use engine::graphics::components::MeshComponent;
 use engine::nalgebra::{Point3, Unit, UnitQuaternion, Vector3};
 
 use engine::plugin::scene::primitives_plugin::{

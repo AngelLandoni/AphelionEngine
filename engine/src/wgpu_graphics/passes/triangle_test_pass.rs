@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
 use shipyard::UniqueView;
-use wgpu::{Buffer, CommandEncoderDescriptor, Operations};
+use wgpu::{Buffer, CommandEncoderDescriptor, DepthStencilState, Operations, RenderPassDepthStencilAttachment};
 
 use crate::{
-    graphics::{gpu::AbstractGpu, mesh::Mesh},
+    graphics::{components::DepthTexture, gpu::AbstractGpu, mesh::Mesh},
     scene::asset_server::AssetServer,
     wgpu_graphics::{
-        buffer::{WgpuIndexBuffer, WgpuVertexBuffer},
+        buffer::{WGPUTexture, WgpuIndexBuffer, WgpuVertexBuffer},
         components::ScreenTexture,
         gpu::Gpu,
         pipelines::traingle_test_pipeline::TriangleTestPipeline,
@@ -18,6 +18,7 @@ use crate::{
 /// Renders the triangle test.
 pub(crate) fn triangle_test_pass_system(
     gpu: UniqueView<AbstractGpu>,
+    depth_texture: UniqueView<DepthTexture>,
     triangle_pipeline: UniqueView<TriangleTestPipeline>,
     screen_texture: UniqueView<ScreenTexture>,
     queue: UniqueView<CommandQueue>,
@@ -26,6 +27,10 @@ pub(crate) fn triangle_test_pass_system(
     let gpu = gpu
         .downcast_ref::<Gpu>()
         .expect("Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu");
+
+    let d_texture = depth_texture
+        .downcast_ref::<WGPUTexture>()
+        .expect("Incorrect depth Texture type, expecting WGPU depth texture");
 
     let s_texture = match &screen_texture.0 {
         Some(s_t) => s_t,
@@ -63,7 +68,14 @@ pub(crate) fn triangle_test_pass_system(
                     },
                 }),
             ],
-            depth_stencil_attachment: None,
+            depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
+                view: &d_texture.view,
+                depth_ops: Some(Operations {
+                    load: wgpu::LoadOp::Clear(1.0),
+                    store: wgpu::StoreOp::Store,
+                }),
+                stencil_ops: None,
+            }),
             timestamp_writes: None,
             occlusion_query_set: None,
         });
@@ -88,24 +100,6 @@ pub(crate) fn triangle_test_pass_system(
             pass.set_index_buffer(i_buffer.0.slice(..), wgpu::IndexFormat::Uint16);
             pass.draw_indexed(0..mesh.index_count, 0, 0..**count);
         }
-
-        /*for (index, mesh) in ents.iter().enumerate() {
-            pass.set_bind_group(1, &triangle_pipeline.transform_bind_group, &[]);
-
-            let v_buffer = mesh
-                .vertex_buffer
-                .downcast_ref::<WgpuVertexBuffer>()
-                .expect("Incorrect vertex buffer type, expecting WGPU vertex buffer");
-
-            let i_buffer = mesh
-                .index_buffer
-                .downcast_ref::<WgpuIndexBuffer>()
-                .expect("Incorrect vertex buffer type, expecting WGPU index buffer");
-
-            pass.set_vertex_buffer(0, v_buffer.0.slice(..));
-            pass.set_index_buffer(i_buffer.0.slice(..), wgpu::IndexFormat::Uint16);
-            pass.draw_indexed(0..mesh.index_count, 0, 0..1);
-        }*/
     }
 
     let _ = queue.0.push(OrderCommandBuffer::new(

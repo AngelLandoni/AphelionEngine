@@ -5,8 +5,11 @@ use wgpu::{Buffer, BufferUsages};
 
 use crate::{
     app::App,
-    components::MeshComponent,
-    graphics::gpu::AbstractGpu,
+    graphics::components::{
+        MeshComponent,
+        DepthTexture,
+    },
+    graphics::{gpu::AbstractGpu, BufferCreator},
     host::window::Window,
     plugin::Pluggable,
     scene::{
@@ -20,8 +23,7 @@ use crate::{
         passes::triangle_test_pass::triangle_test_pass_system,
         pipelines::traingle_test_pipeline::TriangleTestPipeline,
         rendering::{
-            acquire_screen_texture, present_screen_texture, reconfigure_surface_if_needed_system,
-            submit_commands_in_order,
+            acquire_screen_texture, present_screen_texture, reconfigure_main_textures_if_needed_system, submit_commands_in_order
         },
         uniforms::{sync_camera_perspective_uniform, CameraUniform},
         CommandQueue, OrderCommandQueue, MAX_NUMBER_IF_COMMANDS_PER_FRAME,
@@ -46,6 +48,7 @@ impl Pluggable for WgpuRendererPlugin {
             let world = &app.world;
 
             setup_screen_texture_and_queue(world);
+            setup_depth_texture(world, &gpu);
             setup_camera(world, &gpu);
             setup_pipelines(world, &gpu);
 
@@ -55,7 +58,7 @@ impl Pluggable for WgpuRendererPlugin {
         // Setup scheludes.
         {
             app.schedule(Schedule::Start, |world| {
-                world.run(reconfigure_surface_if_needed_system);
+                world.run(reconfigure_main_textures_if_needed_system);
             });
 
             app.schedule(Schedule::InitFrame, |world| {
@@ -98,6 +101,12 @@ fn setup_screen_texture_and_queue(world: &World) {
     world.add_unique(CommandQueue(OrderCommandQueue::new(
         MAX_NUMBER_IF_COMMANDS_PER_FRAME,
     )));
+}
+
+/// Setups the global depth texture.
+fn setup_depth_texture(world: &World, gpu: &Gpu) {
+    let d_texture = gpu.allocate_depth_texture("Global depth texture");
+    world.add_unique(DepthTexture(d_texture));
 }
 
 /// Allocates space in the gpu to handle the camera proj and submits the buffer
