@@ -1,20 +1,11 @@
-use std::collections::HashMap;
-
-use shipyard::{IntoIter, UniqueView, UniqueViewMut, View, World};
-use wgpu::{Buffer, BufferUsages};
+use shipyard::{UniqueView, UniqueViewMut, World};
+use wgpu::BufferUsages;
 
 use crate::{
-    app::App,
-    graphics::components::{DepthTexture, MeshComponent},
-    graphics::{gpu::AbstractGpu, BufferCreator},
-    host::window::Window,
-    plugin::Pluggable,
-    scene::{
-        asset_server::MeshResourceID, camera::Camera, components::Transform,
+    app::App, graphics::{components::DepthTexture, gpu::AbstractGpu, BufferCreator}, host::window::Window, plugin::Pluggable, scene::{
+        camera::Camera,
         perspective::Perspective,
-    },
-    schedule::Schedule,
-    wgpu_graphics::{
+    }, schedule::Schedule, wgpu_graphics::{
         components::{ScreenFrame, ScreenTexture},
         gpu::Gpu,
         passes::triangle_test_pass::triangle_test_pass_system,
@@ -25,7 +16,7 @@ use crate::{
         },
         uniforms::{sync_camera_perspective_uniform, CameraUniform},
         CommandQueue, OrderCommandQueue, MAX_NUMBER_IF_COMMANDS_PER_FRAME,
-    },
+    }
 };
 
 pub struct WgpuRendererPlugin;
@@ -44,12 +35,18 @@ impl Pluggable for WgpuRendererPlugin {
         // Setup all the unique resources.
         {
             let world = &app.world;
-
+            
             setup_screen_texture_and_queue(world);
             setup_depth_texture(world, &gpu);
             setup_camera(world, &gpu);
-            setup_pipelines(world, &gpu);
+        }
 
+        {
+            setup_pipelines(app, &gpu);
+        }
+
+        {
+            let world = &app.world;
             world.add_unique(AbstractGpu(Box::new(gpu)));
         }
 
@@ -65,9 +62,8 @@ impl Pluggable for WgpuRendererPlugin {
 
             app.schedule(Schedule::Update, |world| {
                 world.run(sync_camera_perspective_uniform_system);
-                world.run(sync_dynamic_entities_position);
             });
-
+            
             app.schedule(Schedule::RequestRedraw, |world| {
                 world.run(triangle_test_pass_system);
             });
@@ -126,12 +122,10 @@ fn setup_camera(world: &World, gpu: &Gpu) {
 }
 
 /// Setups all the required pipelines.
-fn setup_pipelines(world: &World, gpu: &Gpu) {
-    let camera_uniform = world
-        .borrow::<UniqueView<CameraUniform>>()
-        .expect("Unable to acquire camera uniform");
+fn setup_pipelines(app: &mut App, gpu: &Gpu) {
+    let p = TriangleTestPipeline::new(app, gpu);
 
-    world.add_unique(TriangleTestPipeline::new(gpu, &camera_uniform.0));
+    app.world.add_unique(p);
 }
 
 /// Calls the sync camera method.
@@ -146,40 +140,4 @@ fn sync_camera_perspective_uniform_system(
         .expect("Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu");
 
     sync_camera_perspective_uniform(gpu, &camera, &perspective, &c_uniform.0);
-}
-
-/// Recreates the transformation buffer and pass the transform information.
-fn sync_dynamic_entities_position(
-    gpu: UniqueView<AbstractGpu>,
-    mut pipeline: UniqueViewMut<TriangleTestPipeline>,
-    transforms: View<Transform>,
-    meshes: View<MeshComponent>,
-) {
-    let gpu = gpu
-        .downcast_ref::<Gpu>()
-        .expect("Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu");
-
-    // Agrupate transforms based on types.
-    let mut grouped_transforms: HashMap<MeshResourceID, Vec<[[f32; 4]; 4]>> = HashMap::new();
-
-    for (mesh, transform) in (&meshes, &transforms).iter() {
-        grouped_transforms
-            .entry(mesh.0)
-            .or_insert(Vec::new())
-            .push(transform.as_matrix_array());
-    }
-
-    let mut buffers: HashMap<MeshResourceID, (Buffer, u32)> = HashMap::new();
-
-    for (mesh, transforms) in grouped_transforms {
-        let buffer = gpu.raw_allocate_buffer_init(
-            &format!("Mesh({}) transform", mesh.0),
-            bytemuck::cast_slice(transforms.as_slice()),
-            BufferUsages::VERTEX | BufferUsages::COPY_DST,
-        );
-
-        buffers.insert(mesh, (buffer, transforms.len() as u32));
-    }
-
-    pipeline.mesh_transform_buffers = buffers;
 }
