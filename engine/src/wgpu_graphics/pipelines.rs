@@ -1,1 +1,1 @@
-pub(crate) mod traingle_test_pipeline;
+pub(crate) mod dynamic_mesh_pipeline;

@@ -10,16 +10,16 @@ use crate::{
         buffer::{WGPUTexture, WgpuIndexBuffer, WgpuVertexBuffer},
         components::ScreenTexture,
         gpu::Gpu,
-        pipelines::traingle_test_pipeline::TriangleTestPipeline,
+        pipelines::dynamic_mesh_pipeline::DynamicMeshPipeline,
         CommandQueue, CommandSubmitOrder, OrderCommandBuffer,
     },
 };
 
 /// Renders the triangle test.
-pub(crate) fn triangle_test_pass_system(
+pub(crate) fn dynamic_mesh_pass_system(
     gpu: UniqueView<AbstractGpu>,
     depth_texture: UniqueView<DepthTexture>,
-    triangle_pipeline: UniqueView<TriangleTestPipeline>,
+    triangle_pipeline: UniqueView<DynamicMeshPipeline>,
     screen_texture: UniqueView<ScreenTexture>,
     queue: UniqueView<CommandQueue>,
     asset_server: UniqueView<AssetServer>,

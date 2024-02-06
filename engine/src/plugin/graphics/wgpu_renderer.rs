@@ -8,8 +8,8 @@ use crate::{
     }, schedule::Schedule, wgpu_graphics::{
         components::{ScreenFrame, ScreenTexture},
         gpu::Gpu,
-        passes::triangle_test_pass::triangle_test_pass_system,
-        pipelines::traingle_test_pipeline::TriangleTestPipeline,
+        passes::dynamic_mesh_pass::dynamic_mesh_pass_system,
+        pipelines::dynamic_mesh_pipeline::DynamicMeshPipeline,
         rendering::{
             acquire_screen_texture, present_screen_texture,
             reconfigure_main_textures_if_needed_system, submit_commands_in_order,
@@ -65,7 +65,7 @@ impl Pluggable for WgpuRendererPlugin {
             });
             
             app.schedule(Schedule::RequestRedraw, |world| {
-                world.run(triangle_test_pass_system);
+                world.run(dynamic_mesh_pass_system);
             });
 
             app.schedule(Schedule::QueueSubmit, |world| {
@@ -123,7 +123,7 @@ fn setup_camera(world: &World, gpu: &Gpu) {
 
 /// Setups all the required pipelines.
 fn setup_pipelines(app: &mut App, gpu: &Gpu) {
-    let p = TriangleTestPipeline::new(app, gpu);
+    let p = DynamicMeshPipeline::new(app, gpu);
 
     app.world.add_unique(p);
 }

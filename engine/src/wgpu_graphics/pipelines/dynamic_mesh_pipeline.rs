@@ -12,7 +12,7 @@ use crate::{
 };
 
 #[derive(Unique)]
-pub struct TriangleTestPipeline {
+pub struct DynamicMeshPipeline {
     /// Contains a reference to the pipeline.
     pub(crate) pipeline: RenderPipeline,
     /// Conaints the associated bind group.
@@ -22,9 +22,9 @@ pub struct TriangleTestPipeline {
     pub(crate) mesh_transform_buffers: AHashMap<MeshResourceID, (Buffer, u64)>,
 }
 
-impl TriangleTestPipeline {
-    /// Creates and returns a new `TriangleTestPipeline`.
-    pub(crate) fn new(app: &mut App, gpu: &Gpu) -> TriangleTestPipeline {
+impl DynamicMeshPipeline {
+    /// Creates and returns a new `DynamicMeshPipeline`.
+    pub(crate) fn new(app: &mut App, gpu: &Gpu) -> DynamicMeshPipeline {
         let program = gpu.compile_program(
             "triangle_test",
             include_str!("../shaders/triangle_test.wgsl"),
@@ -134,7 +134,7 @@ impl TriangleTestPipeline {
             });
 
 
-        TriangleTestPipeline {
+        DynamicMeshPipeline {
             pipeline,
             camera_bind_group,
             mesh_transform_buffers: AHashMap::new(),
@@ -152,7 +152,7 @@ fn setup_schedulers(app: &mut App) {
 /// Recreates the transformation buffer and pass the transform information.
 fn sync_dynamic_entities_position(
     gpu: UniqueView<AbstractGpu>,
-    mut pipeline: UniqueViewMut<TriangleTestPipeline>,
+    mut pipeline: UniqueViewMut<DynamicMeshPipeline>,
     transforms: View<Transform>,
     meshes: View<MeshComponent>,
 ) {
