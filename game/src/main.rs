@@ -1,5 +1,6 @@
 use egui_demo_lib::DemoWindows;
 
+use engine::egui::Mesh;
 use engine::graphics::components::MeshComponent;
 use engine::nalgebra::{Point3, Unit, UnitQuaternion, Vector3};
 
@@ -27,12 +28,16 @@ use engine::{
     schedule::Schedule,
     shipyard::{Component, Unique, UniqueView, UniqueViewMut},
 };
+use shipyard::{IntoIter, View, ViewMut};
 
 #[derive(Unique)]
 struct Demo(DemoWindows);
 
 unsafe impl Send for Demo {}
 unsafe impl Sync for Demo {}
+
+#[derive(Unique)]
+pub struct RotCubeAngle(f32);
 
 #[derive(Unique)]
 pub struct FlyCamera {
@@ -232,6 +237,18 @@ fn fly_camera_system(
     fly_camera.right_direction = parallel_direction;
 }
 
+
+fn rotate_cubes_system(meshes: View<MeshComponent>, mut transforms: ViewMut<Transform>, mut angl: UniqueViewMut<RotCubeAngle>, clock: UniqueView<Clock>) {
+    let axis = Unit::new_normalize(Vector3::new(0.0, 1.0, 0.0));
+ 
+    /*for (index, (_, t)) in (&meshes, &mut transforms).iter().enumerate() {
+        let rot = UnitQuaternion::from_axis_angle(&axis, angl.0 + index as f32);
+        t.rotation = rot;
+    }*/
+
+    // angl.0 += 0.5 * clock.delta_seconds() as f32;
+}
+
 struct PlayerPlugin;
 
 impl Pluggable for PlayerPlugin {
@@ -240,64 +257,95 @@ impl Pluggable for PlayerPlugin {
 
         app.world.add_unique(Demo(demo));
         app.world.add_unique(FlyCamera::default());
+        app.world.add_unique(RotCubeAngle(0.0));
 
         let axis = Unit::new_normalize(Vector3::new(1.0, 2.0, 3.0));
         let rot = UnitQuaternion::from_axis_angle(&axis, 1.78);
 
-        app.world.add_entity((
+        /*app.world.add_entity((
             MeshComponent(CUBE_MESH_RESOURCE_ID),
             Transform {
                 position: Vector3::new(0.0, 0.0, 0.0),
                 rotation: rot,
                 scale: Vector3::new(1.0, 1.0, 1.0),
             },
-        ));
+        ));*/
 
         let axis = Unit::new_normalize(Vector3::new(1.0, 2.0, 3.0));
         let rot = UnitQuaternion::from_axis_angle(&axis, 0.0);
 
-        app.world.add_entity((
+/*         app.world.add_entity((
             MeshComponent(CUBE_MESH_RESOURCE_ID),
             Transform {
                 position: Vector3::new(5.0, 0.0, 0.0),
                 rotation: rot,
                 scale: Vector3::new(2.0, 1.0, 1.0),
             },
-        ));
+        ));*/
 
         let axis = Unit::new_normalize(Vector3::new(1.0, 2.0, 3.0));
         let rot = UnitQuaternion::from_axis_angle(&axis, 0.0);
+
+       /* app.world.add_entity((
+            MeshComponent(CUBE_MESH_RESOURCE_ID),
+            Transform {
+                position: Vector3::new(0.0, 0.0, 0.0),
+                rotation: rot,
+                scale: Vector3::new(6.0, 2.0, 2.0),
+            },
+        ));
+
+
+        app.world.add_entity((
+            MeshComponent(CUBE_MESH_RESOURCE_ID),
+            Transform {
+                position: Vector3::new(0.0, 0.0, 0.0),
+                rotation: rot,
+                scale: Vector3::new(2.0, 12.0, 2.0),
+            },
+        ));
+        
+        app.world.add_entity((
+            MeshComponent(CUBE_MESH_RESOURCE_ID),
+            Transform {
+                position: Vector3::new(0.0, 0.0, 0.0),
+                rotation: rot,
+                scale: Vector3::new(2.0, 2.0, 24.0),
+            },
+        ));
 
         app.world.add_entity((
             MeshComponent(CUBE_MESH_RESOURCE_ID),
             Transform {
                 position: Vector3::new(10.0, 0.0, 0.0),
                 rotation: rot,
-                scale: Vector3::new(2.0, 1.0, 1.0),
+                scale: Vector3::new(2.0, 2.0, 24.0),
             },
-        ));
+        ));*/
 
-        for i in 0..10 {
+       for i in 0..10 {
             for j in 0..10 {
-                app.world.add_entity((
-                    MeshComponent(CUBE_MESH_RESOURCE_ID),
-                    Transform {
-                        position: Vector3::new(10.0 + i as f32 * 5.0, 0.0, j as f32 * 5.0),
-                        rotation: rot,
-                        scale: Vector3::new(1.0, 1.0, 1.0),
-                    },
-                ));
+                for k in 0..10 {
+                    app.world.add_entity((
+                        MeshComponent(CUBE_MESH_RESOURCE_ID),
+                        Transform {
+                            position: Vector3::new(10.0 + i as f32 * 5.0, k as f32 * 5.0, j as f32 * 5.0),
+                            rotation: rot,
+                            scale: Vector3::new(1.0, 1.0, 1.0),
+                        },
+                    ));
+                }
             }
         }
 
-        app.world.add_entity((
+        /*app.world.add_entity((
             MeshComponent(PENTAGON_MESH_RESOURCE_ID),
             Transform {
                 position: Vector3::new(8.0, 0.0, 0.0),
                 rotation: rot,
                 scale: Vector3::new(1.0, 1.0, 1.0),
             },
-        ));
+        ));*/
 
         app.schedule(Schedule::RequestRedraw, |world| {
             world.run(set_ui);
@@ -308,6 +356,7 @@ impl Pluggable for PlayerPlugin {
         app.schedule(Schedule::Update, |world| {
             world.run(fly_camera_system);
             world.run(camera_system);
+            world.run(rotate_cubes_system);
         });
     }
 }

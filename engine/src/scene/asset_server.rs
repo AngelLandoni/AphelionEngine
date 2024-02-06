@@ -10,7 +10,7 @@ use crate::graphics::mesh::Mesh;
 
 type AssetResourceID = &'static str;
 
-#[derive(Copy, Clone, Hash, PartialEq, Eq)]
+#[derive(Copy, Clone, Hash, PartialEq, Eq, Debug)]
 pub struct MeshResourceID(pub(crate) AssetResourceID);
 
 impl Deref for MeshResourceID {

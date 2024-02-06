@@ -1,18 +1,14 @@
 use std::collections::HashMap;
 
-use shipyard::Unique;
+use ahash::AHashMap;
+use shipyard::{IntoIter, Unique, UniqueView, UniqueViewMut, View, World};
 
 use wgpu::{
-    vertex_attr_array, BindGroup, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BlendComponent,
-    Buffer, BufferAddress, ColorTargetState, ColorWrites, DepthBiasState, DepthStencilState,
-    FragmentState, MultisampleState, PipelineLayoutDescriptor, PrimitiveState, RenderPipeline,
-    RenderPipelineDescriptor, ShaderStages, StencilState, VertexBufferLayout, VertexState,
+    vertex_attr_array, BindGroup, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BlendComponent, Buffer, BufferAddress, BufferUsages, ColorTargetState, ColorWrites, DepthBiasState, DepthStencilState, FragmentState, MultisampleState, PipelineLayoutDescriptor, PrimitiveState, RenderPipeline, RenderPipelineDescriptor, ShaderStages, StencilState, VertexBufferLayout, VertexState
 };
 
 use crate::{
-    graphics::vertex::Vertex,
-    scene::asset_server::MeshResourceID,
-    wgpu_graphics::gpu::{Gpu, DEPTH_TEXTURE_FORMAT},
+    app::App, graphics::{components::MeshComponent, gpu::AbstractGpu, vertex::Vertex}, scene::{asset_server::MeshResourceID, components::Transform}, schedule::Schedule, wgpu_graphics::{gpu::{Gpu, DEPTH_TEXTURE_FORMAT}, uniforms::CameraUniform}
 };
 
 #[derive(Unique)]
@@ -22,16 +18,23 @@ pub struct TriangleTestPipeline {
     /// Conaints the associated bind group.
     pub(crate) camera_bind_group: BindGroup,
     /// Contains the buffer which holds the transform information.
-    pub(crate) mesh_transform_buffers: HashMap<MeshResourceID, (Buffer, u32)>,
+    // TODO(Angel): Set this as u32, WGPU only supports u32 for instancing
+    pub(crate) mesh_transform_buffers: AHashMap<MeshResourceID, (Buffer, u64)>,
 }
 
 impl TriangleTestPipeline {
     /// Creates and returns a new `TriangleTestPipeline`.
-    pub(crate) fn new(gpu: &Gpu, camera_buffer: &Buffer) -> TriangleTestPipeline {
+    pub(crate) fn new(app: &mut App, gpu: &Gpu) -> TriangleTestPipeline {
         let program = gpu.compile_program(
             "triangle_test",
             include_str!("../shaders/triangle_test.wgsl"),
         );
+
+        setup_schedulers(app);
+
+        let camera_uniform = app.world
+            .borrow::<UniqueView<CameraUniform>>()
+            .expect("Unable to acquire camera uniform");
 
         let camera_bind_group_layout =
             gpu.device
@@ -53,7 +56,7 @@ impl TriangleTestPipeline {
             layout: &camera_bind_group_layout,
             entries: &[wgpu::BindGroupEntry {
                 binding: 0,
-                resource: camera_buffer.as_entire_binding(),
+                resource: camera_uniform.0.as_entire_binding(),
             }],
             label: Some("camera_bind_group"),
         });
@@ -130,10 +133,84 @@ impl TriangleTestPipeline {
                 multiview: None,
             });
 
+
         TriangleTestPipeline {
             pipeline,
             camera_bind_group,
-            mesh_transform_buffers: HashMap::new(),
+            mesh_transform_buffers: AHashMap::new(),
         }
+    }
+}
+
+/// Setups all the schedulers required by the pipeline.
+fn setup_schedulers(app: &mut App) {
+    app.schedule(Schedule::Update, |world| {
+        world.run(sync_dynamic_entities_position)
+    });
+}
+
+/// Recreates the transformation buffer and pass the transform information.
+fn sync_dynamic_entities_position(
+    gpu: UniqueView<AbstractGpu>,
+    mut pipeline: UniqueViewMut<TriangleTestPipeline>,
+    transforms: View<Transform>,
+    meshes: View<MeshComponent>,
+) {
+    let gpu = gpu
+        .downcast_ref::<Gpu>()
+        .expect("Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu");
+
+    pipeline
+        .mesh_transform_buffers
+        .iter_mut()
+        .for_each(|e| e.1.1 = 0);
+
+    // TODO(Angel): Since we already know the maximum size per mesh, we can 
+    // pre-allocate memory for each mesh to avoid dynamic reallocation during 
+    // runtime, which can improve performance by reducing memory fragmentation 
+    // and allocation overhead.
+    let mut raw_transforms: AHashMap<MeshResourceID, Vec<u8>> = AHashMap::new();
+
+    for ent in meshes.iter() {       
+        pipeline.mesh_transform_buffers.entry(**ent).or_insert_with(|| {
+            // Allocate the buffer.
+            let buffer = gpu.allocate_aligned_zero_buffer(
+                &format!("Mesh({}) transform", ent.0.0),
+                // TODO(Angel): The size must be configured using the pipeline props.
+                200000 * std::mem::size_of::<[[f32; 4]; 4]>() as u64,
+                BufferUsages::VERTEX | BufferUsages::COPY_DST,
+            );
+            (buffer, 0)
+        });        
+    }
+
+    for (e, t) in (&meshes, &transforms).iter() {
+        raw_transforms
+            .entry(**e)
+            .and_modify(|e| {
+                let data = t.as_matrix_array();
+                let a: &[u8] = bytemuck::cast_slice(&data);
+                e.extend_from_slice(a);
+            })
+            .or_insert_with(|| { 
+                let mut vec = Vec::new();
+                let data = t.as_matrix_array();
+                let a: &[u8] = bytemuck::cast_slice(&data);
+                vec.extend_from_slice(a);
+                vec
+            });
+    }
+
+    for (m, b) in raw_transforms.iter() {       
+        pipeline
+            .mesh_transform_buffers
+            .entry(*m)
+            .and_modify(|e| {
+                gpu
+                    .queue
+                    .write_buffer(&e.0, 0, b);
+                e.1 = b.len() as u64 / Transform::raw_size();
+            }
+        );
     }
 }

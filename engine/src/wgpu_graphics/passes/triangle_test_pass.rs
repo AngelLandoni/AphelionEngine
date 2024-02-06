@@ -43,7 +43,7 @@ pub(crate) fn triangle_test_pass_system(
             label: Some("Tirangle test encoder"),
         });
 
-    let preload_meshes: Vec<(Arc<Mesh>, &Buffer, &u32)> = triangle_pipeline
+    let preload_meshes: Vec<(Arc<Mesh>, &Buffer, &u64)> = triangle_pipeline
         .mesh_transform_buffers
         .iter()
         .map(|(mesh_id, (buffer, count))| (asset_server.load_mesh(mesh_id), buffer, count))
@@ -98,7 +98,8 @@ pub(crate) fn triangle_test_pass_system(
             pass.set_vertex_buffer(0, v_buffer.0.slice(..));
             pass.set_vertex_buffer(1, buffer.slice(..));
             pass.set_index_buffer(i_buffer.0.slice(..), wgpu::IndexFormat::Uint16);
-            pass.draw_indexed(0..mesh.index_count, 0, 0..**count);
+            //pass.draw_indexed(0..mesh.index_count, 0, 0..**count as u32 + 1);
+            pass.draw_indexed(0..mesh.index_count, 0, 0..**count as u32);
         }
     }
 

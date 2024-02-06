@@ -5,7 +5,7 @@ use nalgebra::{Matrix4, Rotation3, UnitQuaternion, Vector3};
 /// Represents a trasnformation component.
 ///
 /// This is used to transform one specif entity in the `World`.
-#[derive(Component)]
+#[derive(Component, Debug)]
 #[track(Insertion)]
 pub struct Transform {
     pub position: Vector3<f32>,
