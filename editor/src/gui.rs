@@ -7,8 +7,8 @@ use std::ops::{Deref, DerefMut};
 
 use engine::{
     app::App,
-    egui::{FontFamily, FontId, Margin, TextStyle, Widget},
-    plugin::{core::clock::Clock, graphics::egui::EguiContext, Pluggable},
+    egui::{Margin, Widget},
+    plugin::{graphics::egui::EguiContext, Pluggable},
     schedule::Schedule,
 };
 
@@ -108,7 +108,7 @@ fn render_gui_system(
                 ui,
                 &mut panel_state.0,
                 rect.height(),
-                |ui, tab| ui.label("Hello"),
+                |ui, _tab| ui.label("Hello"),
             );
         });
 }
