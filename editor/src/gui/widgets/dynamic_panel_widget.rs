@@ -1,10 +1,12 @@
 use engine::egui::{
-    Color32, Pos2, Rect, Response, Sense, Stroke, Ui, Vec2, Widget,
+    Color32, Frame, Margin, Pos2, Rect, Response, Rounding, Sense, Stroke, Ui, Vec2
 };
 
 use crate::gui::split_panel_tree::{
     BinaryOps, HFraction, PanelNode, SplitPanelTree, Tab, VFraction,
 };
+
+use super::tab_widget::render_tab_widget;
 
 pub fn render_dynamic_panel_widget(
     ui: &mut Ui,
@@ -50,22 +52,6 @@ pub fn render_dynamic_panel_widget(
                     rect.right_bottom(),
                 );
 
-                ui.painter().rect(
-                    left_rect,
-                    0.0,
-                    Color32::RED,
-                    //                        Color32::from_hex("#242424").unwrap_or_default(),
-                    Stroke::NONE,
-                );
-
-                ui.painter().rect(
-                    right_rect,
-                    0.0,
-                    Color32::BLUE,
-                    //Color32::from_hex("#121212").unwrap_or_default(),
-                    Stroke::NONE,
-                );
-
                 panel_tree.tree[index.left()].update_rect(left_rect);
                 panel_tree.tree[index.right()].update_rect(right_rect);
             }
@@ -95,35 +81,56 @@ pub fn render_dynamic_panel_widget(
                     rect.right_bottom(),
                 );
 
-                ui.painter().rect(
-                    top_rect,
-                    0.0,
-                    Color32::from_hex("#346434").unwrap_or_default(),
-                    //Color32::from_hex("#242424").unwrap_or_default(),
-                    Stroke::NONE,
-                );
-
-                ui.painter().rect(
-                    bottom_rect,
-                    0.0,
-                    Color32::from_hex("#804080").unwrap_or_default(),
-                    //Color32::from_hex("#121212").unwrap_or_default(),
-                    Stroke::NONE,
-                );
-
                 panel_tree.tree[index.left()].update_rect(top_rect);
                 panel_tree.tree[index.right()].update_rect(bottom_rect);
             }
 
             PanelNode::Container { rect, tabs } => {
                 ui.allocate_rect(*rect, Sense::focusable_noninteractive());
-
                 let mut ui = ui.child_ui(*rect, Default::default());
 
-                for tab in tabs {
-                    builder(&mut ui, tab);
-                }
+                render_list_of_tabs(&mut ui, rect, tabs, &builder);
             }
         }
     }
+}
+
+/// Renders all the tabs and the content of the seleted one.
+fn render_list_of_tabs(ui: &mut Ui, rect: &Rect, tabs: &Vec<Tab>, builder: impl Fn(&mut Ui, &Tab) -> Response) {
+    // Render the tabs background line.
+    ui.painter().rect_filled(
+        Rect::from_min_max(
+            rect.left_top(),
+            rect.right_top() + Vec2::new(0.0, 30.0),
+        ), 
+        0.0,
+        Color32::from_hex("#151515").unwrap_or(Color32::default()),
+    );
+
+    for tab in tabs {
+        Frame::none()
+            .outer_margin(Margin {
+                top: 5.0,
+                ..Default::default()
+            })
+            .show(ui, |ui| {
+                render_tab_widget(ui, &tab.title, true);
+            });
+    }
+
+    ui.painter().rect_filled(
+        Rect::from_min_max(
+            rect.left_top() + Vec2::new(0.0, 30.0),
+            rect.right_bottom(),
+        ), 
+        Rounding {
+            nw: 0.0,
+            ne: 10.0,
+            sw: 10.0,
+            se: 10.0,
+        },
+        Color32::from_hex("#242424").unwrap_or(Color32::default()),
+    );
+
+    //builder(ui, tab);
 }
