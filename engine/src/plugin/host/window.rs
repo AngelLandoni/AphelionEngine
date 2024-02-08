@@ -3,11 +3,7 @@ use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
 use shipyard::{Unique, UniqueViewMut};
 
 use winit::{
-    dpi::LogicalSize,
-    event::{DeviceEvent, ElementState, Event, KeyEvent, WindowEvent},
-    event_loop::EventLoop,
-    keyboard::PhysicalKey,
-    window::WindowBuilder,
+    dpi::LogicalSize, event::{DeviceEvent, ElementState, Event, KeyEvent, WindowEvent}, event_loop::EventLoop, keyboard::PhysicalKey, platform::macos::WindowBuilderExtMacOS, window::{WindowAttributes, WindowBuilder}
 };
 
 use crate::{
@@ -65,7 +61,10 @@ impl Pluggable for WinitWindowPlugin {
 
         let window_builder = WindowBuilder::new()
             .with_title(title)
-            .with_inner_size(LogicalSize::new(width, height));
+            .with_inner_size(LogicalSize::new(width, height))
+            .with_title_hidden(true)
+            .with_titlebar_transparent(true)
+            .with_fullsize_content_view(true);
 
         let winit_window: winit::window::Window = window_builder
             .build(&event_loop)

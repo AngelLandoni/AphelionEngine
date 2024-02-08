@@ -1,14 +1,23 @@
-use std::collections::HashMap;
-
 use ahash::AHashMap;
-use shipyard::{IntoIter, Unique, UniqueView, UniqueViewMut, View, World};
+use shipyard::{IntoIter, Unique, UniqueView, UniqueViewMut, View};
 
 use wgpu::{
-    vertex_attr_array, BindGroup, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BlendComponent, Buffer, BufferAddress, BufferUsages, ColorTargetState, ColorWrites, DepthBiasState, DepthStencilState, FragmentState, MultisampleState, PipelineLayoutDescriptor, PrimitiveState, RenderPipeline, RenderPipelineDescriptor, ShaderStages, StencilState, VertexBufferLayout, VertexState
+    vertex_attr_array, BindGroup, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BlendComponent,
+    Buffer, BufferAddress, BufferUsages, ColorTargetState, ColorWrites, DepthBiasState,
+    DepthStencilState, FragmentState, MultisampleState, PipelineLayoutDescriptor, PrimitiveState,
+    RenderPipeline, RenderPipelineDescriptor, ShaderStages, StencilState, VertexBufferLayout,
+    VertexState,
 };
 
 use crate::{
-    app::App, graphics::{components::MeshComponent, gpu::AbstractGpu, vertex::Vertex}, scene::{asset_server::MeshResourceID, components::Transform}, schedule::Schedule, wgpu_graphics::{gpu::{Gpu, DEPTH_TEXTURE_FORMAT}, uniforms::CameraUniform}
+    app::App,
+    graphics::{components::MeshComponent, gpu::AbstractGpu, vertex::Vertex},
+    scene::{asset_server::MeshResourceID, components::Transform},
+    schedule::Schedule,
+    wgpu_graphics::{
+        gpu::{Gpu, DEPTH_TEXTURE_FORMAT},
+        uniforms::CameraUniform,
+    },
 };
 
 #[derive(Unique)]
@@ -32,7 +41,8 @@ impl DynamicMeshPipeline {
 
         setup_schedulers(app);
 
-        let camera_uniform = app.world
+        let camera_uniform = app
+            .world
             .borrow::<UniqueView<CameraUniform>>()
             .expect("Unable to acquire camera uniform");
 
@@ -133,7 +143,6 @@ impl DynamicMeshPipeline {
                 multiview: None,
             });
 
-
         DynamicMeshPipeline {
             pipeline,
             camera_bind_group,
@@ -163,25 +172,28 @@ fn sync_dynamic_entities_position(
     pipeline
         .mesh_transform_buffers
         .iter_mut()
-        .for_each(|e| e.1.1 = 0);
+        .for_each(|e| e.1 .1 = 0);
 
-    // TODO(Angel): Since we already know the maximum size per mesh, we can 
-    // pre-allocate memory for each mesh to avoid dynamic reallocation during 
-    // runtime, which can improve performance by reducing memory fragmentation 
+    // TODO(Angel): Since we already know the maximum size per mesh, we can
+    // pre-allocate memory for each mesh to avoid dynamic reallocation during
+    // runtime, which can improve performance by reducing memory fragmentation
     // and allocation overhead.
     let mut raw_transforms: AHashMap<MeshResourceID, Vec<u8>> = AHashMap::new();
 
-    for ent in meshes.iter() {       
-        pipeline.mesh_transform_buffers.entry(**ent).or_insert_with(|| {
-            // Allocate the buffer.
-            let buffer = gpu.allocate_aligned_zero_buffer(
-                &format!("Mesh({}) transform", ent.0.0),
-                // TODO(Angel): The size must be configured using the pipeline props.
-                200000 * std::mem::size_of::<[[f32; 4]; 4]>() as u64,
-                BufferUsages::VERTEX | BufferUsages::COPY_DST,
-            );
-            (buffer, 0)
-        });        
+    for ent in meshes.iter() {
+        pipeline
+            .mesh_transform_buffers
+            .entry(**ent)
+            .or_insert_with(|| {
+                // Allocate the buffer.
+                let buffer = gpu.allocate_aligned_zero_buffer(
+                    &format!("Mesh({}) transform", ent.0 .0),
+                    // TODO(Angel): The size must be configured using the pipeline props.
+                    200000 * std::mem::size_of::<[[f32; 4]; 4]>() as u64,
+                    BufferUsages::VERTEX | BufferUsages::COPY_DST,
+                );
+                (buffer, 0)
+            });
     }
 
     for (e, t) in (&meshes, &transforms).iter() {
@@ -192,7 +204,7 @@ fn sync_dynamic_entities_position(
                 let a: &[u8] = bytemuck::cast_slice(&data);
                 e.extend_from_slice(a);
             })
-            .or_insert_with(|| { 
+            .or_insert_with(|| {
                 let mut vec = Vec::new();
                 let data = t.as_matrix_array();
                 let a: &[u8] = bytemuck::cast_slice(&data);
@@ -201,16 +213,10 @@ fn sync_dynamic_entities_position(
             });
     }
 
-    for (m, b) in raw_transforms.iter() {       
-        pipeline
-            .mesh_transform_buffers
-            .entry(*m)
-            .and_modify(|e| {
-                gpu
-                    .queue
-                    .write_buffer(&e.0, 0, b);
-                e.1 = b.len() as u64 / Transform::raw_size();
-            }
-        );
+    for (m, b) in raw_transforms.iter() {
+        pipeline.mesh_transform_buffers.entry(*m).and_modify(|e| {
+            gpu.queue.write_buffer(&e.0, 0, b);
+            e.1 = b.len() as u64 / Transform::raw_size();
+        });
     }
 }

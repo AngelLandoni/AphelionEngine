@@ -1,6 +1,10 @@
 use bytemuck::{AnyBitPattern, Pod};
 use wgpu::{
-    util::{BufferInitDescriptor, DeviceExt}, Adapter, Buffer, BufferAddress, BufferUsages, Device, DeviceDescriptor, Extent3d, Features, Limits, Queue, RequestAdapterOptions, SamplerDescriptor, ShaderModule, Surface, SurfaceConfiguration, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor, COPY_BUFFER_ALIGNMENT
+    util::{BufferInitDescriptor, DeviceExt},
+    Adapter, Buffer, BufferAddress, BufferUsages, Device, DeviceDescriptor, Extent3d, Features,
+    Limits, Queue, RequestAdapterOptions, SamplerDescriptor, ShaderModule, Surface,
+    SurfaceConfiguration, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
+    TextureViewDescriptor, COPY_BUFFER_ALIGNMENT,
 };
 
 use crate::{
@@ -142,11 +146,11 @@ impl Gpu {
         &self,
         label: &str,
         size: u64,
-        usage: BufferUsages
+        usage: BufferUsages,
     ) -> Buffer {
         let padded_size = match size.checked_sub(COPY_BUFFER_ALIGNMENT - 1) {
             Some(subtracted) => subtracted & !(COPY_BUFFER_ALIGNMENT - 1),
-            None => 0
+            None => 0,
         };
 
         self.device.create_buffer(&wgpu::BufferDescriptor {
@@ -160,7 +164,7 @@ impl Gpu {
     pub(crate) fn write_aligned_buffer(&self, buffer: &Buffer, offset: BufferAddress, data: &[u8]) {
         let aligned_offset = match offset.checked_sub(COPY_BUFFER_ALIGNMENT - 1) {
             Some(subtracted) => subtracted & !(COPY_BUFFER_ALIGNMENT - 1),
-            None => 0
+            None => 0,
         };
         self.queue.write_buffer(buffer, aligned_offset, data);
     }
