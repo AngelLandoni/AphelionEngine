@@ -76,25 +76,35 @@ fn update_fly_camera_when_keys_are_pressed_system(
 
     // Update camera position based on the keys pressed.
     if keyboard.is_key_down(&KeyCode::W) {
-        camera.position += e_camera.direction * e_camera.speed * clock.delta_seconds() as f32;
-        camera.target += e_camera.direction * e_camera.speed * clock.delta_seconds() as f32;
+        camera.position +=
+            e_camera.direction * e_camera.speed * clock.delta_seconds() as f32;
+        camera.target +=
+            e_camera.direction * e_camera.speed * clock.delta_seconds() as f32;
     }
 
     if keyboard.is_key_down(&KeyCode::S) {
-        camera.position -= e_camera.direction * e_camera.speed * clock.delta_seconds() as f32;
-        camera.target -= e_camera.direction * e_camera.speed * clock.delta_seconds() as f32;
+        camera.position -=
+            e_camera.direction * e_camera.speed * clock.delta_seconds() as f32;
+        camera.target -=
+            e_camera.direction * e_camera.speed * clock.delta_seconds() as f32;
     }
 
     if keyboard.is_key_down(&KeyCode::A) {
-        camera.position -=
-            e_camera.tangent_direction * e_camera.speed * clock.delta_seconds() as f32;
-        camera.target -= e_camera.tangent_direction * e_camera.speed * clock.delta_seconds() as f32;
+        camera.position -= e_camera.tangent_direction
+            * e_camera.speed
+            * clock.delta_seconds() as f32;
+        camera.target -= e_camera.tangent_direction
+            * e_camera.speed
+            * clock.delta_seconds() as f32;
     }
 
     if keyboard.is_key_down(&KeyCode::D) {
-        camera.position +=
-            e_camera.tangent_direction * e_camera.speed * clock.delta_seconds() as f32;
-        camera.target += e_camera.tangent_direction * e_camera.speed * clock.delta_seconds() as f32;
+        camera.position += e_camera.tangent_direction
+            * e_camera.speed
+            * clock.delta_seconds() as f32;
+        camera.target += e_camera.tangent_direction
+            * e_camera.speed
+            * clock.delta_seconds() as f32;
     }
 
     // Increase the speed as long as a key is pressed and the speed does not

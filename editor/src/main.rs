@@ -7,7 +7,9 @@ use engine::{
         core::clock::ClockPlugin,
         graphics::{egui::EguiPlugin, wgpu_renderer::WgpuRendererPlugin},
         host::window::WinitWindowPlugin,
-        scene::{primitives_plugin::PrimitivesPlugin, scene_plugin::ScenePlugin},
+        scene::{
+            primitives_plugin::PrimitivesPlugin, scene_plugin::ScenePlugin,
+        },
     },
 };
 

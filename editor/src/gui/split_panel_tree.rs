@@ -147,11 +147,14 @@ impl SplitPanelTree {
         // We want one more level, that implies create N number of elements to
         // fill that level. We take the current level and add an extra one then
         // the 1 gets shifted that amount of levels to the left (multiply by 2).
-        let number_of_elements_to_fill_level = 1 << (right_most_element.level() + 1);
+        let number_of_elements_to_fill_level =
+            1 << (right_most_element.level() + 1);
 
         // Finally resize if it is appropiated.
         self.tree
-            .resize_with(number_of_elements_to_fill_level + 1, || PanelNode::None);
+            .resize_with(number_of_elements_to_fill_level + 1, || {
+                PanelNode::None
+            });
 
         // Check where the old content should go (left or right).
         match dir {
@@ -199,11 +202,14 @@ impl SplitPanelTree {
         // We want one more level, that implies create N number of elements to
         // fill that level. We take the current level and add an extra one then
         // the 1 gets shifted that amount of levels to the left (multiply by 2).
-        let number_of_elements_to_fill_level = 1 << (right_most_element.level() + 1);
+        let number_of_elements_to_fill_level =
+            1 << (right_most_element.level() + 1);
 
         // Finally resize if it is appropiated.
         self.tree
-            .resize_with(number_of_elements_to_fill_level + 1, || PanelNode::None);
+            .resize_with(number_of_elements_to_fill_level + 1, || {
+                PanelNode::None
+            });
 
         println!("Len: {}", number_of_elements_to_fill_level);
 
@@ -224,7 +230,12 @@ impl SplitPanelTree {
         (target.left(), target.right())
     }
 
-    pub fn insert_tab(&mut self, target: Index, name: &str, identification: &str) {
+    pub fn insert_tab(
+        &mut self,
+        target: Index,
+        name: &str,
+        identification: &str,
+    ) {
         match &mut self.tree[target] {
             // Empty spot we are good insert container.
             PanelNode::None => {
