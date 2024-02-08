@@ -1,6 +1,7 @@
 pub mod split_panel_tree;
 pub mod style;
 pub mod widgets;
+pub mod icons;
 
 use shipyard::{Unique, UniqueView, UniqueViewMut};
 use std::ops::{Deref, DerefMut};
@@ -20,7 +21,7 @@ use crate::gui::{
 };
 
 use self::{
-    split_panel_tree::VSplitDir, style::configure_fonts,
+    split_panel_tree::VSplitDir, style::{configure_fonts, configure_icon_font},
     widgets::dynamic_panel_widget::render_dynamic_panel_widget,
 };
 
@@ -58,10 +59,12 @@ impl Pluggable for GuiPlugin {
 /// Configures the ui state.
 fn configure_gui_system(
     mut panel_state: UniqueViewMut<GuiPanelState>,
-    egui: UniqueView<EguiContext>,
+    mut egui: UniqueViewMut<EguiContext>,
 ) {
     // Configure all the font styles.
     configure_fonts(&egui.0);
+    // Configure the icons font.
+    configure_icon_font(&mut egui.0);
     // Configure all the panels.
     configure_panels(&mut panel_state);
 }

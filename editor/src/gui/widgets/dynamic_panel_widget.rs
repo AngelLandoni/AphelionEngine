@@ -8,6 +8,9 @@ use crate::gui::split_panel_tree::{
 
 use super::tab_widget::render_tab_widget;
 
+const PANEL_CORNER_RADIUS: f32 = 5.0;
+const PANEL_SPACE: f32 = 4.0;
+
 pub fn render_dynamic_panel_widget(
     ui: &mut Ui,
     panel_tree: &mut SplitPanelTree,
@@ -42,13 +45,13 @@ pub fn render_dynamic_panel_widget(
                 let left_rect = Rect::from_min_max(
                     rect.left_top(),
                     rect.left_bottom()
-                        + Vec2::new(rect.width() * left_fraction, 0.0),
+                        + Vec2::new(rect.width() * left_fraction, 0.0) - Vec2::new(PANEL_SPACE / 2.0, 0.0),
                 );
 
                 // Define the size and position of the red rectangle (right half)
                 let right_rect = Rect::from_min_max(
                     rect.right_top()
-                        - Vec2::new(rect.width() * right_fraction, 0.0),
+                        - Vec2::new(rect.width() * right_fraction, 0.0) + Vec2::new(PANEL_SPACE / 2.0, 0.0),
                     rect.right_bottom(),
                 );
 
@@ -71,13 +74,13 @@ pub fn render_dynamic_panel_widget(
                 let top_rect = Rect::from_min_max(
                     rect.left_top(),
                     rect.right_top()
-                        + Vec2::new(0.0, rect.height() * top_fraction),
+                        + Vec2::new(0.0, rect.height() * top_fraction) - Vec2::new(0.0, PANEL_SPACE / 2.0),
                 );
 
                 // Define the size and position of the red rectangle (right half)
                 let bottom_rect = Rect::from_min_max(
                     rect.left_bottom()
-                        - Vec2::new(0.0, rect.height() * bottom_fraction),
+                        - Vec2::new(0.0, rect.height() * bottom_fraction) + Vec2::new(0.0, PANEL_SPACE / 2.0),
                     rect.right_bottom(),
                 );
 
@@ -114,7 +117,7 @@ fn render_list_of_tabs(ui: &mut Ui, rect: &Rect, tabs: &Vec<Tab>, builder: impl 
                 ..Default::default()
             })
             .show(ui, |ui| {
-                render_tab_widget(ui, &tab.title, true);
+                render_tab_widget(ui, crate::gui::icons::IMAGE, &tab.title, true);
             });
     }
 
@@ -125,9 +128,9 @@ fn render_list_of_tabs(ui: &mut Ui, rect: &Rect, tabs: &Vec<Tab>, builder: impl 
         ), 
         Rounding {
             nw: 0.0,
-            ne: 10.0,
-            sw: 10.0,
-            se: 10.0,
+            ne: PANEL_CORNER_RADIUS,
+            sw: PANEL_CORNER_RADIUS,
+            se: PANEL_CORNER_RADIUS,
         },
         Color32::from_hex("#242424").unwrap_or(Color32::default()),
     );
