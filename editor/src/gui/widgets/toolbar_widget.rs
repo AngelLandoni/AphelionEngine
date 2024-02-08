@@ -5,8 +5,8 @@ use engine::egui::{
 
 use crate::gui::widgets::menu_widget::MenuWidget;
 
-const MACOS_SEMA_BUTTONS_LEFT_PADDING: f32 = 70.0;
-const MACOS_SEMA_BUTTONS_VERTICAL_PADDING: f32 = 5.0;
+const MACOS_SEMA_BUTTONS_LEFT_PADDING: f32 = 60.0;
+const MACOS_SEMA_BUTTONS_VERTICAL_PADDING: f32 = 6.0;
 
 struct TabWidget<'a> {
     title: &'a str,
@@ -80,7 +80,7 @@ impl Widget for ToolbarWidget {
                 )
                 .stroke(Stroke::NONE)
                 .outer_margin(Margin::ZERO)
-                .inner_margin(Margin::symmetric(20.0, 10.0))
+                .inner_margin(Margin::symmetric(20.0, 12.0))
                 .show(ui, |ui| {
                     ui.horizontal(|ui| {
                         ui.with_layout(
