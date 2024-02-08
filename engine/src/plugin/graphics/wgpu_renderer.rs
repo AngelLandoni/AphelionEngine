@@ -2,10 +2,13 @@ use shipyard::{UniqueView, UniqueViewMut, World};
 use wgpu::BufferUsages;
 
 use crate::{
-    app::App, graphics::{components::DepthTexture, gpu::AbstractGpu, BufferCreator}, host::window::Window, plugin::Pluggable, scene::{
-        camera::Camera,
-        perspective::Perspective,
-    }, schedule::Schedule, wgpu_graphics::{
+    app::App,
+    graphics::{components::DepthTexture, gpu::AbstractGpu, BufferCreator},
+    host::window::Window,
+    plugin::Pluggable,
+    scene::{camera::Camera, perspective::Perspective},
+    schedule::Schedule,
+    wgpu_graphics::{
         components::{ScreenFrame, ScreenTexture},
         gpu::Gpu,
         passes::dynamic_mesh_pass::dynamic_mesh_pass_system,
@@ -16,7 +19,7 @@ use crate::{
         },
         uniforms::{sync_camera_perspective_uniform, CameraUniform},
         CommandQueue, OrderCommandQueue, MAX_NUMBER_IF_COMMANDS_PER_FRAME,
-    }
+    },
 };
 
 pub struct WgpuRendererPlugin;
@@ -35,7 +38,7 @@ impl Pluggable for WgpuRendererPlugin {
         // Setup all the unique resources.
         {
             let world = &app.world;
-            
+
             setup_screen_texture_and_queue(world);
             setup_depth_texture(world, &gpu);
             setup_camera(world, &gpu);
@@ -63,7 +66,7 @@ impl Pluggable for WgpuRendererPlugin {
             app.schedule(Schedule::Update, |world| {
                 world.run(sync_camera_perspective_uniform_system);
             });
-            
+
             app.schedule(Schedule::RequestRedraw, |world| {
                 world.run(dynamic_mesh_pass_system);
             });

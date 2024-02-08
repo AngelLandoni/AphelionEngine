@@ -1,12 +1,9 @@
 use egui_demo_lib::DemoWindows;
 
-use engine::egui::Mesh;
 use engine::graphics::components::MeshComponent;
 use engine::nalgebra::{Point3, Unit, UnitQuaternion, Vector3};
 
-use engine::plugin::scene::primitives_plugin::{
-    PrimitivesPlugin, CUBE_MESH_RESOURCE_ID, PENTAGON_MESH_RESOURCE_ID,
-};
+use engine::plugin::scene::primitives_plugin::{PrimitivesPlugin, CUBE_MESH_RESOURCE_ID};
 
 use engine::scene::components::Transform;
 use engine::scene::mouse::CursorDelta;
@@ -28,7 +25,7 @@ use engine::{
     schedule::Schedule,
     shipyard::{Component, Unique, UniqueView, UniqueViewMut},
 };
-use shipyard::{IntoIter, View, ViewMut};
+use shipyard::{View, ViewMut};
 
 #[derive(Unique)]
 struct Demo(DemoWindows);
@@ -237,10 +234,14 @@ fn fly_camera_system(
     fly_camera.right_direction = parallel_direction;
 }
 
+fn rotate_cubes_system(
+    _meshes: View<MeshComponent>,
+    _transforms: ViewMut<Transform>,
+    _angl: UniqueViewMut<RotCubeAngle>,
+    _clock: UniqueView<Clock>,
+) {
+    let _axis = Unit::new_normalize(Vector3::new(0.0, 1.0, 0.0));
 
-fn rotate_cubes_system(meshes: View<MeshComponent>, mut transforms: ViewMut<Transform>, mut angl: UniqueViewMut<RotCubeAngle>, clock: UniqueView<Clock>) {
-    let axis = Unit::new_normalize(Vector3::new(0.0, 1.0, 0.0));
- 
     /*for (index, (_, t)) in (&meshes, &mut transforms).iter().enumerate() {
         let rot = UnitQuaternion::from_axis_angle(&axis, angl.0 + index as f32);
         t.rotation = rot;
@@ -260,7 +261,7 @@ impl Pluggable for PlayerPlugin {
         app.world.add_unique(RotCubeAngle(0.0));
 
         let axis = Unit::new_normalize(Vector3::new(1.0, 2.0, 3.0));
-        let rot = UnitQuaternion::from_axis_angle(&axis, 1.78);
+        let _rot = UnitQuaternion::from_axis_angle(&axis, 1.78);
 
         /*app.world.add_entity((
             MeshComponent(CUBE_MESH_RESOURCE_ID),
@@ -272,9 +273,9 @@ impl Pluggable for PlayerPlugin {
         ));*/
 
         let axis = Unit::new_normalize(Vector3::new(1.0, 2.0, 3.0));
-        let rot = UnitQuaternion::from_axis_angle(&axis, 0.0);
+        let _rot = UnitQuaternion::from_axis_angle(&axis, 0.0);
 
-/*         app.world.add_entity((
+        /*         app.world.add_entity((
             MeshComponent(CUBE_MESH_RESOURCE_ID),
             Transform {
                 position: Vector3::new(5.0, 0.0, 0.0),
@@ -286,7 +287,7 @@ impl Pluggable for PlayerPlugin {
         let axis = Unit::new_normalize(Vector3::new(1.0, 2.0, 3.0));
         let rot = UnitQuaternion::from_axis_angle(&axis, 0.0);
 
-       /* app.world.add_entity((
+        /* app.world.add_entity((
             MeshComponent(CUBE_MESH_RESOURCE_ID),
             Transform {
                 position: Vector3::new(0.0, 0.0, 0.0),
@@ -304,7 +305,7 @@ impl Pluggable for PlayerPlugin {
                 scale: Vector3::new(2.0, 12.0, 2.0),
             },
         ));
-        
+
         app.world.add_entity((
             MeshComponent(CUBE_MESH_RESOURCE_ID),
             Transform {
@@ -323,13 +324,17 @@ impl Pluggable for PlayerPlugin {
             },
         ));*/
 
-       for i in 0..58 {
+        for i in 0..58 {
             for j in 0..58 {
                 for k in 0..58 {
                     app.world.add_entity((
                         MeshComponent(CUBE_MESH_RESOURCE_ID),
                         Transform {
-                            position: Vector3::new(10.0 + i as f32 * 5.0, k as f32 * 5.0, j as f32 * 5.0),
+                            position: Vector3::new(
+                                10.0 + i as f32 * 5.0,
+                                k as f32 * 5.0,
+                                j as f32 * 5.0,
+                            ),
                             rotation: rot,
                             scale: Vector3::new(1.0, 1.0, 1.0),
                         },
