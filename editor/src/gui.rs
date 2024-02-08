@@ -1,8 +1,8 @@
-pub mod dynamic_panel_widget;
-pub mod menu_widget;
 pub mod split_panel_tree;
-pub mod toolbar_widget;
+pub mod style;
+pub mod widgets;
 
+use shipyard::{Unique, UniqueView, UniqueViewMut};
 use std::ops::{Deref, DerefMut};
 
 use engine::{
@@ -11,14 +11,17 @@ use engine::{
     plugin::{core::clock::Clock, graphics::egui::EguiContext, Pluggable},
     schedule::Schedule,
 };
-use shipyard::{Unique, UniqueView, UniqueViewMut};
 
-use crate::gui::split_panel_tree::VSplitDir;
+use crate::gui::{
+    split_panel_tree::{
+        HFraction, HSplitDir, SplitPanelTree, VFraction, ROOT_NODE,
+    },
+    widgets::toolbar_widget::ToolbarWidget,
+};
 
 use self::{
-    dynamic_panel_widget::DynamicPanelWidget,
-    split_panel_tree::{HFraction, HSplitDir, SplitPanelTree, VFraction, ROOT_NODE},
-    toolbar_widget::ToolbarWidget,
+    split_panel_tree::VSplitDir, style::configure_fonts,
+    widgets::dynamic_panel_widget::render_dynamic_panel_widget,
 };
 
 #[derive(Unique)]
@@ -38,11 +41,6 @@ impl DerefMut for GuiPanelState {
     }
 }
 
-enum TabSection {
-    Workbench,
-    Log,
-}
-
 pub struct GuiPlugin;
 impl Pluggable for GuiPlugin {
     fn configure(&self, app: &mut App) {
@@ -58,55 +56,45 @@ impl Pluggable for GuiPlugin {
 }
 
 /// Configures the ui state.
-fn configure_gui_system(mut panel_state: UniqueViewMut<GuiPanelState>) {
-    let (workbench, _helpers) =
-        panel_state.horizontal_split(ROOT_NODE, HSplitDir::Left, HFraction::Left(0.8));
-    let (visual_area, _logs) =
-        panel_state.vertical_split(workbench, VSplitDir::Top, VFraction::Top(0.8));
-
-    panel_state.insert_tab(visual_area, "Testing", "Workbench");
+fn configure_gui_system(
+    mut panel_state: UniqueViewMut<GuiPanelState>,
+    egui: UniqueView<EguiContext>,
+) {
+    // Configure all the font styles.
+    configure_fonts(&egui.0);
+    // Configure all the panels.
+    configure_panels(&mut panel_state);
 }
 
+/// Configures the default layout and distribution of panels within the editor.
+fn configure_panels(tree: &mut SplitPanelTree) {
+    let (workbench, right_zone) = tree.horizontal_split(
+        ROOT_NODE,
+        HSplitDir::Left,
+        HFraction::Left(0.85),
+    );
+
+    let (left_zone, central) = tree.horizontal_split(
+        workbench,
+        HSplitDir::Right,
+        HFraction::Right(0.8),
+    );
+
+    let (viewport, logs) =
+        tree.vertical_split(central, VSplitDir::Top, VFraction::Top(0.8));
+
+    tree.insert_tab(viewport, "Viewport", "Viewport");
+    tree.insert_tab(logs, "General logs", "GeneralLogs");
+
+    tree.insert_tab(left_zone, "Entities", "EntitiesTree");
+    tree.insert_tab(right_zone, "Properties", "Properties");
+}
+
+/// Renders the UI based on the Panel states.
 fn render_gui_system(
     egui: UniqueView<EguiContext>,
     mut panel_state: UniqueViewMut<GuiPanelState>,
-    clock: UniqueView<Clock>,
 ) {
-    // Get current context style
-    let mut style = (*egui.0.style()).clone();
-
-    // Redefine text_styles
-    style.text_styles = [
-        (
-            TextStyle::Heading,
-            FontId::new(30.0, FontFamily::Proportional),
-        ),
-        (
-            TextStyle::Name("Heading2".into()),
-            FontId::new(25.0, FontFamily::Proportional),
-        ),
-        (
-            TextStyle::Name("Context".into()),
-            FontId::new(23.0, FontFamily::Proportional),
-        ),
-        (TextStyle::Body, FontId::new(15.0, FontFamily::Proportional)),
-        (
-            TextStyle::Monospace,
-            FontId::new(14.0, FontFamily::Proportional),
-        ),
-        (
-            TextStyle::Button,
-            FontId::new(14.0, FontFamily::Proportional),
-        ),
-        (
-            TextStyle::Small,
-            FontId::new(10.0, FontFamily::Proportional),
-        ),
-    ]
-    .into();
-
-    egui.0.set_style(style);
-
     engine::egui::CentralPanel::default()
         .frame(engine::egui::Frame {
             inner_margin: Margin::ZERO,
@@ -115,13 +103,12 @@ fn render_gui_system(
         })
         .show(&egui.0, |ui| {
             let rect = ToolbarWidget.ui(ui).rect;
-            DynamicPanelWidget::new(&mut panel_state, rect.height(), |ui, tab| {
-                match tab.identification.as_ref() {
-                    "Workbench" => ui.label(format!("DT: {}", clock.delta_seconds())),
 
-                    _ => ui.label(""),
-                }
-            })
-            .ui(ui);
+            render_dynamic_panel_widget(
+                ui,
+                &mut panel_state.0,
+                rect.height(),
+                |ui, tab| ui.label("Hello"),
+            );
         });
 }

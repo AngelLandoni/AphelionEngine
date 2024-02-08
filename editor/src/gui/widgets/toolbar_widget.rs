@@ -1,6 +1,9 @@
-use engine::egui::{Align, Color32, Frame, Layout, Margin, Rounding, Stroke, Style, Vec2, Widget};
+use engine::egui::{
+    Align, Color32, Frame, Layout, Margin, Rounding, Stroke, Style, Vec2,
+    Widget,
+};
 
-use crate::gui::menu_widget::MenuWidget;
+use crate::gui::widgets::menu_widget::MenuWidget;
 
 const MACOS_SEMA_BUTTONS_LEFT_PADDING: f32 = 70.0;
 const MACOS_SEMA_BUTTONS_VERTICAL_PADDING: f32 = 5.0;
@@ -43,7 +46,9 @@ impl Widget for ToolbarWidget {
             ui.spacing_mut().item_spacing = Vec2::ZERO;
 
             Frame::group(&Style::default())
-                .fill(Color32::from_hex("#151515").unwrap_or(Color32::default()))
+                .fill(
+                    Color32::from_hex("#151515").unwrap_or(Color32::default()),
+                )
                 .stroke(Stroke::NONE)
                 .outer_margin(Margin::ZERO)
                 .inner_margin(Margin {
@@ -70,26 +75,36 @@ impl Widget for ToolbarWidget {
                 });
 
             Frame::group(&Style::default())
-                .fill(Color32::from_hex("#242424").unwrap_or(Color32::default()))
+                .fill(
+                    Color32::from_hex("#242424").unwrap_or(Color32::default()),
+                )
                 .stroke(Stroke::NONE)
                 .outer_margin(Margin::ZERO)
                 .inner_margin(Margin::symmetric(20.0, 10.0))
                 .show(ui, |ui| {
                     ui.horizontal(|ui| {
-                        ui.with_layout(Layout::left_to_right(Align::TOP), |ui| {
-                            ui.label("Left");
-                        });
+                        ui.with_layout(
+                            Layout::left_to_right(Align::TOP),
+                            |ui| {
+                                ui.label("Left");
+                            },
+                        );
 
                         ui.with_layout(
-                            Layout::centered_and_justified(engine::egui::Direction::TopDown),
+                            Layout::centered_and_justified(
+                                engine::egui::Direction::TopDown,
+                            ),
                             |ui| {
                                 ui.label("Play");
                             },
                         );
 
-                        ui.with_layout(Layout::right_to_left(Align::TOP), |ui| {
-                            ui.label("Right");
-                        });
+                        ui.with_layout(
+                            Layout::right_to_left(Align::TOP),
+                            |ui| {
+                                ui.label("Right");
+                            },
+                        );
                     });
                 });
         })
