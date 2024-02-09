@@ -9,6 +9,12 @@ pub trait BinaryOps {
     fn left(&self) -> usize;
     fn right(&self) -> usize;
     fn level(&self) -> usize;
+    fn parent(&self) -> usize;
+    fn is_left(&self) -> bool;
+    fn is_right(&self) -> bool;
+    fn children_at(&self, level: usize) -> std::ops::Range<usize>;
+    fn children_left(&self, level: usize) -> std::ops::Range<usize>;
+    fn children_right(&self, level: usize) -> std::ops::Range<usize>;
 }
 
 impl BinaryOps for Index {
@@ -25,6 +31,39 @@ impl BinaryOps for Index {
             return 0;
         }
         (usize::BITS as usize) - (self + 1).leading_zeros() as usize
+    }
+
+    fn parent(&self) -> Index {
+        (self - 1) / 2
+    }
+
+    fn is_left(&self) -> bool {
+        self % 2 != 0
+    }
+
+    fn is_right(&self) -> bool {
+        self % 2 == 0
+    }
+
+    fn children_at(&self, level: usize) -> std::ops::Range<usize> {
+        let base = 1 << level;
+        let s = (self + 1) * base - 1;
+        let e = (self + 2) * base - 1;
+        s..e
+    }
+
+    fn children_left(&self, level: usize) -> std::ops::Range<usize> {
+        let base = 1 << level;
+        let s = (self + 1) * base - 1;
+        let e = (self + 1) * base + base / 2 - 1;
+        s..e
+    }
+
+    fn children_right(&self, level: usize) -> std::ops::Range<usize> {
+        let base = 1 << level;
+        let s = (self + 1) * base + base / 2 - 1;
+        let e = (self + 2) * base - 1;
+        s..e
     }
 }
 
@@ -290,7 +329,14 @@ impl SplitPanelTree {
                 self.tree[target] = element;
             }
 
-            PanelNode::Container { .. } => {}
+            PanelNode::Container {
+                tabs, active_tab, ..
+            } => {
+                tabs.push(Tab {
+                    title: name.to_owned(),
+                    identification: identification.to_owned(),
+                });
+            }
 
             // Not allowed.
             PanelNode::HLayout {
@@ -301,6 +347,64 @@ impl SplitPanelTree {
                 rect: _,
                 fraction: _,
             } => {}
+        }
+    }
+
+    // Removes all the containers which does not have any tab.
+    pub fn clean_containers(&mut self) {
+        let container =
+            self.tree
+                .iter()
+                .enumerate()
+                .find_map(|(index, node)| match node {
+                    PanelNode::Container { tabs, .. } => {
+                        if tabs.is_empty() {
+                            Some(index)
+                        } else {
+                            None
+                        }
+                    }
+                    _ => None,
+                });
+
+        let container: Index = match container {
+            Some(c) => c,
+            None => return,
+        };
+
+        let parent = container.parent();
+
+        self.tree[parent] = PanelNode::None;
+        self.tree[container] = PanelNode::None;
+
+        let mut level = 0;
+
+        if container.is_left() {
+            'left_end: loop {
+                let dst = parent.children_at(level);
+                let src = parent.children_right(level + 1);
+                for (dst, src) in dst.zip(src) {
+                    if src >= self.tree.len() {
+                        break 'left_end;
+                    }
+                    self.tree[dst] =
+                        std::mem::replace(&mut self.tree[src], PanelNode::None);
+                }
+                level += 1;
+            }
+        } else {
+            'right_end: loop {
+                let dst = parent.children_at(level);
+                let src = parent.children_left(level + 1);
+                for (dst, src) in dst.zip(src) {
+                    if src >= self.tree.len() {
+                        break 'right_end;
+                    }
+                    self.tree[dst] =
+                        std::mem::replace(&mut self.tree[src], PanelNode::None);
+                }
+                level += 1;
+            }
         }
     }
 }

@@ -1,16 +1,17 @@
 use engine::{
     egui::{
         Color32, CursorIcon, Id, LayerId, Order, Pos2, Rect, Response,
-        Rounding, Sense, Ui, Vec2,
+        Rounding, Sense, Stroke, Ui, Vec2,
     },
     plugin::graphics::egui::EguiContext,
 };
 use shipyard::{Unique, UniqueView, UniqueViewMut};
 
 use crate::gui::{
-    colors::SHADOW_COLOR,
+    colors::{HIGHLIGHT, SHADOW_COLOR},
     split_panel_tree::{
-        BinaryOps, HFraction, Index, PanelNode, SplitPanelTree, Tab, VFraction,
+        BinaryOps, HFraction, HSplitDir, Index, PanelNode, SplitPanelTree, Tab,
+        VFraction, VSplitDir,
     },
     GuiPanelState,
 };
@@ -25,6 +26,13 @@ const PANEL_SPACE: f32 = 6.0;
 #[derive(Unique)]
 pub struct TabDragStartPosition(pub Option<Pos2>);
 
+pub enum SplitDir {
+    Left,
+    Right,
+    Top,
+    Bottom,
+}
+
 #[derive(Debug)]
 struct HoverData {
     rect: Rect,
@@ -34,7 +42,7 @@ struct HoverData {
 }
 
 impl HoverData {
-    /*fn resolve(&self) -> (Option<Split>, Rect) {
+    fn calculate_split_section(&self) -> (Option<SplitDir>, Rect) {
         if let Some(tabs) = self.tabs {
             return (None, tabs);
         }
@@ -42,6 +50,7 @@ impl HoverData {
         let (rect, pointer) = (self.rect, self.pointer);
 
         let center = rect.center();
+
         let pts = [
             center.distance(pointer),
             rect.left_center().distance(pointer),
@@ -50,24 +59,48 @@ impl HoverData {
             rect.center_bottom().distance(pointer),
         ];
 
-        let position = pts
-            .into_iter()
+        let dir = pts
+            .iter()
             .enumerate()
-            .min_by(|(_, lhs), (_, rhs)| f32::total_cmp(lhs, rhs))
-            .map(|(idx, _)| idx)
-            .unwrap();
+            .min_by(|(_, left), (_, right)| left.total_cmp(right))
+            .map(|(d, _)| d)
+            .unwrap_or(0);
 
-        let (target, other) = match position {
-            0 => (None, Rect::EVERYTHING),
-            1 => (Some(Split::Left), Rect::everything_left_of(center.x)),
-            2 => (Some(Split::Right), Rect::everything_right_of(center.x)),
-            3 => (Some(Split::Above), Rect::everything_above(center.y)),
-            4 => (Some(Split::Below), Rect::everything_below(center.y)),
+        let (target, proposed_rect) = match dir {
+            0 => (None, Rect::NOTHING),
+            1 => (
+                Some(SplitDir::Left),
+                Rect::from_min_max(
+                    rect.left_top(),
+                    rect.left_bottom() + Vec2::new(rect.width() * 0.5, 0.0),
+                ),
+            ),
+            2 => (
+                Some(SplitDir::Right),
+                Rect::from_min_max(
+                    rect.right_top() - Vec2::new(rect.width() * 0.5, 0.0),
+                    rect.right_bottom(),
+                ),
+            ),
+            3 => (
+                Some(SplitDir::Top),
+                Rect::from_min_max(
+                    rect.left_top(),
+                    rect.right_top() + Vec2::new(0.0, rect.height() * 0.5),
+                ),
+            ),
+            4 => (
+                Some(SplitDir::Bottom),
+                Rect::from_min_max(
+                    rect.left_bottom() - Vec2::new(0.0, rect.height() * 0.5),
+                    rect.right_bottom(),
+                ),
+            ),
             _ => unreachable!(),
         };
 
-        (target, rect.intersect(other))
-    }*/
+        (target, proposed_rect)
+    }
 }
 
 #[derive(Default, Unique, Debug)]
@@ -237,7 +270,6 @@ pub fn render_dynamic_panel_widget(
                 ui.allocate_rect(*rect, Sense::focusable_noninteractive());
 
                 let mut ui = ui.child_ui(*rect, Default::default());
-                ui.set_clip_rect(*rect);
 
                 render_list_of_tabs(
                     &mut ui,
@@ -265,10 +297,18 @@ fn render_list_of_tabs(
     shared_data: &mut SharedData,
     ui_builder: impl Fn(&mut Ui, &Tab) -> Response,
 ) {
-    let tabs_rect = Rect::from_min_max(rect.left_top(), rect.right_bottom());
-
     let full_response = ui.allocate_rect(*rect, Sense::hover());
+
+    let tabs_rect = Rect::from_min_max(
+        rect.left_top(),
+        rect.right_top() + Vec2::new(0.0, 25.0),
+    );
     let tabs_zone_response = ui.allocate_rect(tabs_rect, Sense::hover());
+
+    let content_rect = Rect::from_min_max(
+        rect.left_top() + Vec2::new(0.0, 25.0),
+        rect.right_bottom(),
+    );
 
     render_shadow_widget(
         ui,
@@ -365,6 +405,8 @@ fn render_list_of_tabs(
         }
     });
 
+    let mut ui = ui.child_ui(content_rect, Default::default());
+
     let is_being_dragged = ui.memory(|m| m.is_anything_being_dragged());
 
     if is_being_dragged && full_response.hovered() {
@@ -380,11 +422,16 @@ fn render_list_of_tabs(
         });
     }
 
+    ui.set_clip_rect(*rect);
+
     if let Some(tab) = tabs.get(*active_tab) {
         ui_builder(&mut ui, tab);
     }
 }
 
+/// Calculates, if the tag is being dragged and there is a target, the panel
+/// that must be splited and also the hightlights to indicated with and how the
+/// pantel will be splited.
 pub fn calculate_tag_dragging_system(
     egui: UniqueView<EguiContext>,
     mut panel_state: UniqueViewMut<GuiPanelState>,
@@ -397,6 +444,19 @@ pub fn calculate_tag_dragging_system(
         if !panel_state.tree[hover.dst].is_container() {
             return;
         }
+
+        let (target, zone) = hover.calculate_split_section();
+
+        let id = Id::new("helper");
+        let layer_id = LayerId::new(Order::Foreground, id);
+        let painter = egui.0.layer_painter(layer_id);
+
+        painter.rect_stroke(
+            zone,
+            5.0,
+            Stroke::new(3.0, Color32::from_hex(HIGHLIGHT).unwrap_or_default()),
+        );
+
         // If the user did not release the tab ignore the logic.
         if !egui.0.input(|i| i.pointer.any_released()) {
             return;
@@ -408,6 +468,67 @@ pub fn calculate_tag_dragging_system(
             None => return,
         };
 
-        panel_state.tree[hover.dst].append_tab(tab);
+        // If we do not have direction it means that the tab was dropped inside
+        // the tab section and therefore should be moved
+        if let Some(target) = target {
+            match target {
+                SplitDir::Left => {
+                    let (left, _) = panel_state.horizontal_split(
+                        hover.dst,
+                        HSplitDir::Right,
+                        HFraction::Right(0.5),
+                    );
+                    panel_state.insert_tab(
+                        left,
+                        &tab.title,
+                        &tab.identification,
+                    );
+                }
+
+                SplitDir::Right => {
+                    let (_, right) = panel_state.horizontal_split(
+                        hover.dst,
+                        HSplitDir::Left,
+                        HFraction::Left(0.5),
+                    );
+                    panel_state.insert_tab(
+                        right,
+                        &tab.title,
+                        &tab.identification,
+                    );
+                }
+
+                SplitDir::Top => {
+                    let (top, _) = panel_state.vertical_split(
+                        hover.dst,
+                        VSplitDir::Bottom,
+                        VFraction::Bottom(0.5),
+                    );
+                    panel_state.insert_tab(
+                        top,
+                        &tab.title,
+                        &tab.identification,
+                    );
+                }
+
+                SplitDir::Bottom => {
+                    let (_, bottom) = panel_state.vertical_split(
+                        hover.dst,
+                        VSplitDir::Top,
+                        VFraction::Top(0.5),
+                    );
+                    panel_state.insert_tab(
+                        bottom,
+                        &tab.title,
+                        &tab.identification,
+                    );
+                }
+            };
+        } else {
+            panel_state.tree[hover.dst].append_tab(tab)
+        }
+
+        // Clear all the empty containers.
+        panel_state.clean_containers();
     }
 }
