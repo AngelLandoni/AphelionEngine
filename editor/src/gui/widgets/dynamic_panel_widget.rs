@@ -229,7 +229,11 @@ pub fn render_dynamic_panel_widget(
                 panel_tree.tree[index.right()].update_rect(bottom_rect);
             }
 
-            PanelNode::Container { rect, tabs, active_tab } => {
+            PanelNode::Container {
+                rect,
+                tabs,
+                active_tab,
+            } => {
                 ui.allocate_rect(*rect, Sense::focusable_noninteractive());
 
                 let mut ui = ui.child_ui(*rect, Default::default());
@@ -338,7 +342,7 @@ fn render_list_of_tabs(
 
                 if response.clicked() {
                     *active_tab = index;
-                }                
+                }
             } else {
                 let response = ui
                     .scope(|ui| {
@@ -353,11 +357,11 @@ fn render_list_of_tabs(
                     .response;
                 let sense = Sense::click_and_drag();
                 let response = ui.interact(response.rect, id, sense);
-                
+
                 if response.drag_started() {
                     *drag_start_position = response.hover_pos();
                 }
-            } 
+            }
         }
     });
 
