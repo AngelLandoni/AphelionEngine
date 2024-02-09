@@ -1,7 +1,8 @@
+pub mod colors;
+pub mod icons;
 pub mod split_panel_tree;
 pub mod style;
 pub mod widgets;
-pub mod icons;
 
 use shipyard::{Unique, UniqueView, UniqueViewMut};
 use std::ops::{Deref, DerefMut};
@@ -21,7 +22,8 @@ use crate::gui::{
 };
 
 use self::{
-    split_panel_tree::VSplitDir, style::{configure_fonts, configure_icon_font},
+    split_panel_tree::VSplitDir,
+    style::{configure_fonts, configure_icon_font},
     widgets::dynamic_panel_widget::render_dynamic_panel_widget,
 };
 

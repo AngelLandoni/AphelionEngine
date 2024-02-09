@@ -1,4 +1,6 @@
-use engine::egui::{Context, FontData, FontDefinitions, FontFamily, FontId, TextStyle};
+use engine::egui::{
+    Context, FontData, FontDefinitions, FontFamily, FontId, TextStyle,
+};
 
 /// Configures all the needed fonts and sizes.
 pub fn configure_fonts(ctx: &Context) {
@@ -32,7 +34,8 @@ pub fn configure_fonts(ctx: &Context) {
 
 /// Configures the icon font used to render icons.
 pub fn configure_icon_font(ctx: &mut Context) {
-    let font = FontData::from_static(include_bytes!("../assets/fonts/icon.ttf"));
+    let font =
+        FontData::from_static(include_bytes!("../assets/fonts/icon.ttf"));
 
     let mut fonts = FontDefinitions::default();
     fonts.font_data.insert("blender".to_owned(), font);
