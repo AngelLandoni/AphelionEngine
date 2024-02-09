@@ -113,9 +113,9 @@ impl SplitPanelTree {
     }
 
     pub fn update_root_rect(&mut self, rect: Rect) {
-        self.tree.first_mut().map(|n| {
+        if let Some(n) = self.tree.first_mut() {
             n.update_rect(rect);
-        });
+        }
     }
 
     /// Replaces the target node with an horizontal node and returns the left
