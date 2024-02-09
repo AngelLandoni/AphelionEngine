@@ -229,7 +229,7 @@ pub fn render_dynamic_panel_widget(
                 panel_tree.tree[index.right()].update_rect(bottom_rect);
             }
 
-            PanelNode::Container { rect, tabs } => {
+            PanelNode::Container { rect, tabs, active_tab } => {
                 ui.allocate_rect(*rect, Sense::focusable_noninteractive());
 
                 let mut ui = ui.child_ui(*rect, Default::default());
@@ -240,6 +240,7 @@ pub fn render_dynamic_panel_widget(
                     rect,
                     tabs,
                     index,
+                    active_tab,
                     drag_start_position,
                     shared_data,
                     &builder,
@@ -255,9 +256,10 @@ fn render_list_of_tabs(
     rect: &Rect,
     tabs: &Vec<Tab>,
     panel_index: Index,
+    active_tab: &mut Index,
     drag_start_position: &mut Option<Pos2>,
     shared_data: &mut SharedData,
-    _builder: impl Fn(&mut Ui, &Tab) -> Response,
+    ui_builder: impl Fn(&mut Ui, &Tab) -> Response,
 ) {
     let tabs_rect = Rect::from_min_max(rect.left_top(), rect.right_bottom());
 
@@ -311,7 +313,7 @@ fn render_list_of_tabs(
                             ui,
                             crate::gui::icons::IMAGE,
                             &tab.title,
-                            true,
+                            *active_tab == index,
                             true,
                         )
                     })
@@ -333,6 +335,10 @@ fn render_list_of_tabs(
                         shared_data.drag = Some((panel_index, index));
                     }
                 }
+
+                if response.clicked() {
+                    *active_tab = index;
+                }                
             } else {
                 let response = ui
                     .scope(|ui| {
@@ -340,17 +346,18 @@ fn render_list_of_tabs(
                             ui,
                             crate::gui::icons::IMAGE,
                             &tab.title,
-                            true,
+                            *active_tab == index,
                             false,
                         )
                     })
                     .response;
                 let sense = Sense::click_and_drag();
                 let response = ui.interact(response.rect, id, sense);
+                
                 if response.drag_started() {
                     *drag_start_position = response.hover_pos();
                 }
-            }
+            } 
         }
     });
 
@@ -369,7 +376,9 @@ fn render_list_of_tabs(
         });
     }
 
-    //builder(ui, tab);
+    if let Some(tab) = tabs.get(*active_tab) {
+        ui_builder(&mut ui, tab);
+    }
 }
 
 pub fn calculate_tag_dragging_system(
