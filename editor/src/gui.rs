@@ -24,7 +24,10 @@ use crate::gui::{
 use self::{
     split_panel_tree::VSplitDir,
     style::{configure_fonts, configure_icon_font},
-    widgets::dynamic_panel_widget::{render_dynamic_panel_widget, SharedData, TabDragStartPosition},
+    widgets::dynamic_panel_widget::{
+        calculate_tag_dragging_system, render_dynamic_panel_widget, SharedData,
+        TabDragStartPosition,
+    },
 };
 
 #[derive(Unique)]
@@ -56,6 +59,7 @@ impl Pluggable for GuiPlugin {
 
         app.schedule(Schedule::RequestRedraw, |world| {
             world.run(render_gui_system);
+            world.run(calculate_tag_dragging_system);
         });
     }
 }

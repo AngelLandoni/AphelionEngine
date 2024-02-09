@@ -61,6 +61,35 @@ impl PanelNode {
             | Self::HLayout { rect, .. } => *rect = new_rect,
         }
     }
+
+    pub fn is_container(&self) -> bool {
+        match self {
+            PanelNode::Container { .. } => true,
+            _ => false,
+        }
+    }
+
+    pub fn append_tab(&mut self, tab: Tab) {
+        match self {
+            PanelNode::Container { tabs, .. } => {
+                tabs.push(tab);
+            }
+            _ => {}
+        }
+    }
+
+    pub fn extract_tab(&mut self, index: Index) -> Option<Tab> {
+        match self {
+            PanelNode::Container { tabs, .. } => {
+                if tabs.len() < index || tabs.is_empty() {
+                    None
+                } else {
+                    Some(tabs.remove(index))
+                }
+            }
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug)]
