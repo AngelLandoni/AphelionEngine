@@ -47,7 +47,7 @@ impl Debug for Tab {
 #[derive(Debug)]
 pub enum PanelNode {
     None,
-    Container { rect: Rect, tabs: Vec<Tab> },
+    Container { rect: Rect, tabs: Vec<Tab>, active_tab: Index },
     HLayout { rect: Rect, fraction: HFraction },
     VLayout { rect: Rect, fraction: VFraction },
 }
@@ -274,13 +274,13 @@ impl SplitPanelTree {
                         title: name.to_owned(),
                         identification: identification.to_owned(),
                     }],
+                    active_tab: 0,
                 };
 
                 self.tree[target] = element;
             }
 
-            // Add a new tab to the container still good.
-            PanelNode::Container { rect: _, tabs: _ } => {}
+            PanelNode::Container { .. } => {}
 
             // Not allowed.
             PanelNode::HLayout {

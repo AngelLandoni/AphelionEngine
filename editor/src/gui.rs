@@ -9,7 +9,7 @@ use std::ops::{Deref, DerefMut};
 
 use engine::{
     app::App,
-    egui::{Margin, Widget},
+    egui::{vec2, Checkbox, CollapsingHeader, Color32, Frame, Margin, Resize, Response, RichText, ScrollArea, Sense, Stroke, TextStyle, Ui, Vec2, Widget},
     plugin::{graphics::egui::EguiContext, Pluggable},
     schedule::Schedule,
 };
@@ -123,7 +123,16 @@ fn render_gui_system(
                 rect.height(),
                 &mut start_drag.0,
                 &mut shared_data,
-                |ui, _tab| ui.label("Hello"),
+                |ui, tab| {
+                    match tab.identification.as_str() {
+                        "Viewport" => ui.label("Viewport!"),
+                        "GeneralLogs" => ui.label("Logs"),
+                        "EntitiesTree" => ui.label("Entities"),
+                        "Properties" => ui.label("Props"),
+
+                        _ => ui.label("Error unkown zone"),
+                    }
+                },
             );
         });
 }
