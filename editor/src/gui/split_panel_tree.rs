@@ -330,7 +330,7 @@ impl SplitPanelTree {
             }
 
             PanelNode::Container {
-                tabs, active_tab, ..
+                tabs,  ..
             } => {
                 tabs.push(Tab {
                     title: name.to_owned(),
