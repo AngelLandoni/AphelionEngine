@@ -47,9 +47,19 @@ impl Debug for Tab {
 #[derive(Debug)]
 pub enum PanelNode {
     None,
-    Container { rect: Rect, tabs: Vec<Tab>, active_tab: Index },
-    HLayout { rect: Rect, fraction: HFraction },
-    VLayout { rect: Rect, fraction: VFraction },
+    Container {
+        rect: Rect,
+        tabs: Vec<Tab>,
+        active_tab: Index,
+    },
+    HLayout {
+        rect: Rect,
+        fraction: HFraction,
+    },
+    VLayout {
+        rect: Rect,
+        fraction: VFraction,
+    },
 }
 
 impl PanelNode {
