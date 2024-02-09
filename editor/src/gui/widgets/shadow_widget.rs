@@ -45,13 +45,10 @@ pub fn render_partial_shadow_widget(
     ignoring: &ShadowEdge,
 ) {
     for (offset, color) in shadows.iter().enumerate().rev() {
-        let left_offset = if ignoring.left { 0 } else { offset + 1 };
-
-        let right_offset = if ignoring.right { 0 } else { offset + 1 };
-
-        let top_offset = if ignoring.right { 0 } else { offset + 1 };
-
-        let bottom_offset = if ignoring.right { 0 } else { offset + 1 };
+        let left_offset = if ignoring.left { offset + 1 } else { 0 };
+        let right_offset = if ignoring.right { offset + 1 } else { 0 };
+        let top_offset = if ignoring.top { offset + 1 } else { 0 };
+        let bottom_offset = if ignoring.bottom { offset + 1 } else { 0 };
 
         ui.painter().rect_filled(
             Rect::from_min_max(

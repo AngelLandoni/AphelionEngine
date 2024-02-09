@@ -1,14 +1,18 @@
-use engine::egui::{
-    panel, Color32, CursorIcon, Id, LayerId, Order, Pos2, Rect, Response, Rounding, Sense, Ui, Vec2
+use engine::{
+    egui::{
+        Color32, CursorIcon, Id, LayerId, Order, Pos2, Rect, Response,
+        Rounding, Sense, Ui, Vec2,
+    },
+    plugin::graphics::egui::EguiContext,
 };
-use shipyard::Unique;
+use shipyard::{Unique, UniqueView, UniqueViewMut};
 
 use crate::gui::{
     colors::SHADOW_COLOR,
     split_panel_tree::{
-        Index,
-        BinaryOps, HFraction, PanelNode, SplitPanelTree, Tab, VFraction,
+        BinaryOps, HFraction, Index, PanelNode, SplitPanelTree, Tab, VFraction,
     },
+    GuiPanelState,
 };
 
 use super::{
@@ -21,6 +25,7 @@ const PANEL_SPACE: f32 = 6.0;
 #[derive(Unique)]
 pub struct TabDragStartPosition(pub Option<Pos2>);
 
+#[derive(Debug)]
 struct HoverData {
     rect: Rect,
     tabs: Option<Rect>,
@@ -65,7 +70,7 @@ impl HoverData {
     }*/
 }
 
-#[derive(Default, Unique)]
+#[derive(Default, Unique, Debug)]
 pub struct SharedData {
     drag: Option<(Index, usize)>,
     hover: Option<HoverData>,
@@ -102,6 +107,9 @@ pub fn render_dynamic_panel_widget(
         0.0,
         Color32::from_hex("#151515").unwrap_or(Color32::default()),
     );
+
+    shared_data.drag = None;
+    shared_data.hover = None;
 
     for index in 0..panel_tree.tree.len() {
         match &mut panel_tree.tree[index] {
@@ -223,9 +231,19 @@ pub fn render_dynamic_panel_widget(
 
             PanelNode::Container { rect, tabs } => {
                 ui.allocate_rect(*rect, Sense::focusable_noninteractive());
-                let mut ui = ui.child_ui(*rect, Default::default());
 
-                render_list_of_tabs(&mut ui, rect, tabs, index, drag_start_position, shared_data,&builder);
+                let mut ui = ui.child_ui(*rect, Default::default());
+                ui.set_clip_rect(*rect);
+
+                render_list_of_tabs(
+                    &mut ui,
+                    rect,
+                    tabs,
+                    index,
+                    drag_start_position,
+                    shared_data,
+                    &builder,
+                );
             }
         }
     }
@@ -241,6 +259,11 @@ fn render_list_of_tabs(
     shared_data: &mut SharedData,
     _builder: impl Fn(&mut Ui, &Tab) -> Response,
 ) {
+    let tabs_rect = Rect::from_min_max(rect.left_top(), rect.right_bottom());
+
+    let full_response = ui.allocate_rect(*rect, Sense::hover());
+    let tabs_zone_response = ui.allocate_rect(tabs_rect, Sense::hover());
+
     render_shadow_widget(
         ui,
         Rect::from_min_max(
@@ -271,49 +294,107 @@ fn render_list_of_tabs(
         Color32::from_hex("#242424").unwrap_or(Color32::default()),
     );
 
-    for (index, tab) in tabs.iter().enumerate() {
-        let id = Id::new((panel_index, index, "tab"));
-        
-        let is_being_dragged = ui.memory(|m| {
-            m.is_being_dragged(id)
-        });
+    let mut ui = ui.child_ui(tabs_rect, Default::default());
 
+    ui.spacing_mut().item_spacing = Vec2::ZERO;
+    ui.horizontal(|ui| {
+        for (index, tab) in tabs.iter().enumerate() {
+            let id = Id::new((panel_index, index, "tab"));
 
-        if is_being_dragged {
-            let layer_id = LayerId::new(Order::Tooltip, id);
+            let is_being_dragged = ui.memory(|m| m.is_being_dragged(id));
+            if is_being_dragged {
+                let layer_id = LayerId::new(Order::Foreground, id);
 
-            let response = ui.with_layer_id(layer_id, |ui| {
-                render_tab_widget(ui, crate::gui::icons::IMAGE, &tab.title, true)
-            }).response;
+                let response = ui
+                    .with_layer_id(layer_id, |ui| {
+                        render_tab_widget(
+                            ui,
+                            crate::gui::icons::IMAGE,
+                            &tab.title,
+                            true,
+                            true,
+                        )
+                    })
+                    .response;
 
-            let sense = Sense::click_and_drag();
-            let response = ui
-                .interact(response.rect, id, sense)
-                .on_hover_cursor(CursorIcon::Grabbing);
+                let sense = Sense::click_and_drag();
+                let response = ui
+                    .interact(response.rect, id, sense)
+                    .on_hover_cursor(CursorIcon::Grabbing);
 
-            if let Some(pointer_pos) = ui.ctx().pointer_interact_pos() {
-                let center = response.rect.center();
-                let start = drag_start_position.unwrap_or(center);
+                if let Some(pointer_pos) = ui.ctx().pointer_interact_pos() {
+                    let center = response.rect.center();
+                    let start = drag_start_position.unwrap_or(center);
 
-                let delta = pointer_pos - start;
-                if delta.x.abs() > 30.0 || delta.y.abs() > 6.0 {
-                    ui.ctx().translate_layer(layer_id, delta);
+                    let delta = pointer_pos - start;
+                    if delta.x.abs() > 30.0 || delta.y.abs() > 6.0 {
+                        ui.ctx().translate_layer(layer_id, delta);
 
-                    shared_data.drag = Some((panel_index, index));
+                        shared_data.drag = Some((panel_index, index));
+                    }
+                }
+            } else {
+                let response = ui
+                    .scope(|ui| {
+                        render_tab_widget(
+                            ui,
+                            crate::gui::icons::IMAGE,
+                            &tab.title,
+                            true,
+                            false,
+                        )
+                    })
+                    .response;
+                let sense = Sense::click_and_drag();
+                let response = ui.interact(response.rect, id, sense);
+                if response.drag_started() {
+                    *drag_start_position = response.hover_pos();
                 }
             }
-
-        } else {
-            let response = ui.scope(|ui| {
-                render_tab_widget(ui, crate::gui::icons::IMAGE, &tab.title, true)
-            }).response;
-            let sense = Sense::click_and_drag();
-            let response = ui.interact(response.rect, id, sense);
-            if response.drag_started() {
-                *drag_start_position = response.hover_pos();
-            }
         }
+    });
+
+    let is_being_dragged = ui.memory(|m| m.is_anything_being_dragged());
+
+    if is_being_dragged && full_response.hovered() {
+        shared_data.hover = ui.input(|i| {
+            i.pointer.hover_pos().map(|pointer| HoverData {
+                rect: *rect,
+                dst: panel_index,
+                tabs: tabs_zone_response
+                    .hovered()
+                    .then_some(tabs_zone_response.rect),
+                pointer,
+            })
+        });
     }
 
     //builder(ui, tab);
+}
+
+pub fn calculate_tag_dragging_system(
+    egui: UniqueView<EguiContext>,
+    mut panel_state: UniqueViewMut<GuiPanelState>,
+    shared_data: UniqueView<SharedData>,
+) {
+    if let (Some((src, tab_index)), Some(hover)) =
+        (shared_data.drag, &shared_data.hover)
+    {
+        // Only trigger the drag if we are inside a content.
+        if !panel_state.tree[hover.dst].is_container() {
+            return;
+        }
+        // If the user did not release the tab ignore the logic.
+        if !egui.0.input(|i| i.pointer.any_released()) {
+            return;
+        }
+
+        // Remove the tab from the old place.
+        let tab = match panel_state.tree[src].extract_tab(tab_index) {
+            Some(tab) => tab,
+            None => return,
+        };
+
+        panel_state.tree[hover.dst].append_tab(tab);
+    }
 }

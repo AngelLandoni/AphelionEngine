@@ -2,14 +2,14 @@ use engine::egui::{
     Color32, CursorIcon, FontId, Pos2, Response, Rounding, Sense, Ui, Vec2,
 };
 
-use crate::gui::colors::SHADOW_COLOR;
+use crate::gui::colors::{SHADOW_COLOR, SHADOW_FOCUS_COLOR};
 
 use super::shadow_widget::{render_partial_shadow_widget, ShadowEdge};
 
 const SPACE_BETWEEN_ICON_AND_TITLE: f32 = 10.0;
 const HORIZONTAL_PADDING: f32 = 16.0;
 
-const CORNER_RADIUS: f32 = 10.0;
+const CORNER_RADIUS: f32 = 5.0;
 
 /// Renders a tab widget.
 pub fn render_tab_widget(
@@ -17,8 +17,9 @@ pub fn render_tab_widget(
     icon: char,
     title: &str,
     is_active: bool,
+    is_being_dragged: bool,
 ) -> Response {
-    let px = ui.ctx().pixels_per_point().recip();
+    let _px = ui.ctx().pixels_per_point().recip();
 
     let font_id = FontId::proportional(15.0);
     let galley =
@@ -51,30 +52,44 @@ pub fn render_tab_widget(
     let response = response.on_hover_cursor(CursorIcon::PointingHand);
 
     if is_active {
-        let rounding = Rounding {
-            nw: px * CORNER_RADIUS,
-            ne: px * CORNER_RADIUS,
-            sw: 0.0,
-            se: 0.0,
+        let color = if is_being_dragged {
+            SHADOW_FOCUS_COLOR
+        } else {
+            SHADOW_COLOR
+        };
+        let rounding = if is_being_dragged {
+            Rounding::same(CORNER_RADIUS)
+        } else {
+            Rounding {
+                nw: CORNER_RADIUS,
+                ne: CORNER_RADIUS,
+                sw: 0.0,
+                se: 0.0,
+            }
+        };
+        let shadow = if is_being_dragged {
+            ShadowEdge {
+                left: true,
+                right: true,
+                top: true,
+                bottom: true,
+            }
+        } else {
+            ShadowEdge {
+                left: true,
+                right: true,
+                top: true,
+                bottom: false,
+            }
         };
 
         render_partial_shadow_widget(
             ui,
             rect,
-            SHADOW_COLOR.into(),
+            color.into(),
             1.0,
-            Rounding {
-                nw: 0.0,
-                ne: CORNER_RADIUS,
-                sw: CORNER_RADIUS,
-                se: CORNER_RADIUS,
-            },
-            &ShadowEdge {
-                left: true,
-                right: true,
-                top: true,
-                bottom: false,
-            },
+            rounding,
+            &shadow,
         );
 
         ui.painter().rect_filled(
