@@ -24,7 +24,7 @@ use crate::gui::{
 use self::{
     split_panel_tree::VSplitDir,
     style::{configure_fonts, configure_icon_font},
-    widgets::dynamic_panel_widget::render_dynamic_panel_widget,
+    widgets::dynamic_panel_widget::{render_dynamic_panel_widget, SharedData, TabDragStartPosition},
 };
 
 #[derive(Unique)]
@@ -49,6 +49,8 @@ impl Pluggable for GuiPlugin {
     fn configure(&self, app: &mut App) {
         app.world
             .add_unique(GuiPanelState(SplitPanelTree::default()));
+        app.world.add_unique(TabDragStartPosition(None));
+        app.world.add_unique(SharedData::default());
 
         app.world.run(configure_gui_system);
 
@@ -99,6 +101,8 @@ fn configure_panels(tree: &mut SplitPanelTree) {
 fn render_gui_system(
     egui: UniqueView<EguiContext>,
     mut panel_state: UniqueViewMut<GuiPanelState>,
+    mut start_drag: UniqueViewMut<TabDragStartPosition>,
+    mut shared_data: UniqueViewMut<SharedData>,
 ) {
     engine::egui::CentralPanel::default()
         .frame(engine::egui::Frame {
@@ -113,6 +117,8 @@ fn render_gui_system(
                 ui,
                 &mut panel_state.0,
                 rect.height(),
+                &mut start_drag.0,
+                &mut shared_data,
                 |ui, _tab| ui.label("Hello"),
             );
         });

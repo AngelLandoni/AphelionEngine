@@ -3,7 +3,7 @@ use std::fmt::Debug;
 use engine::egui::Rect;
 
 /// Represents a reference to a node.
-type Index = usize;
+pub type Index = usize;
 
 pub trait BinaryOps {
     fn left(&self) -> usize;
