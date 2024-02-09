@@ -94,11 +94,17 @@ fn configure_panels(tree: &mut SplitPanelTree) {
     let (viewport, logs) =
         tree.vertical_split(central, VSplitDir::Top, VFraction::Top(0.8));
 
+    let (hierarchy, entities) =
+        tree.vertical_split(left_zone, VSplitDir::Top, VFraction::Bottom(0.3));
+
     tree.insert_tab(viewport, "Viewport", "Viewport");
     tree.insert_tab(logs, "General logs", "GeneralLogs");
 
-    tree.insert_tab(left_zone, "Entities", "EntitiesTree");
     tree.insert_tab(right_zone, "Properties", "Properties");
+    tree.insert_tab(right_zone, "Landscape", "LandscapeEditor");
+
+    tree.insert_tab(hierarchy, "Hierarchy", "EntityHierarchy");
+    tree.insert_tab(entities, "Entities", "Entities");
 }
 
 /// Renders the UI based on the Panel states.
@@ -126,8 +132,10 @@ fn render_gui_system(
                 |ui, tab| match tab.identification.as_str() {
                     "Viewport" => ui.label("Viewport!"),
                     "GeneralLogs" => ui.label("Logs"),
-                    "EntitiesTree" => ui.label("Entities"),
                     "Properties" => ui.label("Props"),
+                    "LandscapeEditor" => ui.label("Landscape editor"),
+                    "EntityHierarchy" => ui.label("Hierarchy"),
+                    "Entities" => ui.label("Entities list"),
 
                     _ => ui.label("Error unkown zone"),
                 },
