@@ -6,17 +6,12 @@ use shipyard::{Unique, UniqueView, UniqueViewMut};
 use wgpu::{Operations, RenderPassColorAttachment, RenderPassDescriptor};
 
 use crate::{
-    app::App,
-    graphics::gpu::AbstractGpu,
-    host::window::Window,
-    plugin::{
+    app::App, graphics::gpu::AbstractGpu, host::window::Window, plugin::{
         host::window::{UniqueWinitEvent, WinitWindowWrapper},
         Pluggable,
-    },
-    schedule::Schedule,
-    wgpu_graphics::{
-        components::ScreenTexture, gpu::Gpu, CommandQueue, CommandSubmitOrder, OrderCommandBuffer,
-    },
+    }, scene::scene_state::SceneState, schedule::Schedule, wgpu_graphics::{
+        buffer::WGPUTexture, components::ScreenTexture, gpu::Gpu, CommandQueue, CommandSubmitOrder, OrderCommandBuffer
+    }
 };
 
 #[derive(Unique)]
@@ -26,11 +21,21 @@ pub struct EguiContext(pub Context);
 pub struct EguiRenderer {
     state: State,
     renderer: Renderer,
+    selector: EguiSceneSelector,    
 }
 
 pub struct EguiInit();
 
-pub struct EguiPlugin;
+/// Provides an aftraction used to determine where the egui ui must be rendered.
+#[derive(Clone)]
+pub enum EguiSceneSelector {
+    Main,
+    SubScene(String),
+}
+
+pub struct EguiPlugin {
+    pub scene: EguiSceneSelector,
+}
 
 // https://github.com/ejb004/egui-wgpu-demo/blob/master/src/gui.rs
 impl Pluggable for EguiPlugin {
@@ -69,7 +74,7 @@ impl Pluggable for EguiPlugin {
 
             app.world.add_unique(EguiContext(context));
 
-            app.world.add_unique(EguiRenderer { state, renderer });
+            app.world.add_unique(EguiRenderer { state, renderer, selector: self.scene.clone() });
         }
 
         {
@@ -109,11 +114,15 @@ fn egui_generate_full_output(
 fn egui_render_system(
     gpu: UniqueView<AbstractGpu>,
     window: UniqueView<Window>,
-    s_texture: UniqueView<ScreenTexture>,
+    s_state: UniqueView<SceneState>,
     queue: UniqueView<CommandQueue>,
     mut egui: UniqueViewMut<EguiRenderer>,
     egui_ctx: UniqueView<EguiContext>,
 ) {
+    let gpu = gpu
+        .downcast_ref::<Gpu>()
+        .expect("Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu");
+
     let w = match window.accesor.downcast_ref::<WinitWindowWrapper>() {
         Some(w) => w,
         None => {
@@ -123,18 +132,25 @@ fn egui_render_system(
         }
     };
 
-    let gpu = gpu
-        .downcast_ref::<Gpu>()
-        .expect("Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu");
-
     let output = egui_ctx.0.end_frame();
 
-    let view = match &s_texture.0 {
-        Some(v) => v,
-        None => {
-            println!("Unable to find screen texture");
-            return;
-        }
+    let texture = match &egui.selector {
+        EguiSceneSelector::Main => {
+            s_state
+                .main
+                .target_texture
+                .downcast_ref::<WGPUTexture>()
+                .expect("Egui only works with WGPU")
+        },
+        EguiSceneSelector::SubScene(id) => {
+            s_state
+                .sub_scenes
+                .get(id)
+                .expect(format!("Unable to find scene with id {}", id).as_str())
+                .target_texture
+                .downcast_ref::<WGPUTexture>()
+                .expect("Egui only works with WGPU")
+        },
     };
 
     egui.state
@@ -153,8 +169,20 @@ fn egui_render_system(
         .device
         .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
 
+    // TODO(Angel): Maybe accesing the texture to get the size is not the best
+    // way.
+
+    println!("T: {}", texture.texture.size().width);
+    println!("B: {}", gpu.surface_config.width);
     let screen_descriptor = ScreenDescriptor {
-        size_in_pixels: [gpu.surface_config.width, gpu.surface_config.height],
+        /*size_in_pixels: [
+            texture.texture.size().width,
+            texture.texture.size().height,
+        ],*/
+        size_in_pixels: [
+            gpu.surface_config.width,
+            gpu.surface_config.height,
+        ],
         pixels_per_point: window.accesor.scale_factor() as f32,
     };
 
@@ -170,7 +198,7 @@ fn egui_render_system(
         let mut r_pass = encoder.begin_render_pass(&RenderPassDescriptor {
             label: Some("Egui render pass"),
             color_attachments: &[Some(RenderPassColorAttachment {
-                view,
+                view: &texture.view,
                 resolve_target: None,
                 ops: Operations {
                     load: wgpu::LoadOp::Load,

@@ -11,7 +11,7 @@ use engine::{
     shipyard::Unique,
 };
 use shipyard::{UniqueView, UniqueViewMut};
-
+/* 
 #[derive(Unique)]
 pub struct EditorCamera {
     pub yaw: f64,
@@ -141,3 +141,4 @@ fn update_fly_camera_when_keys_are_pressed_system(
     e_camera.direction = dir;
     e_camera.tangent_direction = tangent_direction;
 }
+*/

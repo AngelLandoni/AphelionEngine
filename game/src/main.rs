@@ -369,8 +369,24 @@ impl Pluggable for PlayerPlugin {
 pub fn main() {
     App::new()
         .add_plugin(WinitWindowPlugin::new("My game", 1024, 800))
-        .add_plugin(ScenePlugin)
         .add_plugin(WgpuRendererPlugin)
+        .app_plugin(ScenePlugin {
+            main: SceneDescriptor::main(),
+            sub_scenes: [
+                SceneDescriptor {
+                    label: "",
+                    id: "MainEditorView",
+                    camera: Camera::default(),
+                    projection: Projection::Perspective,
+                },
+                SceneDescriptor {
+                    label: "UI",
+                    id: "GameUI",
+                    camera: Camera::default(),
+                    projection: Projection::Orthograpic,
+                }
+            ]
+        })
         .add_plugin(ClockPlugin)
         .add_plugin(PrimitivesPlugin)
         .add_plugin(EguiPlugin)

@@ -9,12 +9,12 @@ use wgpu::{
 
 use crate::{
     graphics::{
-        gpu::GpuAbstractor, BufferCreator, IndexBuffer, ShaderHandler, Texture, VertexBuffer,
+        gpu::GpuAbstractor, BufferCreator, BufferHandler, IndexBuffer, ShaderHandler, SurfaceHandler, Texture, UniformBuffer, VertexBuffer
     },
-    host::window::Window,
+    host::window::Window, types::Size,
 };
 
-use super::buffer::{WGPUTexture, WgpuIndexBuffer, WgpuVertexBuffer};
+use super::buffer::{WGPUTexture, WgpuIndexBuffer, WgpuUniformBuffer, WgpuVertexBuffer};
 
 pub(crate) const DEPTH_TEXTURE_FORMAT: TextureFormat = TextureFormat::Depth32Float;
 
@@ -97,24 +97,6 @@ impl Gpu {
             })
     }
 
-    /*pub(crate) fn allocate_buffer(&self, label: &str, size: u64, usage: BufferUsages) -> Buffer {
-        // Convert the size from the provided one into one that WGPU handles.
-        let unpadded_size: BufferAddress = size as BufferAddress;
-        // Make sure the size is 4 bytes aligned.
-        let padding: BufferAddress = COPY_BUFFER_ALIGNMENT - unpadded_size % COPY_BUFFER_ALIGNMENT;
-
-        // Final padding, the size now is memory aligned.
-        let padded_size: BufferAddress = unpadded_size + padding;
-
-        // Allocate and return the reference.
-        self.device.create_buffer(&BufferDescriptor {
-            label: Some(label),
-            size: padded_size,
-            usage,
-            mapped_at_creation: true,
-        })
-    }*/
-
     /// Allocates and initilizes a chunk of memory on the GPU.
     pub(crate) fn allocate_buffer_init<T: Pod + AnyBitPattern>(
         &self,
@@ -176,6 +158,12 @@ impl ShaderHandler for Gpu {
     fn compile_program(&self) {}
 }
 
+impl SurfaceHandler for Gpu {
+    fn surface_size(&self) -> crate::types::Size<u32> {
+        Size::new(self.surface_config.width, self.surface_config.height)
+    }
+}
+
 impl BufferCreator for Gpu {
     /// Stores the information into the GPU RAM and returns a reference to it.
     fn allocate_vertex_buffer(&self, label: &str, data: &[u8]) -> Box<dyn VertexBuffer> {
@@ -234,7 +222,63 @@ impl BufferCreator for Gpu {
         Box::new(WGPUTexture {
             texture,
             view,
-            sampler,
+            sampler: Some(sampler),
         })
+    }
+
+    fn allocate_target_texture(&self, label: &str, width: u32, height: u32) -> Box<dyn Texture> {
+        let texture = self.device.create_texture(&TextureDescriptor {
+            label: Some(label),
+            size: Extent3d {
+                width,
+                height,
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: TextureDimension::D2,
+            format: wgpu::TextureFormat::Bgra8UnormSrgb,
+            usage: TextureUsages::RENDER_ATTACHMENT | TextureUsages::COPY_SRC | TextureUsages::TEXTURE_BINDING,
+            view_formats: &[],
+        });
+
+        let view = texture.create_view(&TextureViewDescriptor::default());
+
+        let sampler = self.device.create_sampler(&wgpu::SamplerDescriptor {
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Linear,
+            min_filter: wgpu::FilterMode::Nearest,
+            mipmap_filter: wgpu::FilterMode::Nearest,
+            ..Default::default()
+        });
+
+        Box::new(WGPUTexture {
+            texture,
+            view,
+            sampler: Some(sampler),
+        })
+    }
+
+    fn allocate_uniform_buffer(&self, label: &str, data: &[u8]) -> Box<dyn UniformBuffer> {
+        let buffer = self.raw_allocate_buffer_init(
+            label,
+            data,
+            BufferUsages::COPY_DST | BufferUsages::UNIFORM
+        );
+
+        Box::new(WgpuUniformBuffer(buffer))
+    }
+}
+
+
+impl BufferHandler for Gpu {
+    fn write_uniform_buffer(&self, buffer: &Box<dyn UniformBuffer>, offset: u64, data: &[u8]) {
+        let buffer = buffer
+            .downcast_ref::<WgpuUniformBuffer>()
+            .expect("Unable to downcast Uniform Buffer");
+    
+        self.queue.write_buffer(&buffer.0, offset, data);
     }
 }

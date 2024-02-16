@@ -4,7 +4,6 @@ pub(crate) mod gpu;
 pub(crate) mod passes;
 pub(crate) mod pipelines;
 pub(crate) mod rendering;
-pub(crate) mod uniforms;
 
 use crossbeam_queue::ArrayQueue;
 use shipyard::Unique;
@@ -17,6 +16,7 @@ pub struct CommandQueue(pub(crate) OrderCommandQueue);
 /// that the pass should be drawn later in the rendering pipeline.
 #[derive(Copy, Clone)]
 pub(crate) enum CommandSubmitOrder {
+    FrameComposition,
     DebugGui,
     TriangleTest,
 }

@@ -14,37 +14,22 @@ use crate::{
     graphics::{components::MeshComponent, gpu::AbstractGpu, vertex::Vertex},
     scene::{asset_server::MeshResourceID, components::Transform},
     schedule::Schedule,
-    wgpu_graphics::{
-        gpu::{Gpu, DEPTH_TEXTURE_FORMAT},
-        uniforms::CameraUniform,
-    },
+    wgpu_graphics::gpu::{Gpu, DEPTH_TEXTURE_FORMAT},
 };
 
 #[derive(Unique)]
 pub struct DynamicMeshPipeline {
     /// Contains a reference to the pipeline.
     pub(crate) pipeline: RenderPipeline,
-    /// Conaints the associated bind group.
-    pub(crate) camera_bind_group: BindGroup,
-    /// Contains the buffer which holds the transform information.
-    // TODO(Angel): Set this as u32, WGPU only supports u32 for instancing
-    pub(crate) mesh_transform_buffers: AHashMap<MeshResourceID, (Buffer, u64)>,
 }
 
 impl DynamicMeshPipeline {
     /// Creates and returns a new `DynamicMeshPipeline`.
-    pub(crate) fn new(app: &mut App, gpu: &Gpu) -> DynamicMeshPipeline {
+    pub(crate) fn new(gpu: &Gpu) -> DynamicMeshPipeline {
         let program = gpu.compile_program(
             "triangle_test",
             include_str!("../shaders/triangle_test.wgsl"),
         );
-
-        setup_schedulers(app);
-
-        let camera_uniform = app
-            .world
-            .borrow::<UniqueView<CameraUniform>>()
-            .expect("Unable to acquire camera uniform");
 
         let camera_bind_group_layout =
             gpu.device
@@ -61,15 +46,6 @@ impl DynamicMeshPipeline {
                         count: None,
                     }],
                 });
-
-        let camera_bind_group = gpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
-            layout: &camera_bind_group_layout,
-            entries: &[wgpu::BindGroupEntry {
-                binding: 0,
-                resource: camera_uniform.0.as_entire_binding(),
-            }],
-            label: Some("camera_bind_group"),
-        });
 
         let layout = gpu
             .device
@@ -145,78 +121,6 @@ impl DynamicMeshPipeline {
 
         DynamicMeshPipeline {
             pipeline,
-            camera_bind_group,
-            mesh_transform_buffers: AHashMap::new(),
         }
-    }
-}
-
-/// Setups all the schedulers required by the pipeline.
-fn setup_schedulers(app: &mut App) {
-    app.schedule(Schedule::Update, |world| {
-        world.run(sync_dynamic_entities_position)
-    });
-}
-
-/// Recreates the transformation buffer and pass the transform information.
-fn sync_dynamic_entities_position(
-    gpu: UniqueView<AbstractGpu>,
-    mut pipeline: UniqueViewMut<DynamicMeshPipeline>,
-    transforms: View<Transform>,
-    meshes: View<MeshComponent>,
-) {
-    let gpu = gpu
-        .downcast_ref::<Gpu>()
-        .expect("Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu");
-
-    pipeline
-        .mesh_transform_buffers
-        .iter_mut()
-        .for_each(|e| e.1 .1 = 0);
-
-    // TODO(Angel): Since we already know the maximum size per mesh, we can
-    // pre-allocate memory for each mesh to avoid dynamic reallocation during
-    // runtime, which can improve performance by reducing memory fragmentation
-    // and allocation overhead.
-    let mut raw_transforms: AHashMap<MeshResourceID, Vec<u8>> = AHashMap::new();
-
-    for ent in meshes.iter() {
-        pipeline
-            .mesh_transform_buffers
-            .entry(**ent)
-            .or_insert_with(|| {
-                // Allocate the buffer.
-                let buffer = gpu.allocate_aligned_zero_buffer(
-                    &format!("Mesh({}) transform", ent.0 .0),
-                    // TODO(Angel): The size must be configured using the pipeline props.
-                    200000 * std::mem::size_of::<[[f32; 4]; 4]>() as u64,
-                    BufferUsages::VERTEX | BufferUsages::COPY_DST,
-                );
-                (buffer, 0)
-            });
-    }
-
-    for (e, t) in (&meshes, &transforms).iter() {
-        raw_transforms
-            .entry(**e)
-            .and_modify(|e| {
-                let data = t.as_matrix_array();
-                let a: &[u8] = bytemuck::cast_slice(&data);
-                e.extend_from_slice(a);
-            })
-            .or_insert_with(|| {
-                let mut vec = Vec::new();
-                let data = t.as_matrix_array();
-                let a: &[u8] = bytemuck::cast_slice(&data);
-                vec.extend_from_slice(a);
-                vec
-            });
-    }
-
-    for (m, b) in raw_transforms.iter() {
-        pipeline.mesh_transform_buffers.entry(*m).and_modify(|e| {
-            gpu.queue.write_buffer(&e.0, 0, b);
-            e.1 = b.len() as u64 / Transform::raw_size();
-        });
     }
 }

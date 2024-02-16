@@ -42,12 +42,14 @@ pub(crate) fn dynamic_mesh_pass_system(
         .create_command_encoder(&CommandEncoderDescriptor {
             label: Some("Tirangle test encoder"),
         });
-
+/*
     let preload_meshes: Vec<(Arc<Mesh>, &Buffer, &u64)> = triangle_pipeline
         .mesh_transform_buffers
         .iter()
         .map(|(mesh_id, (buffer, count))| (asset_server.load_mesh(mesh_id), buffer, count))
         .collect::<Vec<_>>();
+
+    // for scene in scenes {
 
     {
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -103,9 +105,11 @@ pub(crate) fn dynamic_mesh_pass_system(
         }
     }
 
+    // }
+
     let _ = queue.0.push(OrderCommandBuffer::new(
         Some("Render egui".to_owned()),
         CommandSubmitOrder::TriangleTest,
         encoder.finish(),
-    ));
+    ));*/
 }

@@ -1,7 +1,6 @@
 use nalgebra::{Matrix4, Point3, Vector3};
-use shipyard::Unique;
 
-#[derive(Unique)]
+#[derive(Copy, Clone)]
 /// Represents the main world camera.
 pub struct Camera {
     /// The position of the camera, indicating the point in 3D space where the
