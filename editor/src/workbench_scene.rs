@@ -1,4 +1,10 @@
-use engine::{app::App, graphics::components::MeshComponent, nalgebra::{Unit, UnitQuaternion, Vector3}, plugin::{scene::primitives_plugin::CUBE_MESH_RESOURCE_ID, Pluggable}, scene::components::Transform, schedule::Schedule};
+use engine::{
+    app::App,
+    graphics::components::MeshComponent,
+    nalgebra::{Unit, UnitQuaternion, Vector3},
+    plugin::{scene::primitives_plugin::CUBE_MESH_RESOURCE_ID, Pluggable},
+    scene::components::Transform,
+};
 
 use crate::camera::EditorCamera;
 
@@ -29,6 +35,5 @@ impl Pluggable for WorkbenchScenePlugin {
                 }
             }
         }
-
     }
 }

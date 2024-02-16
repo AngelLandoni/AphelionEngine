@@ -1,4 +1,14 @@
-use engine::{app::App, nalgebra::{Point3, Vector3}, plugin::{core::clock::Clock, Pluggable}, scene::{keyboard::{KeyCode, Keyboard}, mouse::CursorDelta, scene_state::SceneState}, schedule::Schedule};
+use engine::{
+    app::App,
+    nalgebra::{Point3, Vector3},
+    plugin::{core::clock::Clock, Pluggable},
+    scene::{
+        keyboard::{KeyCode, Keyboard},
+        mouse::CursorDelta,
+        scene_state::SceneState,
+    },
+    schedule::Schedule,
+};
 use shipyard::{Unique, UniqueView, UniqueViewMut};
 
 #[derive(Unique)]
