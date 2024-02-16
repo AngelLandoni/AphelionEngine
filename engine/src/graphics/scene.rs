@@ -49,7 +49,6 @@ impl Scene {
     }
 }
 
-// TODO(Angel): Add support for multi scene.
 pub(crate) fn sync_main_scene_dynamic_entities_transform(
     gpu: UniqueView<AbstractGpu>,
     entities: EntitiesView,
@@ -58,12 +57,28 @@ pub(crate) fn sync_main_scene_dynamic_entities_transform(
     meshes: View<MeshComponent>,
     mut scenes: UniqueViewMut<SceneState>,
 ) {
-    let mut main_scene_raw_transforms: AHashMap<MeshResourceID, Vec<u8>> = AHashMap::new();
+    // Main scene.
+    sync_scene(&mut scenes.main, None, &gpu, &entities, &transforms, &meshes, &scene_targets);
+    // Sub scenes.
+    for (id, scene) in &mut scenes.sub_scenes {
+        sync_scene(scene, Some(id), &gpu, &entities, &transforms, &meshes, &scene_targets);
+    }
+}
 
-    let main_scene = &mut scenes.main;
+
+fn sync_scene(
+    scene: &mut Scene,
+    scene_id: Option<&String>,
+    gpu: &UniqueView<AbstractGpu>,
+    entities: &EntitiesView,
+    transforms: &View<Transform>,
+    meshes: &View<MeshComponent>,
+    scene_targets: &View<SceneTarget>,
+) {
+    let mut scene_raw_transforms: AHashMap<MeshResourceID, Vec<u8>> = AHashMap::new();
 
     for ent in meshes.iter() {
-        main_scene
+        scene
             .mesh_transform_buffers
             .entry(**ent)
             .or_insert_with(|| {
@@ -91,93 +106,54 @@ pub(crate) fn sync_main_scene_dynamic_entities_transform(
             // If it does not contain the component it must be added to the
             // main scene.
             Ok(SceneTarget::Main) | Err(_) => {
-                main_scene_raw_transforms
-                    .entry(**mesh)
-                    .and_modify(|e| {
-                        let data = transform.as_matrix_array();
-                        let a: &[u8] = bytemuck::cast_slice(&data);
-                        e.extend_from_slice(a);
-                    })
-                    .or_insert_with(|| {
-                        let mut vec = Vec::new();
-                        let data = transform.as_matrix_array();
-                        let a: &[u8] = bytemuck::cast_slice(&data);
-                        vec.extend_from_slice(a);
-                        vec
-                    });
+                if scene_id.is_none() {
+                    scene_raw_transforms
+                        .entry(**mesh)
+                        .and_modify(|e| {
+                            let data = transform.as_matrix_array();
+                            let a: &[u8] = bytemuck::cast_slice(&data);
+                            e.extend_from_slice(a);
+                        })
+                        .or_insert_with(|| {
+                            let mut vec = Vec::new();
+                            let data = transform.as_matrix_array();
+                            let a: &[u8] = bytemuck::cast_slice(&data);
+                            vec.extend_from_slice(a);
+                            vec
+                        });
+                }
             },
 
             Ok(SceneTarget::SubScene(s)) => {
-                // TODO(Angel): Add support for mutli scene.
+                if let Some(scene_id) = scene_id {
+                    // If we found an entity which is assiged to the current
+                    // scene add the transformation.
+                    if *scene_id == *s {
+                        scene_raw_transforms
+                            .entry(**mesh)
+                            .and_modify(|e| {
+                                let data = transform.as_matrix_array();
+                                let a: &[u8] = bytemuck::cast_slice(&data);
+                                e.extend_from_slice(a);
+                            })
+                            .or_insert_with(|| {
+                                let mut vec = Vec::new();
+                                let data = transform.as_matrix_array();
+                                let a: &[u8] = bytemuck::cast_slice(&data);
+                                vec.extend_from_slice(a);
+                                vec
+                            });
+                    } 
+                }
             },
         }
     }
 
-    for (m, b) in main_scene_raw_transforms.iter() {
-        scenes.main.mesh_transform_buffers.entry(*m).and_modify(|e| {
+    for (m, b) in scene_raw_transforms.iter() {
+        scene.mesh_transform_buffers.entry(*m).and_modify(|e| {
             gpu.write_vertex_buffer(&e.0, 0, b);
             e.1 = b.len() as u64 / Transform::raw_size();
-        });
-    }
-
-}
-
-/*fn sync_dynamic_entities_position_system(
-    gpu: UniqueView<AbstractGpu>,
-    transforms: View<Transform>,
-    meshes: View<MeshComponent>,
-) {
-
-
-    pipeline
-        .mesh_transform_buffers
-        .iter_mut()
-        .for_each(|e| e.1 .1 = 0);
-
-    // TODO(Angel): Since we already know the maximum size per mesh, we can
-    // pre-allocate memory for each mesh to avoid dynamic reallocation during
-    // runtime, which can improve performance by reducing memory fragmentation
-    // and allocation overhead.
-    let mut raw_transforms: AHashMap<MeshResourceID, Vec<u8>> = AHashMap::new();
-
-    for ent in meshes.iter() {
-        pipeline
-            .mesh_transform_buffers
-            .entry(**ent)
-            .or_insert_with(|| {
-                // Allocate the buffer.
-                let buffer = gpu.allocate_aligned_zero_buffer(
-                    &format!("Mesh({}) transform", ent.0 .0),
-                    // TODO(Angel): The size must be configured using the pipeline props.
-                    200000 * std::mem::size_of::<[[f32; 4]; 4]>() as u64,
-                    BufferUsages::VERTEX | BufferUsages::COPY_DST,
-                );
-                (buffer, 0)
-            });
-    }
-
-    for (e, t) in (&meshes, &transforms).iter() {
-        raw_transforms
-            .entry(**e)
-            .and_modify(|e| {
-                let data = t.as_matrix_array();
-                let a: &[u8] = bytemuck::cast_slice(&data);
-                e.extend_from_slice(a);
-            })
-            .or_insert_with(|| {
-                let mut vec = Vec::new();
-                let data = t.as_matrix_array();
-                let a: &[u8] = bytemuck::cast_slice(&data);
-                vec.extend_from_slice(a);
-                vec
-            });
-    }
-
-    for (m, b) in raw_transforms.iter() {
-        pipeline.mesh_transform_buffers.entry(*m).and_modify(|e| {
-            gpu.queue.write_buffer(&e.0, 0, b);
-            e.1 = b.len() as u64 / Transform::raw_size();
+            println!("Numb instances: {}", e.1);
         });
     }
 }
-*/

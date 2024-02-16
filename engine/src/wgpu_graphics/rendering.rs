@@ -40,9 +40,10 @@ pub(crate) fn reconfigure_main_textures_if_needed_system(
 
         gpu.surface.configure(&gpu.device, &gpu.surface_config);
 
-        depth_t.0 = gpu.allocate_depth_texture("Global depth texture");
+        depth_t.0 = gpu.allocate_depth_texture("Global depth texture", window.size.width, window.size.height);
 
         // Sync all the scenes which does not have a default resolution.
+        // TODO(Angel): Add support for sub scenes.
         if s_state.main.should_sync_resolution_to_window {
             s_state.main.target_texture = gpu.allocate_target_texture(
                 &s_state.main.label,

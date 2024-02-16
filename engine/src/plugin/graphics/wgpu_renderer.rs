@@ -110,7 +110,11 @@ fn setup_screen_texture_and_queue(world: &World) {
 
 /// Setups the global depth texture.
 fn setup_depth_texture(world: &World, gpu: &Gpu) {
-    let d_texture = gpu.allocate_depth_texture("Global depth texture");
+    let d_texture = gpu.allocate_depth_texture(
+        "Global depth texture",
+        gpu.surface_config.width,
+        gpu.surface_config.height,
+    );
     world.add_unique(DepthTexture(d_texture));
 }
 
