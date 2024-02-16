@@ -2,14 +2,22 @@ use shipyard::{UniqueView, UniqueViewMut};
 use wgpu::CommandBuffer;
 
 use crate::{
-    graphics::{components::DepthTexture, gpu::AbstractGpu, BufferCreator}, host::window::Window, scene::scene_state::SceneState, wgpu_graphics::{
+    graphics::{components::DepthTexture, gpu::AbstractGpu, BufferCreator},
+    host::window::Window,
+    scene::scene_state::SceneState,
+    wgpu_graphics::{
         components::{ScreenFrame, ScreenTexture},
         gpu::Gpu,
         CommandQueue, OrderCommandBuffer,
-    }
+    },
 };
 
-use super::{buffer::WGPUTexture, pipelines::frame_composition_pipeline::FrameCompositionPipeline};
+use super::{
+    buffer::WGPUTexture,
+    pipelines::frame_composition_pipeline::{
+        create_frame_composition_texture_bind_group, FrameCompositionPipeline,
+    },
+};
 
 /// DepthTexture: After the window is resized or the resolution changes the
 /// depth texture must be updated to match resolutions.
@@ -18,12 +26,11 @@ pub(crate) fn reconfigure_main_textures_if_needed_system(
     window: UniqueView<Window>,
     mut depth_t: UniqueViewMut<DepthTexture>,
     mut s_state: UniqueViewMut<SceneState>,
-
     mut frame_conf: UniqueViewMut<FrameCompositionPipeline>,
 ) {
-    let gpu = gpu
-        .downcast_mut::<Gpu>()
-        .expect("Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu");
+    let gpu = gpu.downcast_mut::<Gpu>().expect(
+        "Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu",
+    );
 
     if gpu.surface_config.width != window.size.width
         || gpu.surface_config.height != window.size.height
@@ -35,9 +42,7 @@ pub(crate) fn reconfigure_main_textures_if_needed_system(
 
         depth_t.0 = gpu.allocate_depth_texture("Global depth texture");
 
-
         // Sync all the scenes which does not have a default resolution.
-
         if s_state.main.should_sync_resolution_to_window {
             s_state.main.target_texture = gpu.allocate_target_texture(
                 &s_state.main.label,
@@ -50,42 +55,24 @@ pub(crate) fn reconfigure_main_textures_if_needed_system(
                 .target_texture
                 .downcast_ref::<WGPUTexture>()
                 .expect("Incorrect Texture");
-    
-            // TODO(Angel): Improve this!!!!!.
-            let main_sampler = main_texture.sampler.as_ref().expect("Unable to find sampler");
 
-            let texture_bind_group = gpu.device.create_bind_group(
-                &wgpu::BindGroupDescriptor {
-                    layout: &frame_conf.texture_bind_group_layout,
-                    entries: &[
-                        wgpu::BindGroupEntry {
-                            binding: 0,
-                            resource: wgpu::BindingResource::TextureView(&main_texture.view),
-                        },
+            let main_sampler = main_texture
+                .sampler
+                .as_ref()
+                .expect("Unable to find sampler");
 
-                        wgpu::BindGroupEntry {
-                            binding: 1,
-                            resource: wgpu::BindingResource::Sampler(&main_sampler),
-                        }
-                    ],
-                    label: Some("frame_composition_diffuse_bind_group"),
-                }
-            );
+            let texture_bind_group =
+                create_frame_composition_texture_bind_group(
+                    gpu,
+                    &frame_conf.texture_bind_group_layout,
+                    &main_texture.view,
+                    main_sampler,
+                );
 
             frame_conf.texture_bind_group = Some(texture_bind_group);
         }
-
-        /*for s in s_state.sub_scenes. {
-
-            s.target_texture = gpu.allocate_target_texture(
-                &s_state.main.label,
-                window.size.width,
-                window.size.height,
-            );
-        }*/
     }
 }
-
 
 /// Setups the screen texture into the world.
 // TODO(Angel): Remove panic, to support headless.
@@ -94,9 +81,9 @@ pub(crate) fn acquire_screen_texture(
     mut s_frame: UniqueViewMut<ScreenFrame>,
     mut s_texture: UniqueViewMut<ScreenTexture>,
 ) {
-    let gpu = gpu
-        .downcast_ref::<Gpu>()
-        .expect("Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu");
+    let gpu = gpu.downcast_ref::<Gpu>().expect(
+        "Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu",
+    );
 
     if let Ok(frame) = gpu.surface.get_current_texture() {
         let view = frame
@@ -127,11 +114,12 @@ pub(crate) fn submit_commands_in_order(
     gpu: UniqueView<AbstractGpu>,
     c_queue: UniqueView<CommandQueue>,
 ) {
-    let gpu = gpu
-        .downcast_ref::<Gpu>()
-        .expect("Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu");
+    let gpu = gpu.downcast_ref::<Gpu>().expect(
+        "Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu",
+    );
 
-    let mut commands = Vec::<OrderCommandBuffer>::with_capacity(c_queue.0.len());
+    let mut commands =
+        Vec::<OrderCommandBuffer>::with_capacity(c_queue.0.len());
 
     while let Some(c) = c_queue.0.pop() {
         commands.push(c);

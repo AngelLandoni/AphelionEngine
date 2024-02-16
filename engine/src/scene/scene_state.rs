@@ -4,7 +4,7 @@ use shipyard::Unique;
 use crate::graphics::scene::Scene;
 
 #[derive(Unique)]
-pub(crate) struct SceneState {
-    pub(crate) main: Scene,
-    pub(crate) sub_scenes: AHashMap<String, Scene>,
+pub struct SceneState {
+    pub main: Scene,
+    pub sub_scenes: AHashMap<String, Scene>,
 }

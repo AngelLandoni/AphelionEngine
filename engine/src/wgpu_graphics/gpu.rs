@@ -1,22 +1,28 @@
 use bytemuck::{AnyBitPattern, Pod};
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
-    Adapter, Buffer, BufferAddress, BufferUsages, Device, DeviceDescriptor, Extent3d, Features,
-    Limits, Queue, RequestAdapterOptions, SamplerDescriptor, ShaderModule, Surface,
-    SurfaceConfiguration, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
+    Adapter, Buffer, BufferAddress, BufferUsages, Device, DeviceDescriptor,
+    Extent3d, Features, Limits, Queue, RequestAdapterOptions,
+    SamplerDescriptor, ShaderModule, Surface, SurfaceConfiguration,
+    TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
     TextureViewDescriptor, COPY_BUFFER_ALIGNMENT,
 };
 
 use crate::{
     graphics::{
-        gpu::GpuAbstractor, BufferCreator, BufferHandler, IndexBuffer, ShaderHandler, SurfaceHandler, Texture, UniformBuffer, VertexBuffer
+        gpu::GpuAbstractor, BufferCreator, BufferHandler, IndexBuffer,
+        ShaderHandler, SurfaceHandler, Texture, UniformBuffer, VertexBuffer,
     },
-    host::window::Window, types::Size,
+    host::window::Window,
+    types::Size,
 };
 
-use super::buffer::{WGPUTexture, WgpuIndexBuffer, WgpuUniformBuffer, WgpuVertexBuffer};
+use super::buffer::{
+    map_usages, WGPUTexture, WgpuIndexBuffer, WgpuUniformBuffer, WgpuVertexBuffer
+};
 
-pub(crate) const DEPTH_TEXTURE_FORMAT: TextureFormat = TextureFormat::Depth32Float;
+pub(crate) const DEPTH_TEXTURE_FORMAT: TextureFormat =
+    TextureFormat::Depth32Float;
 
 /// Holds all the essential information required for GPU interaction.
 pub(crate) struct Gpu {
@@ -54,7 +60,8 @@ impl Gpu {
                 &DeviceDescriptor {
                     label: None,
                     features: Features::empty(),
-                    limits: Limits::default().using_resolution(adapter.limits()),
+                    limits: Limits::default()
+                        .using_resolution(adapter.limits()),
                 },
                 None,
             )
@@ -89,7 +96,11 @@ impl Gpu {
     }
 
     /// Reads a shader file and generate a module.
-    pub(crate) fn compile_program(&self, label: &str, shader_code: &str) -> ShaderModule {
+    pub(crate) fn compile_program(
+        &self,
+        label: &str,
+        shader_code: &str,
+    ) -> ShaderModule {
         self.device
             .create_shader_module(wgpu::ShaderModuleDescriptor {
                 label: Some(label),
@@ -143,8 +154,14 @@ impl Gpu {
         })
     }
 
-    pub(crate) fn write_aligned_buffer(&self, buffer: &Buffer, offset: BufferAddress, data: &[u8]) {
-        let aligned_offset = match offset.checked_sub(COPY_BUFFER_ALIGNMENT - 1) {
+    pub(crate) fn write_aligned_buffer(
+        &self,
+        buffer: &Buffer,
+        offset: BufferAddress,
+        data: &[u8],
+    ) {
+        let aligned_offset = match offset.checked_sub(COPY_BUFFER_ALIGNMENT - 1)
+        {
             Some(subtracted) => subtracted & !(COPY_BUFFER_ALIGNMENT - 1),
             None => 0,
         };
@@ -166,7 +183,11 @@ impl SurfaceHandler for Gpu {
 
 impl BufferCreator for Gpu {
     /// Stores the information into the GPU RAM and returns a reference to it.
-    fn allocate_vertex_buffer(&self, label: &str, data: &[u8]) -> Box<dyn VertexBuffer> {
+    fn allocate_vertex_buffer(
+        &self,
+        label: &str,
+        data: &[u8],
+    ) -> Box<dyn VertexBuffer> {
         let buffer = self.device.create_buffer_init(&BufferInitDescriptor {
             label: Some(label),
             contents: data,
@@ -177,7 +198,11 @@ impl BufferCreator for Gpu {
     }
 
     /// Stores the information into the GPU RAM and returns a reference to it.
-    fn allocate_index_buffer(&self, label: &str, data: &[u8]) -> Box<dyn IndexBuffer> {
+    fn allocate_index_buffer(
+        &self,
+        label: &str,
+        data: &[u8],
+    ) -> Box<dyn IndexBuffer> {
         let buffer = self.device.create_buffer_init(&BufferInitDescriptor {
             label: Some(label),
             contents: data,
@@ -199,7 +224,8 @@ impl BufferCreator for Gpu {
             sample_count: 1,
             dimension: TextureDimension::D2,
             format: DEPTH_TEXTURE_FORMAT,
-            usage: TextureUsages::RENDER_ATTACHMENT | TextureUsages::TEXTURE_BINDING,
+            usage: TextureUsages::RENDER_ATTACHMENT
+                | TextureUsages::TEXTURE_BINDING,
             view_formats: &[],
         });
 
@@ -226,7 +252,12 @@ impl BufferCreator for Gpu {
         })
     }
 
-    fn allocate_target_texture(&self, label: &str, width: u32, height: u32) -> Box<dyn Texture> {
+    fn allocate_target_texture(
+        &self,
+        label: &str,
+        width: u32,
+        height: u32,
+    ) -> Box<dyn Texture> {
         let texture = self.device.create_texture(&TextureDescriptor {
             label: Some(label),
             size: Extent3d {
@@ -238,7 +269,8 @@ impl BufferCreator for Gpu {
             sample_count: 1,
             dimension: TextureDimension::D2,
             format: wgpu::TextureFormat::Bgra8UnormSrgb,
-            usage: TextureUsages::RENDER_ATTACHMENT | TextureUsages::COPY_SRC | TextureUsages::TEXTURE_BINDING,
+            usage: TextureUsages::RENDER_ATTACHMENT
+                | TextureUsages::TEXTURE_BINDING,
             view_formats: &[],
         });
 
@@ -261,24 +293,58 @@ impl BufferCreator for Gpu {
         })
     }
 
-    fn allocate_uniform_buffer(&self, label: &str, data: &[u8]) -> Box<dyn UniformBuffer> {
+    fn allocate_uniform_buffer(
+        &self,
+        label: &str,
+        data: &[u8],
+    ) -> Box<dyn UniformBuffer> {
         let buffer = self.raw_allocate_buffer_init(
             label,
             data,
-            BufferUsages::COPY_DST | BufferUsages::UNIFORM
+            BufferUsages::COPY_DST | BufferUsages::UNIFORM,
         );
 
         Box::new(WgpuUniformBuffer(buffer))
     }
+
+    fn allocate_aligned_zero_vertex_buffer(
+        &self,
+        label: &str,
+        size: u64,
+        uses: crate::graphics::BufferUsage,
+    ) -> Box<dyn VertexBuffer> {
+        Box::new(WgpuVertexBuffer(self.allocate_aligned_zero_buffer(
+            label,
+            size,
+            BufferUsages::VERTEX | map_usages(uses)
+        )))
+    }
 }
 
-
 impl BufferHandler for Gpu {
-    fn write_uniform_buffer(&self, buffer: &Box<dyn UniformBuffer>, offset: u64, data: &[u8]) {
+    fn write_uniform_buffer(
+        &self,
+        buffer: &Box<dyn UniformBuffer>,
+        offset: u64,
+        data: &[u8],
+    ) {
         let buffer = buffer
             .downcast_ref::<WgpuUniformBuffer>()
             .expect("Unable to downcast Uniform Buffer");
-    
+
+        self.queue.write_buffer(&buffer.0, offset, data);
+    }
+
+    fn write_vertex_buffer(
+        &self,
+        buffer: &Box<dyn VertexBuffer>,
+        offset: u64,
+        data: &[u8],
+    ) {
+        let buffer = buffer
+            .downcast_ref::<WgpuVertexBuffer>()
+            .expect("Unable to downcast Vertex Buffer");
+
         self.queue.write_buffer(&buffer.0, offset, data);
     }
 }

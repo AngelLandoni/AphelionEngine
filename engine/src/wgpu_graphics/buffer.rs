@@ -1,6 +1,9 @@
-use wgpu::Buffer;
+use wgpu::{Buffer, BufferUsages};
 
-use crate::{graphics::{IndexBuffer, Texture, UniformBuffer, VertexBuffer}, types::Size};
+use crate::{
+    graphics::{BufferUsage, IndexBuffer, Texture, UniformBuffer, VertexBuffer},
+    types::Size,
+};
 
 pub struct WgpuVertexBuffer(pub(crate) Buffer);
 
@@ -23,5 +26,11 @@ pub struct WGPUTexture {
 impl Texture for WGPUTexture {
     fn size(&self) -> Size<u32> {
         Size::new(self.texture.size().width, self.texture.size().width)
+    }
+}
+
+pub(crate) fn map_usages(usage: BufferUsage) -> BufferUsages {
+    match usage {
+        BufferUsage::COPY_DST => BufferUsages::COPY_DST,
     }
 }

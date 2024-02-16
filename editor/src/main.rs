@@ -1,6 +1,8 @@
 mod camera;
 mod gui;
+mod workbench_scene;
 
+use camera::CameraPlugin;
 use engine::{
     app::App,
     plugin::{
@@ -15,11 +17,11 @@ use engine::{
         },
     },
     scene::{camera::Camera, projection::Projection, scene::SceneDescriptor},
-    types::Size,
 };
 
 //use camera::CameraPlugin;
 use gui::GuiPlugin;
+use workbench_scene::WorkbenchScenePlugin;
 
 pub fn main() {
     App::new()
@@ -40,7 +42,8 @@ pub fn main() {
         .add_plugin(EguiPlugin {
             scene: EguiSceneSelector::Main,
         })
-        //        .add_plugin(CameraPlugin)
+        .add_plugin(CameraPlugin)
+        .add_plugin(WorkbenchScenePlugin)
         .add_plugin(GuiPlugin)
         .run();
 }

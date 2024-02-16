@@ -1,32 +1,41 @@
 use shipyard::UniqueView;
-use wgpu::{CommandEncoderDescriptor, Extent3d, ImageCopyTexture, ImageCopyTextureBase, Operations, RenderPassDepthStencilAttachment};
+use wgpu::{CommandEncoderDescriptor, Operations};
 
-use crate::{graphics::gpu::AbstractGpu, scene::scene_state::SceneState, wgpu_graphics::{buffer::WGPUTexture, components::{ScreenFrame, ScreenTexture}, gpu::Gpu, pipelines::frame_composition_pipeline::FrameCompositionPipeline, CommandQueue, CommandSubmitOrder, OrderCommandBuffer}};
+use crate::{
+    graphics::gpu::AbstractGpu,
+    scene::scene_state::SceneState,
+    wgpu_graphics::{
+        components::{ScreenFrame, ScreenTexture},
+        gpu::Gpu,
+        pipelines::frame_composition_pipeline::FrameCompositionPipeline,
+        CommandQueue, CommandSubmitOrder, OrderCommandBuffer,
+    },
+};
 
 pub(crate) fn frame_composition_pass_system(
     gpu: UniqueView<AbstractGpu>,
-    s_state: UniqueView<SceneState>,
-    screen_frame: UniqueView<ScreenFrame>,
+    _s_state: UniqueView<SceneState>,
+    _screen_frame: UniqueView<ScreenFrame>,
     pipeline: UniqueView<FrameCompositionPipeline>,
     screen_texture: UniqueView<ScreenTexture>,
     queue: UniqueView<CommandQueue>,
 ) {
-    let gpu = gpu
-        .downcast_ref::<Gpu>()
-        .expect("Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu");
+    let gpu = gpu.downcast_ref::<Gpu>().expect(
+        "Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu",
+    );
 
-    let mut encoder = gpu
-        .device
-        .create_command_encoder(&CommandEncoderDescriptor {
-            label: Some("Frame composition encoder"),
-        });
+    let mut encoder =
+        gpu.device
+            .create_command_encoder(&CommandEncoderDescriptor {
+                label: Some("Frame composition encoder"),
+            });
 
     let s_texture = match &screen_texture.0 {
         Some(s_t) => s_t,
         None => return,
     };
 
-    {   
+    {
         let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
             label: Some("Frame composition pass"),
             color_attachments: &[
@@ -51,7 +60,7 @@ pub(crate) fn frame_composition_pass_system(
         });
 
         if let Some(bind_group) = &pipeline.texture_bind_group {
-            pass.set_bind_group(0, &bind_group, &[]);
+            pass.set_bind_group(0, bind_group, &[]);
         }
         pass.set_pipeline(&pipeline.pipeline);
         pass.draw(0..6, 0..1);

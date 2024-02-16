@@ -17,10 +17,15 @@ pub struct PrimitivesPlugin;
 impl Pluggable for PrimitivesPlugin {
     fn configure(&self, app: &mut App) {
         // Borrow the server in order to insert all the primitive meshes.
-        let mut a_server = match app.world.borrow::<UniqueViewMut<AssetServer>>() {
+        let mut a_server = match app
+            .world
+            .borrow::<UniqueViewMut<AssetServer>>()
+        {
             Ok(s) => s,
             Err(_) => {
-                println!("Primitives are not configured, AssetServer not configured");
+                println!(
+                    "Primitives are not configured, AssetServer not configured"
+                );
                 return;
             }
         };
@@ -66,7 +71,8 @@ const PENTAGON_VERTICES: &[Vertex] = &[
 
 const PENTAGON_INDICES: &[u16] = &[0, 1, 4, 1, 2, 4, 2, 3, 4];
 
-pub const PENTAGON_MESH_RESOURCE_ID: MeshResourceID = MeshResourceID(PENTAGON_PRIMITIVE_ID);
+pub const PENTAGON_MESH_RESOURCE_ID: MeshResourceID =
+    MeshResourceID(PENTAGON_PRIMITIVE_ID);
 
 fn configure_pentagon_primitive(gpu: &AbstractGpu, a_server: &mut AssetServer) {
     let v_buffer = gpu.allocate_vertex_buffer(
@@ -199,7 +205,8 @@ const CUBE_INDICES: &[u16] = &[
     20, 21, 22, 22, 23, 20, // back
 ];
 
-pub const CUBE_MESH_RESOURCE_ID: MeshResourceID = MeshResourceID(CUBE_PRIMITIVE_ID);
+pub const CUBE_MESH_RESOURCE_ID: MeshResourceID =
+    MeshResourceID(CUBE_PRIMITIVE_ID);
 
 fn configure_cube_primitive(gpu: &AbstractGpu, a_server: &mut AssetServer) {
     let v_buffer = gpu.allocate_vertex_buffer(
@@ -207,8 +214,10 @@ fn configure_cube_primitive(gpu: &AbstractGpu, a_server: &mut AssetServer) {
         bytemuck::cast_slice(CUBE_VERTICES),
     );
 
-    let i_buffer =
-        gpu.allocate_index_buffer("Cube primitive indices", bytemuck::cast_slice(CUBE_INDICES));
+    let i_buffer = gpu.allocate_index_buffer(
+        "Cube primitive indices",
+        bytemuck::cast_slice(CUBE_INDICES),
+    );
 
     let mesh = Mesh::new(v_buffer, i_buffer, CUBE_INDICES.len() as u32);
 

@@ -12,7 +12,11 @@ use crate::{
 pub(crate) fn run_pipeline_configuration(app: &App) {
     // Update events.
     // Extract all the update callbacks from the user and execute them.
-    if let Some(update_fns) = app.scheduler.schedules.get(&Schedule::PipelineConfiguration) {
+    if let Some(update_fns) = app
+        .scheduler
+        .schedules
+        .get(&Schedule::PipelineConfiguration)
+    {
         for func in update_fns {
             func(&app.world);
         }
@@ -22,7 +26,9 @@ pub(crate) fn run_pipeline_configuration(app: &App) {
 pub(crate) fn run_scene_configuration(app: &App) {
     // Update events.
     // Extract all the update callbacks from the user and execute them.
-    if let Some(update_fns) = app.scheduler.schedules.get(&Schedule::SceneConfiguration) {
+    if let Some(update_fns) =
+        app.scheduler.schedules.get(&Schedule::SceneConfiguration)
+    {
         for func in update_fns {
             func(&app.world);
         }
@@ -32,7 +38,11 @@ pub(crate) fn run_scene_configuration(app: &App) {
 pub(crate) fn run_pipeline_uniform_configuration(app: &App) {
     // Update events.
     // Extract all the update callbacks from the user and execute them.
-    if let Some(update_fns) = app.scheduler.schedules.get(&Schedule::PipelineUniformsSetup) {
+    if let Some(update_fns) = app
+        .scheduler
+        .schedules
+        .get(&Schedule::PipelineUniformsSetup)
+    {
         for func in update_fns {
             func(&app.world);
         }
@@ -43,7 +53,9 @@ pub(crate) fn run_pipeline_uniform_configuration(app: &App) {
 pub(crate) fn run_before_request_redraw_workload(app: &App) {
     // Update events.
     // Extract all the update callbacks from the user and execute them.
-    if let Some(update_fns) = app.scheduler.schedules.get(&Schedule::BeforeRequestRedraw) {
+    if let Some(update_fns) =
+        app.scheduler.schedules.get(&Schedule::BeforeRequestRedraw)
+    {
         for func in update_fns {
             func(&app.world);
         }
@@ -54,7 +66,9 @@ pub(crate) fn run_before_request_redraw_workload(app: &App) {
 pub(crate) fn run_request_redraw_workload(app: &App) {
     // Update events.
     // Extract all the update callbacks from the user and execute them.
-    if let Some(update_fns) = app.scheduler.schedules.get(&Schedule::RequestRedraw) {
+    if let Some(update_fns) =
+        app.scheduler.schedules.get(&Schedule::RequestRedraw)
+    {
         for func in update_fns {
             func(&app.world);
         }
@@ -65,7 +79,9 @@ pub(crate) fn run_request_redraw_workload(app: &App) {
 pub(crate) fn run_after_request_redraw_workload(app: &App) {
     // Update events.
     // Extract all the update callbacks from the user and execute them.
-    if let Some(update_fns) = app.scheduler.schedules.get(&Schedule::AfterRequestRedraw) {
+    if let Some(update_fns) =
+        app.scheduler.schedules.get(&Schedule::AfterRequestRedraw)
+    {
         for func in update_fns {
             func(&app.world);
         }
@@ -75,7 +91,9 @@ pub(crate) fn run_after_request_redraw_workload(app: &App) {
 pub(crate) fn run_window_event_workload(app: &App) {
     // Update events.
     // Extract all the update callbacks from the user and execute them.
-    if let Some(update_fns) = app.scheduler.schedules.get(&Schedule::WindowEvent) {
+    if let Some(update_fns) =
+        app.scheduler.schedules.get(&Schedule::WindowEvent)
+    {
         for func in update_fns {
             func(&app.world);
         }
@@ -150,7 +168,8 @@ pub(crate) fn update_window_size(app: &mut App, width: &u32, height: &u32) {
         size.size.height = *height;
     }
 
-    if let Some(w_u_fns) = app.scheduler.schedules.get(&Schedule::WindowResize) {
+    if let Some(w_u_fns) = app.scheduler.schedules.get(&Schedule::WindowResize)
+    {
         for func in w_u_fns {
             func(&app.world);
         }
