@@ -1,5 +1,15 @@
+use shipyard::Component;
 
-use crate::{scene::{camera::Camera, projection::Projection}, types::Size};
+use crate::{
+    scene::{camera::Camera, projection::Projection},
+    types::Size,
+};
+
+#[derive(Component)]
+pub enum SceneTarget {
+    Main,
+    SubScene(String),
+}
 
 #[derive(Clone)]
 pub struct SceneDescriptor {
@@ -12,11 +22,11 @@ pub struct SceneDescriptor {
     /// Contains the `Projection` used.
     pub projection: Projection,
     /// Conatins the resolution that the target texture will use.
-    pub resolution: Option<Size<u32>>
+    pub resolution: Option<Size<u32>>,
 }
 
 impl SceneDescriptor {
-    /// Creates and initializes a new Scene instance, which is essential for 
+    /// Creates and initializes a new Scene instance, which is essential for
     /// initializing the main scene.
     pub fn main() -> Self {
         SceneDescriptor {
@@ -28,4 +38,3 @@ impl SceneDescriptor {
         }
     }
 }
-

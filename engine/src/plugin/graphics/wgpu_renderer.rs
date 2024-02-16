@@ -9,11 +9,21 @@ use crate::{
     wgpu_graphics::{
         components::{ScreenFrame, ScreenTexture},
         gpu::Gpu,
-        passes::{dynamic_mesh_pass::dynamic_mesh_pass_system, frame_composition_pass_system::frame_composition_pass_system},
-        pipelines::{dynamic_mesh_pipeline::DynamicMeshPipeline, frame_composition_pipeline::{setup_frame_composition_pipelines_uniforms_system, FrameCompositionPipeline}},
+        passes::{
+            dynamic_mesh_pass::dynamic_mesh_pass_system,
+            frame_composition_pass_system::frame_composition_pass_system,
+        },
+        pipelines::{
+            dynamic_mesh_pipeline::{setup_dynamic_mesh_pipelines_uniforms_system, DynamicMeshPipeline},
+            frame_composition_pipeline::{
+                setup_frame_composition_pipelines_uniforms_system,
+                FrameCompositionPipeline,
+            },
+        },
         rendering::{
             acquire_screen_texture, present_screen_texture,
-            reconfigure_main_textures_if_needed_system, submit_commands_in_order,
+            reconfigure_main_textures_if_needed_system,
+            submit_commands_in_order,
         },
         CommandQueue, OrderCommandQueue, MAX_NUMBER_IF_COMMANDS_PER_FRAME,
     },
@@ -23,12 +33,12 @@ pub struct WgpuRendererPlugin;
 
 impl Pluggable for WgpuRendererPlugin {
     fn configure(&self, app: &mut App) {
-        let window_resource = app
-            .world
-            .borrow::<UniqueView<Window>>()
-            .expect("Configure the window context before setting up the renderer");
+        let window_resource = app.world.borrow::<UniqueView<Window>>().expect(
+            "Configure the window context before setting up the renderer",
+        );
 
-        let gpu = futures_lite::future::block_on(Gpu::new(window_resource.as_ref()));
+        let gpu =
+            futures_lite::future::block_on(Gpu::new(window_resource.as_ref()));
 
         drop(window_resource);
 
@@ -48,11 +58,12 @@ impl Pluggable for WgpuRendererPlugin {
         // Setup scheludes.
         {
             app.schedule(Schedule::PipelineConfiguration, |world| {
-                setup_pipelines(&world);
+                setup_pipelines(world);
             });
 
             app.schedule(Schedule::PipelineUniformsSetup, |world| {
                 world.run(setup_frame_composition_pipelines_uniforms_system);
+                world.run(setup_dynamic_mesh_pipelines_uniforms_system);
             });
 
             app.schedule(Schedule::Start, |world| {
@@ -109,7 +120,8 @@ fn setup_pipelines(world: &World) {
         .borrow::<UniqueView<AbstractGpu>>()
         .expect("Unable to acquire AbtractGpu");
 
-    let gpu = a_gpu.downcast_ref::<Gpu>()
+    let gpu = a_gpu
+        .downcast_ref::<Gpu>()
         .expect("Unable to acquire Wgpu GPU");
 
     let dynamic_mesh = DynamicMeshPipeline::new(gpu);

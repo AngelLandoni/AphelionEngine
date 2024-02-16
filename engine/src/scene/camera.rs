@@ -24,7 +24,11 @@ impl Default for Camera {
 
 impl Camera {
     /// Creates and returns a new `Camera` using the provided
-    pub fn new(position: Point3<f32>, target: Point3<f32>, up: Vector3<f32>) -> Self {
+    pub fn new(
+        position: Point3<f32>,
+        target: Point3<f32>,
+        up: Vector3<f32>,
+    ) -> Self {
         Camera {
             position,
             target,
@@ -53,7 +57,11 @@ impl Camera {
     /// # Arguments
     ///
     /// `direction` - The direction of translation and the magnitude.
-    pub fn add_target_translation(&mut self, direction: Vector3<f32>, amount: f32) {
+    pub fn add_target_translation(
+        &mut self,
+        direction: Vector3<f32>,
+        amount: f32,
+    ) {
         self.target.x += direction.x * amount;
         self.target.y += direction.y * amount;
         self.target.z += direction.z * amount;

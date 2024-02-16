@@ -1,10 +1,19 @@
-use ahash::{AHashMap, AHashSet};
+use ahash::AHashMap;
 use shipyard::{Unique, UniqueView, UniqueViewMut, World};
 
 use crate::{
-    app::App, graphics::{gpu::AbstractGpu, scene::Scene}, host::window::Window, plugin::Pluggable, scene::{
-        asset_server::AssetServer, keyboard::Keyboard, mouse::{Cursor, CursorDelta}, perspective::Perspective, scene::SceneDescriptor, scene_state::{self, SceneState}
-    }, schedule::Schedule, types::Size
+    app::App,
+    graphics::{gpu::AbstractGpu, scene::{sync_main_scene_dynamic_entities_transform, Scene}},
+    host::window::Window,
+    plugin::Pluggable,
+    scene::{
+        asset_server::AssetServer,
+        keyboard::Keyboard,
+        mouse::{Cursor, CursorDelta},
+        scene::SceneDescriptor,
+        scene_state::SceneState,
+    },
+    schedule::Schedule,
 };
 
 #[derive(Unique)]
@@ -36,13 +45,18 @@ impl Pluggable for ScenePlugin {
 
         // Update aspect ratio when window is resized only for the main `Scene`.
         app.schedule(Schedule::WindowResize, |world| {
-            world.run(|w: UniqueView<Window>, mut s_s: UniqueViewMut<SceneState>| {
-                s_s.main.projection.update_aspect_ratio(w.size.width as f32 / w.size.height as f32);
-            });
+            world.run(
+                |w: UniqueView<Window>, mut s_s: UniqueViewMut<SceneState>| {
+                    s_s.main.projection.update_aspect_ratio(
+                        w.size.width as f32 / w.size.height as f32,
+                    );
+                },
+            );
         });
 
         app.schedule(Schedule::Update, |world| {
             world.run(sync_scene_cameras_with_their_uniforms_system);
+            world.run(sync_main_scene_dynamic_entities_transform);
         });
     }
 }
@@ -54,9 +68,9 @@ fn allocate_scenes(world: &World) {
         .borrow::<UniqueView<TempSceneDescriptors>>()
         .expect("Unable to acquire TempSceneDescriptors");
 
-    let gpu = world
-        .borrow::<UniqueView<AbstractGpu>>()
-        .expect("Unable to acquire AbstractGpu, the scenes cannot be allocated");
+    let gpu = world.borrow::<UniqueView<AbstractGpu>>().expect(
+        "Unable to acquire AbstractGpu, the scenes cannot be allocated",
+    );
 
     let mut sub_scenes_finished = AHashMap::new();
 
@@ -74,25 +88,32 @@ fn allocate_scenes(world: &World) {
         // scenes.
         let target_texture = gpu.allocate_target_texture(
             format!("{} scene target texture", s_scene.label).as_ref(),
-            s_scene.resolution.map(|s| s.width).unwrap_or(gpu.surface_size().width),
-            s_scene.resolution.map(|s| s.height).unwrap_or(gpu.surface_size().height),
+            s_scene
+                .resolution
+                .map(|s| s.width)
+                .unwrap_or(gpu.surface_size().width),
+            s_scene
+                .resolution
+                .map(|s| s.height)
+                .unwrap_or(gpu.surface_size().height),
         );
-    
-        let depth_texture = gpu.allocate_depth_texture("Main scene depth texture");
-    
+
+        let depth_texture =
+            gpu.allocate_depth_texture("Main scene depth texture");
+
         let scene = Scene {
             label: s_scene.label.clone(),
             camera: s_scene.camera,
             projection: s_scene.projection,
-            camera_buffer: camera_buffer,
+            camera_buffer,
             mesh_transform_buffers: AHashMap::new(),
-            target_texture: target_texture,
-            depth_texture: depth_texture,
+            target_texture,
+            depth_texture,
             should_sync_resolution_to_window: s_scene.resolution.is_none(),
         };
 
         sub_scenes_finished.insert(s_scene.id.clone(), scene);
-    } 
+    }
 
     let main_camera: [[f32; 4]; 4] = main.camera.view_matrix().into();
     let main_camera_buffer = gpu.allocate_uniform_buffer(
@@ -102,8 +123,12 @@ fn allocate_scenes(world: &World) {
 
     let target_texture = gpu.allocate_target_texture(
         "Main scene target texture",
-        main.resolution.map(|s| s.width).unwrap_or(gpu.surface_size().width),
-        main.resolution.map(|s| s.height).unwrap_or(gpu.surface_size().height),
+        main.resolution
+            .map(|s| s.width)
+            .unwrap_or(gpu.surface_size().width),
+        main.resolution
+            .map(|s| s.height)
+            .unwrap_or(gpu.surface_size().height),
     );
 
     let depth_texture = gpu.allocate_depth_texture("Main scene depth texture");
@@ -129,21 +154,23 @@ fn allocate_scenes(world: &World) {
 /// updated to refect the changes.
 fn sync_scene_cameras_with_their_uniforms_system(
     gpu: UniqueView<AbstractGpu>,
-    s_state: UniqueView<SceneState>
+    s_state: UniqueView<SceneState>,
 ) {
-    let c_matrix: [[f32; 4]; 4] = s_state
-        .main
-        .calculate_camera_projection()
-        .into();
+    let c_matrix: [[f32; 4]; 4] =
+        s_state.main.calculate_camera_projection().into();
 
     gpu.write_uniform_buffer(
         &s_state.main.camera_buffer,
         0,
-        bytemuck::cast_slice(&[c_matrix])
+        bytemuck::cast_slice(&[c_matrix]),
     );
 
     for s in s_state.sub_scenes.values() {
         let c_matrix: [[f32; 4]; 4] = s.calculate_camera_projection().into();
-        gpu.write_uniform_buffer(&s.camera_buffer, 0, bytemuck::cast_slice(&[c_matrix]));
+        gpu.write_uniform_buffer(
+            &s.camera_buffer,
+            0,
+            bytemuck::cast_slice(&[c_matrix]),
+        );
     }
 }

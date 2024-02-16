@@ -6,12 +6,19 @@ use shipyard::{Unique, UniqueView, UniqueViewMut};
 use wgpu::{Operations, RenderPassColorAttachment, RenderPassDescriptor};
 
 use crate::{
-    app::App, graphics::gpu::AbstractGpu, host::window::Window, plugin::{
+    app::App,
+    graphics::gpu::AbstractGpu,
+    host::window::Window,
+    plugin::{
         host::window::{UniqueWinitEvent, WinitWindowWrapper},
         Pluggable,
-    }, scene::scene_state::SceneState, schedule::Schedule, wgpu_graphics::{
-        buffer::WGPUTexture, components::ScreenTexture, gpu::Gpu, CommandQueue, CommandSubmitOrder, OrderCommandBuffer
-    }
+    },
+    scene::scene_state::SceneState,
+    schedule::Schedule,
+    wgpu_graphics::{
+        buffer::WGPUTexture, gpu::Gpu, CommandQueue, CommandSubmitOrder,
+        OrderCommandBuffer,
+    },
 };
 
 #[derive(Unique)]
@@ -21,7 +28,7 @@ pub struct EguiContext(pub Context);
 pub struct EguiRenderer {
     state: State,
     renderer: Renderer,
-    selector: EguiSceneSelector,    
+    selector: EguiSceneSelector,
 }
 
 pub struct EguiInit();
@@ -63,18 +70,32 @@ impl Pluggable for EguiPlugin {
                 .borrow::<UniqueView<AbstractGpu>>()
                 .expect("Unable to adquire gpu");
 
-            let state = egui_winit::State::new(context.clone(), id, &u_window.as_ref(), None, None);
+            let state = egui_winit::State::new(
+                context.clone(),
+                id,
+                &u_window.as_ref(),
+                None,
+                None,
+            );
 
             let gpu = gpu
                 .downcast_ref::<Gpu>()
                 .expect("Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu");
 
-            let renderer =
-                egui_wgpu::renderer::Renderer::new(&gpu.device, gpu.texture_format, None, 1);
+            let renderer = egui_wgpu::renderer::Renderer::new(
+                &gpu.device,
+                gpu.texture_format,
+                None,
+                1,
+            );
 
             app.world.add_unique(EguiContext(context));
 
-            app.world.add_unique(EguiRenderer { state, renderer, selector: self.scene.clone() });
+            app.world.add_unique(EguiRenderer {
+                state,
+                renderer,
+                selector: self.scene.clone(),
+            });
         }
 
         {
@@ -119,9 +140,9 @@ fn egui_render_system(
     mut egui: UniqueViewMut<EguiRenderer>,
     egui_ctx: UniqueView<EguiContext>,
 ) {
-    let gpu = gpu
-        .downcast_ref::<Gpu>()
-        .expect("Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu");
+    let gpu = gpu.downcast_ref::<Gpu>().expect(
+        "Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu",
+    );
 
     let w = match window.accesor.downcast_ref::<WinitWindowWrapper>() {
         Some(w) => w,
@@ -135,22 +156,18 @@ fn egui_render_system(
     let output = egui_ctx.0.end_frame();
 
     let texture = match &egui.selector {
-        EguiSceneSelector::Main => {
-            s_state
-                .main
-                .target_texture
-                .downcast_ref::<WGPUTexture>()
-                .expect("Egui only works with WGPU")
-        },
-        EguiSceneSelector::SubScene(id) => {
-            s_state
-                .sub_scenes
-                .get(id)
-                .expect(format!("Unable to find scene with id {}", id).as_str())
-                .target_texture
-                .downcast_ref::<WGPUTexture>()
-                .expect("Egui only works with WGPU")
-        },
+        EguiSceneSelector::Main => s_state
+            .main
+            .target_texture
+            .downcast_ref::<WGPUTexture>()
+            .expect("Egui only works with WGPU"),
+        EguiSceneSelector::SubScene(id) => s_state
+            .sub_scenes
+            .get(id)
+            .unwrap_or_else(|| panic!("Unable to find scene with id {}", id))
+            .target_texture
+            .downcast_ref::<WGPUTexture>()
+            .expect("Egui only works with WGPU"),
     };
 
     egui.state
@@ -165,24 +182,14 @@ fn egui_render_system(
             .update_texture(&gpu.device, &gpu.queue, *id, image_delta)
     }
 
-    let mut encoder = gpu
-        .device
-        .create_command_encoder(&wgpu::CommandEncoderDescriptor { label: None });
+    let mut encoder =
+        gpu.device
+            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                label: None,
+            });
 
-    // TODO(Angel): Maybe accesing the texture to get the size is not the best
-    // way.
-
-    println!("T: {}", texture.texture.size().width);
-    println!("B: {}", gpu.surface_config.width);
     let screen_descriptor = ScreenDescriptor {
-        /*size_in_pixels: [
-            texture.texture.size().width,
-            texture.texture.size().height,
-        ],*/
-        size_in_pixels: [
-            gpu.surface_config.width,
-            gpu.surface_config.height,
-        ],
+        size_in_pixels: [gpu.surface_config.width, gpu.surface_config.height],
         pixels_per_point: window.accesor.scale_factor() as f32,
     };
 

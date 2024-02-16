@@ -3,7 +3,12 @@ use raw_window_handle::{HasRawDisplayHandle, HasRawWindowHandle};
 use shipyard::{Unique, UniqueViewMut};
 
 use winit::{
-    dpi::LogicalSize, event::{DeviceEvent, ElementState, Event, KeyEvent, WindowEvent}, event_loop::EventLoop, keyboard::PhysicalKey, platform::macos::WindowBuilderExtMacOS, window::{WindowAttributes, WindowBuilder}
+    dpi::LogicalSize,
+    event::{DeviceEvent, ElementState, Event, KeyEvent, WindowEvent},
+    event_loop::EventLoop,
+    keyboard::PhysicalKey,
+    platform::macos::WindowBuilderExtMacOS,
+    window::WindowBuilder,
 };
 
 use crate::{
@@ -53,7 +58,8 @@ impl WinitWindowPlugin {
 impl Pluggable for WinitWindowPlugin {
     /// Spawns the main window and triggers the `winit` run loop.
     fn configure(&self, app: &mut App) {
-        let event_loop = EventLoop::new().expect("Unable to initialize `Winit` main run loop");
+        let event_loop = EventLoop::new()
+            .expect("Unable to initialize `Winit` main run loop");
 
         let title = self.title.clone();
         let width = self.size.width;
@@ -148,7 +154,9 @@ fn map_winit_events<T>(event: &Event<T>) -> host::events::Event {
                         ..
                     },
                 ..
-            } => host::events::Event::Keyboard(KeyboardEvent::Pressed(map_keyboard_input(key))),
+            } => host::events::Event::Keyboard(KeyboardEvent::Pressed(
+                map_keyboard_input(key),
+            )),
             WindowEvent::KeyboardInput {
                 event:
                     KeyEvent {
@@ -157,23 +165,27 @@ fn map_winit_events<T>(event: &Event<T>) -> host::events::Event {
                         ..
                     },
                 ..
-            } => host::events::Event::Keyboard(KeyboardEvent::Released(map_keyboard_input(key))),
+            } => host::events::Event::Keyboard(KeyboardEvent::Released(
+                map_keyboard_input(key),
+            )),
             WindowEvent::Resized(size) => host::events::Event::Window(
                 host::events::WindowEvent::Resized(size.width, size.height),
             ),
             WindowEvent::CursorMoved {
                 device_id: _,
                 position,
-            } => host::events::Event::Window(host::events::WindowEvent::CursorMoved(
-                position.x, position.y,
-            )),
-            WindowEvent::CloseRequested => {
-                host::events::Event::Window(host::events::WindowEvent::CloseRequested)
-            }
-            WindowEvent::RedrawRequested => {
-                host::events::Event::Window(host::events::WindowEvent::RequestRedraw)
-            }
-            _ => host::events::Event::Window(host::events::WindowEvent::UnknownOrNotImplemented),
+            } => host::events::Event::Window(
+                host::events::WindowEvent::CursorMoved(position.x, position.y),
+            ),
+            WindowEvent::CloseRequested => host::events::Event::Window(
+                host::events::WindowEvent::CloseRequested,
+            ),
+            WindowEvent::RedrawRequested => host::events::Event::Window(
+                host::events::WindowEvent::RequestRedraw,
+            ),
+            _ => host::events::Event::Window(
+                host::events::WindowEvent::UnknownOrNotImplemented,
+            ),
         },
 
         Event::DeviceEvent {

@@ -3,10 +3,16 @@ use egui_demo_lib::DemoWindows;
 use engine::graphics::components::MeshComponent;
 use engine::nalgebra::{Point3, Unit, UnitQuaternion, Vector3};
 
-use engine::plugin::scene::primitives_plugin::{PrimitivesPlugin, CUBE_MESH_RESOURCE_ID};
+use engine::plugin::graphics::egui::EguiSceneSelector;
+use engine::plugin::scene::primitives_plugin::{
+    PrimitivesPlugin, CUBE_MESH_RESOURCE_ID,
+};
 
 use engine::scene::components::Transform;
 use engine::scene::mouse::CursorDelta;
+use engine::scene::projection::Projection;
+use engine::scene::scene::SceneDescriptor;
+use engine::scene::scene_state::SceneState;
 use engine::{
     app::App,
     plugin::{
@@ -63,7 +69,6 @@ fn set_ui(
     egui: UniqueView<EguiContext>,
     _demo: UniqueViewMut<Demo>,
     clock: UniqueView<Clock>,
-    mut camera: UniqueViewMut<Camera>,
     mouse_position: UniqueView<Cursor>,
 ) {
     let delta: String = format!("{}", clock.delta_milliseconds())
@@ -100,86 +105,60 @@ fn set_ui(
                 });
 
                 engine::egui::ScrollArea::vertical().show(ui, |ui| {
-                    engine::egui::Grid::new("Info")
-                        .num_columns(2)
-                        .show(ui, |ui| {
+                    engine::egui::Grid::new("Info").num_columns(2).show(
+                        ui,
+                        |ui| {
                             ui.label("Delta: ");
                             ui.label(delta);
                             ui.end_row();
 
                             ui.label("Position: ");
-                            ui.label(format!("x: {}, y: {}", mouse_position.x, mouse_position.y));
+                            ui.label(format!(
+                                "x: {}, y: {}",
+                                mouse_position.x, mouse_position.y
+                            ));
                             ui.end_row();
-                        });
+                        },
+                    );
                 });
             });
     });
-
-    engine::egui::Window::new("Streamline CFD")
-        // .vscroll(true)
-        .default_open(true)
-        //.max_width(1000.0)
-        //.max_height(800.0)
-        //.default_width(800.0)
-        .resizable(true)
-        //.anchor(Align2::LEFT_TOP, [0.0, 0.0])
-        .show(&egui.0, |ui| {
-            if ui.add(engine::egui::Button::new("Far")).clicked() {
-                camera.add_translation(
-                    engine::nalgebra::Vector3::new(0.0, 0.0, 1.0),
-                    10.0 * clock.delta_seconds() as f32,
-                );
-                camera.add_target_translation(
-                    engine::nalgebra::Vector3::new(0.0, 0.0, 1.0),
-                    10.0 * clock.delta_seconds() as f32,
-                );
-            }
-
-            if ui.add(engine::egui::Button::new("Near")).clicked() {
-                camera.add_translation(
-                    engine::nalgebra::Vector3::new(0.0, 0.0, -1.0),
-                    10.0 * clock.delta_seconds() as f32,
-                );
-                camera.add_target_translation(
-                    engine::nalgebra::Vector3::new(0.0, 0.0, -1.0),
-                    10.0 * clock.delta_seconds() as f32,
-                );
-            }
-
-            ui.label("Slider");
-            // ui.add(egui::Slider::new(_, 0..=120).text("age"));
-            ui.end_row();
-
-            // proto_scene.egui(ui);
-        });
 
     //demo.0.ui(&egui.0);
 }
 
 fn camera_system(
     keyboard: UniqueView<Keyboard>,
-    mut camera: UniqueViewMut<Camera>,
+    mut scenes: UniqueViewMut<SceneState>,
     clock: UniqueView<Clock>,
     fly_camera: UniqueView<FlyCamera>,
 ) {
     if keyboard.is_key_down(&KeyCode::W) {
-        camera.position += fly_camera.direction * 8.5 * clock.delta_seconds() as f32;
-        camera.target += fly_camera.direction * 8.5 * clock.delta_seconds() as f32;
+        scenes.main.camera.position +=
+            fly_camera.direction * 8.5 * clock.delta_seconds() as f32;
+        scenes.main.camera.target +=
+            fly_camera.direction * 8.5 * clock.delta_seconds() as f32;
     }
 
     if keyboard.is_key_down(&KeyCode::S) {
-        camera.position -= fly_camera.direction * 8.5 * clock.delta_seconds() as f32;
-        camera.target -= fly_camera.direction * 8.5 * clock.delta_seconds() as f32;
+        scenes.main.camera.position -=
+            fly_camera.direction * 8.5 * clock.delta_seconds() as f32;
+        scenes.main.camera.target -=
+            fly_camera.direction * 8.5 * clock.delta_seconds() as f32;
     }
 
     if keyboard.is_key_down(&KeyCode::A) {
-        camera.position -= fly_camera.right_direction * 8.5 * clock.delta_seconds() as f32;
-        camera.target -= fly_camera.right_direction * 8.5 * clock.delta_seconds() as f32;
+        scenes.main.camera.position -=
+            fly_camera.right_direction * 8.5 * clock.delta_seconds() as f32;
+        scenes.main.camera.target -=
+            fly_camera.right_direction * 8.5 * clock.delta_seconds() as f32;
     }
 
     if keyboard.is_key_down(&KeyCode::D) {
-        camera.position += fly_camera.right_direction * 8.5 * clock.delta_seconds() as f32;
-        camera.target += fly_camera.right_direction * 8.5 * clock.delta_seconds() as f32;
+        scenes.main.camera.position +=
+            fly_camera.right_direction * 8.5 * clock.delta_seconds() as f32;
+        scenes.main.camera.target +=
+            fly_camera.right_direction * 8.5 * clock.delta_seconds() as f32;
     }
 }
 
@@ -191,7 +170,7 @@ fn grados_a_radianes(grados: f64) -> f64 {
 
 fn fly_camera_system(
     keyboard: UniqueView<Keyboard>,
-    mut camera: UniqueViewMut<Camera>,
+    mut scenes: UniqueViewMut<SceneState>,
     c_delta: UniqueView<CursorDelta>,
     clock: UniqueView<Clock>,
     mut fly_camera: UniqueViewMut<FlyCamera>,
@@ -218,10 +197,10 @@ fn fly_camera_system(
         rad_yaw.cos() as f32 * rad_pitch.cos() as f32,
     );
 
-    camera.target = Point3::new(
-        camera.position.x + dir.x,
-        camera.position.y + dir.y,
-        camera.position.z + dir.z,
+    scenes.main.camera.target = Point3::new(
+        scenes.main.camera.position.x + dir.x,
+        scenes.main.camera.position.y + dir.y,
+        scenes.main.camera.position.z + dir.z,
     );
 
     let parallel_direction = Vector3::new(
@@ -370,26 +349,21 @@ pub fn main() {
     App::new()
         .add_plugin(WinitWindowPlugin::new("My game", 1024, 800))
         .add_plugin(WgpuRendererPlugin)
-        .app_plugin(ScenePlugin {
-            main: SceneDescriptor::main(),
-            sub_scenes: [
-                SceneDescriptor {
-                    label: "",
-                    id: "MainEditorView",
-                    camera: Camera::default(),
-                    projection: Projection::Perspective,
-                },
-                SceneDescriptor {
-                    label: "UI",
-                    id: "GameUI",
-                    camera: Camera::default(),
-                    projection: Projection::Orthograpic,
-                }
-            ]
+        .add_plugin(ScenePlugin {
+            main: SceneDescriptor {
+                label: "Main Scene".to_owned(),
+                id: "MainScene".to_owned(),
+                camera: Camera::default(),
+                projection: Projection::default(),
+                resolution: None,
+            },
+            sub_scenes: Vec::new(),
         })
         .add_plugin(ClockPlugin)
         .add_plugin(PrimitivesPlugin)
-        .add_plugin(EguiPlugin)
+        .add_plugin(EguiPlugin {
+            scene: EguiSceneSelector::Main,
+        })
         .add_plugin(PlayerPlugin)
         .run();
 }

@@ -7,7 +7,7 @@ pub enum Schedule {
     PipelineConfiguration,
     SceneConfiguration,
     PipelineUniformsSetup,
-    
+
     Start,
     InitFrame,
 
@@ -40,7 +40,11 @@ impl<'a> Scheduler<'a> {
     }
 
     /// Adds a new callback to be executed when it is needed.
-    pub(crate) fn add_schedule(&mut self, schedule: Schedule, callback: impl Fn(&World) + 'a) {
+    pub(crate) fn add_schedule(
+        &mut self,
+        schedule: Schedule,
+        callback: impl Fn(&World) + 'a,
+    ) {
         self.schedules
             .entry(schedule)
             .or_default()

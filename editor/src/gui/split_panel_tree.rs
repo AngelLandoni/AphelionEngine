@@ -329,9 +329,7 @@ impl SplitPanelTree {
                 self.tree[target] = element;
             }
 
-            PanelNode::Container {
-                tabs,  ..
-            } => {
+            PanelNode::Container { tabs, .. } => {
                 tabs.push(Tab {
                     title: name.to_owned(),
                     identification: identification.to_owned(),

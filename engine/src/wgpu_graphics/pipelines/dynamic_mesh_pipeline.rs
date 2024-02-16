@@ -1,33 +1,26 @@
-use ahash::AHashMap;
-use shipyard::{IntoIter, Unique, UniqueView, UniqueViewMut, View};
+use shipyard::{Unique, UniqueView, UniqueViewMut};
 
 use wgpu::{
-    vertex_attr_array, BindGroup, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BlendComponent,
-    Buffer, BufferAddress, BufferUsages, ColorTargetState, ColorWrites, DepthBiasState,
-    DepthStencilState, FragmentState, MultisampleState, PipelineLayoutDescriptor, PrimitiveState,
-    RenderPipeline, RenderPipelineDescriptor, ShaderStages, StencilState, VertexBufferLayout,
-    VertexState,
+    vertex_attr_array, BindGroup, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BlendComponent, BufferAddress, ColorTargetState, ColorWrites, DepthBiasState, DepthStencilState, FragmentState, MultisampleState, PipelineLayoutDescriptor, PrimitiveState, RenderPipeline, RenderPipelineDescriptor, ShaderStages, StencilState, VertexBufferLayout, VertexState
 };
 
 use crate::{
-    app::App,
-    graphics::{components::MeshComponent, gpu::AbstractGpu, vertex::Vertex},
-    scene::{asset_server::MeshResourceID, components::Transform},
-    schedule::Schedule,
-    wgpu_graphics::gpu::{Gpu, DEPTH_TEXTURE_FORMAT},
+    graphics::{gpu::AbstractGpu, vertex::Vertex}, scene::scene_state::SceneState, wgpu_graphics::{buffer::WgpuUniformBuffer, gpu::{Gpu, DEPTH_TEXTURE_FORMAT}}
 };
 
 #[derive(Unique)]
 pub struct DynamicMeshPipeline {
     /// Contains a reference to the pipeline.
     pub(crate) pipeline: RenderPipeline,
+    pub(crate) camera_bind_group_layout: BindGroupLayout,
+    pub(crate) camera_bind_group: Option<BindGroup>,
 }
 
 impl DynamicMeshPipeline {
     /// Creates and returns a new `DynamicMeshPipeline`.
     pub(crate) fn new(gpu: &Gpu) -> DynamicMeshPipeline {
         let program = gpu.compile_program(
-            "triangle_test",
+            "dynamic_mesh_program",
             include_str!("../shaders/triangle_test.wgsl"),
         );
 
@@ -47,18 +40,18 @@ impl DynamicMeshPipeline {
                     }],
                 });
 
-        let layout = gpu
-            .device
-            .create_pipeline_layout(&PipelineLayoutDescriptor {
-                label: Some("Triangle test pipeline layout"),
-                bind_group_layouts: &[&camera_bind_group_layout],
-                push_constant_ranges: &[],
-            });
+        let layout =
+            gpu.device
+                .create_pipeline_layout(&PipelineLayoutDescriptor {
+                    label: Some("Dynamic mesh pipeline layout"),
+                    bind_group_layouts: &[&camera_bind_group_layout],
+                    push_constant_ranges: &[],
+                });
 
         let pipeline = gpu
             .device
             .create_render_pipeline(&RenderPipelineDescriptor {
-                label: Some("Triangle test render pipeline"),
+                label: Some("Dynamic mesh render pipeline"),
                 layout: Some(&layout),
                 vertex: VertexState {
                     module: &program,
@@ -121,6 +114,36 @@ impl DynamicMeshPipeline {
 
         DynamicMeshPipeline {
             pipeline,
-        }
+            camera_bind_group_layout,
+            camera_bind_group: None,
+         }
     }
 }
+
+pub(crate) fn setup_dynamic_mesh_pipelines_uniforms_system(
+    gpu: UniqueView<AbstractGpu>,
+    mut dyn_mesh_pipeline: UniqueViewMut<DynamicMeshPipeline>,
+    s_state: UniqueView<SceneState>,
+) {
+    let gpu = gpu
+        .downcast_ref::<Gpu>()
+        .expect("Incorrect GPU type expecting WGPU gpu");
+
+    let camera_buffer = s_state
+        .main
+        .camera_buffer
+        .downcast_ref::<WgpuUniformBuffer>()
+        .expect("Incorrect uniform buffer type");
+
+    dyn_mesh_pipeline.camera_bind_group = Some(gpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
+        layout: &dyn_mesh_pipeline.camera_bind_group_layout,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: camera_buffer.0.as_entire_binding(),
+            },
+        ],
+        label: Some("frame_composition_diffuse_bind_group"),
+    }));
+}
+
