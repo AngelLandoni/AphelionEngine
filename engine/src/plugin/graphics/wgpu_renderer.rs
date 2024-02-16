@@ -1,23 +1,20 @@
 use shipyard::{UniqueView, UniqueViewMut, World};
-use wgpu::BufferUsages;
 
 use crate::{
     app::App,
     graphics::{components::DepthTexture, gpu::AbstractGpu, BufferCreator},
     host::window::Window,
     plugin::Pluggable,
-    scene::{camera::Camera, perspective::Perspective},
     schedule::Schedule,
     wgpu_graphics::{
         components::{ScreenFrame, ScreenTexture},
         gpu::Gpu,
-        passes::dynamic_mesh_pass::dynamic_mesh_pass_system,
-        pipelines::dynamic_mesh_pipeline::DynamicMeshPipeline,
+        passes::{dynamic_mesh_pass::dynamic_mesh_pass_system, frame_composition_pass_system::frame_composition_pass_system},
+        pipelines::{dynamic_mesh_pipeline::DynamicMeshPipeline, frame_composition_pipeline::{setup_frame_composition_pipelines_uniforms_system, FrameCompositionPipeline}},
         rendering::{
             acquire_screen_texture, present_screen_texture,
             reconfigure_main_textures_if_needed_system, submit_commands_in_order,
         },
-        uniforms::{sync_camera_perspective_uniform, CameraUniform},
         CommandQueue, OrderCommandQueue, MAX_NUMBER_IF_COMMANDS_PER_FRAME,
     },
 };
@@ -41,11 +38,6 @@ impl Pluggable for WgpuRendererPlugin {
 
             setup_screen_texture_and_queue(world);
             setup_depth_texture(world, &gpu);
-            setup_camera(world, &gpu);
-        }
-
-        {
-            setup_pipelines(app, &gpu);
         }
 
         {
@@ -55,6 +47,14 @@ impl Pluggable for WgpuRendererPlugin {
 
         // Setup scheludes.
         {
+            app.schedule(Schedule::PipelineConfiguration, |world| {
+                setup_pipelines(&world);
+            });
+
+            app.schedule(Schedule::PipelineUniformsSetup, |world| {
+                world.run(setup_frame_composition_pipelines_uniforms_system);
+            });
+
             app.schedule(Schedule::Start, |world| {
                 world.run(reconfigure_main_textures_if_needed_system);
             });
@@ -63,12 +63,9 @@ impl Pluggable for WgpuRendererPlugin {
                 world.run(acquire_screen_texture);
             });
 
-            app.schedule(Schedule::Update, |world| {
-                world.run(sync_camera_perspective_uniform_system);
-            });
-
             app.schedule(Schedule::RequestRedraw, |world| {
                 world.run(dynamic_mesh_pass_system);
+                world.run(frame_composition_pass_system);
             });
 
             app.schedule(Schedule::QueueSubmit, |world| {
@@ -106,41 +103,18 @@ fn setup_depth_texture(world: &World, gpu: &Gpu) {
     world.add_unique(DepthTexture(d_texture));
 }
 
-/// Allocates space in the gpu to handle the camera proj and submits the buffer
-/// ref to the world.
-fn setup_camera(world: &World, gpu: &Gpu) {
-    let camera = world
-        .borrow::<UniqueView<Camera>>()
-        .expect("Unable to acquire camera");
-
-    let proj: [[f32; 4]; 4] = camera.view_matrix().into();
-
-    let buffer = gpu.allocate_buffer_init(
-        "Camera proj uniform",
-        proj,
-        BufferUsages::COPY_DST | BufferUsages::UNIFORM,
-    );
-
-    world.add_unique(CameraUniform(buffer));
-}
-
 /// Setups all the required pipelines.
-fn setup_pipelines(app: &mut App, gpu: &Gpu) {
-    let p = DynamicMeshPipeline::new(app, gpu);
+fn setup_pipelines(world: &World) {
+    let a_gpu = world
+        .borrow::<UniqueView<AbstractGpu>>()
+        .expect("Unable to acquire AbtractGpu");
 
-    app.world.add_unique(p);
-}
+    let gpu = a_gpu.downcast_ref::<Gpu>()
+        .expect("Unable to acquire Wgpu GPU");
 
-/// Calls the sync camera method.
-fn sync_camera_perspective_uniform_system(
-    gpu: UniqueView<AbstractGpu>,
-    camera: UniqueView<Camera>,
-    perspective: UniqueView<Perspective>,
-    c_uniform: UniqueView<CameraUniform>,
-) {
-    let gpu = gpu
-        .downcast_ref::<Gpu>()
-        .expect("Incorrect Gpu abstractor provided, it was expecting a Wgpu Gpu");
+    let dynamic_mesh = DynamicMeshPipeline::new(gpu);
+    let frame_composition = FrameCompositionPipeline::new(gpu);
 
-    sync_camera_perspective_uniform(gpu, &camera, &perspective, &c_uniform.0);
+    world.add_unique(dynamic_mesh);
+    world.add_unique(frame_composition);
 }

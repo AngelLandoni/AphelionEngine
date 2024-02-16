@@ -5,10 +5,7 @@ use crate::{
     plugin::Pluggable,
     schedule::{Schedule, Scheduler},
     workload::{
-        finish_frame_workload, init_frame_workload, run_after_request_redraw_workload,
-        run_before_request_redraw_workload, run_request_redraw_workload, run_submit_queue_workload,
-        run_update_workload, run_window_event_workload, start_frame_workload, update_cursor_delta,
-        update_cursor_position, update_keyboard_events, update_window_size,
+        finish_frame_workload, init_frame_workload, run_after_request_redraw_workload, run_before_request_redraw_workload, run_pipeline_configuration, run_pipeline_uniform_configuration, run_request_redraw_workload, run_scene_configuration, run_submit_queue_workload, run_update_workload, run_window_event_workload, start_frame_workload, update_cursor_delta, update_cursor_position, update_keyboard_events, update_window_size
     },
 };
 
@@ -57,6 +54,13 @@ impl<'app> App<'app> {
         let plugins = std::mem::take(&mut self.plugins);
         // Configure all pluggins.
         plugins.iter().for_each(|p| p.configure(&mut self));
+
+        // Configure pipelines.
+        run_pipeline_configuration(&self);
+        // Configure scenes.
+        run_scene_configuration(&self);
+        // Configure pipelines uniforms.
+        run_pipeline_uniform_configuration(&self);
 
         // Take ownership of the run loop and execute it.
         let run_loop = std::mem::replace(&mut self.run_loop, Box::new(dummy_run_loop));

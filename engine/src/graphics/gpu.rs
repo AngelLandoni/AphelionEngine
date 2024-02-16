@@ -2,11 +2,13 @@ use downcast_rs::{impl_downcast, Downcast};
 use shipyard::Unique;
 use std::ops::{Deref, DerefMut};
 
-use crate::graphics::{BufferCreator, ShaderHandler};
+use crate::graphics::{BufferCreator, BufferHandler, ShaderHandler};
+
+use super::SurfaceHandler;
 
 /// Rust does not allow Trait composition / additional traits on the fly threfore
 /// we need to create a trait which use them as supertraits.
-pub trait GpuAbstractor: Downcast + BufferCreator + ShaderHandler + Send + Sync {}
+pub trait GpuAbstractor: Downcast + BufferCreator + BufferHandler + SurfaceHandler + ShaderHandler + Send + Sync {}
 impl_downcast!(GpuAbstractor);
 
 #[derive(Unique)]

@@ -4,6 +4,10 @@ use std::collections::HashMap;
 /// Specifies the various steps comprising the application lifecycle.
 #[derive(Eq, PartialEq, Hash)]
 pub enum Schedule {
+    PipelineConfiguration,
+    SceneConfiguration,
+    PipelineUniformsSetup,
+    
     Start,
     InitFrame,
 
