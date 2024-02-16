@@ -1,3 +1,4 @@
+use ahash::AHashMap;
 use shipyard::{Unique, UniqueView, UniqueViewMut};
 
 use wgpu::{
@@ -12,8 +13,12 @@ use crate::{
 pub struct DynamicMeshPipeline {
     /// Contains a reference to the pipeline.
     pub(crate) pipeline: RenderPipeline,
+
+    // TODO(Angel): Probably move this to the `Scene` type?.
     pub(crate) camera_bind_group_layout: BindGroupLayout,
     pub(crate) camera_bind_group: Option<BindGroup>,
+
+    pub(crate) scenes_camera_bind_group: AHashMap<String, BindGroup>,
 }
 
 impl DynamicMeshPipeline {
@@ -116,6 +121,7 @@ impl DynamicMeshPipeline {
             pipeline,
             camera_bind_group_layout,
             camera_bind_group: None,
+            scenes_camera_bind_group: AHashMap::new(),
          }
     }
 }
@@ -128,6 +134,8 @@ pub(crate) fn setup_dynamic_mesh_pipelines_uniforms_system(
     let gpu = gpu
         .downcast_ref::<Gpu>()
         .expect("Incorrect GPU type expecting WGPU gpu");
+
+    // Main scene.
 
     let camera_buffer = s_state
         .main
@@ -145,5 +153,29 @@ pub(crate) fn setup_dynamic_mesh_pipelines_uniforms_system(
         ],
         label: Some("frame_composition_diffuse_bind_group"),
     }));
+
+    for (id, scene) in &s_state.sub_scenes {
+
+        let camera_buffer = scene
+            .camera_buffer
+            .downcast_ref::<WgpuUniformBuffer>()
+            .expect("Incorrect uniform buffer type");
+
+        let bind_group = gpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &dyn_mesh_pipeline.camera_bind_group_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: camera_buffer.0.as_entire_binding(),
+                },
+            ],
+            label: Some("frame_composition_diffuse_bind_group"),
+        });
+
+        dyn_mesh_pipeline.scenes_camera_bind_group.insert(
+            id.to_owned(),
+            bind_group,
+        );
+    }
 }
 

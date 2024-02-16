@@ -3,7 +3,7 @@ use engine::{
     graphics::components::MeshComponent,
     nalgebra::{Unit, UnitQuaternion, Vector3},
     plugin::{scene::primitives_plugin::CUBE_MESH_RESOURCE_ID, Pluggable},
-    scene::components::Transform,
+    scene::{components::Transform, scene::SceneTarget},
 };
 
 use crate::camera::EditorCamera;
@@ -31,6 +31,7 @@ impl Pluggable for WorkbenchScenePlugin {
                             rotation: rot,
                             scale: Vector3::new(1.0, 1.0, 1.0),
                         },
+                        SceneTarget::SubScene("WorkbenchScene".to_string()),
                     ));
                 }
             }

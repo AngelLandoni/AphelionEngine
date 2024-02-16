@@ -212,12 +212,12 @@ impl BufferCreator for Gpu {
         Box::new(WgpuIndexBuffer(buffer))
     }
 
-    fn allocate_depth_texture(&self, label: &str) -> Box<dyn Texture> {
+    fn allocate_depth_texture(&self, label: &str, width: u32, height: u32) -> Box<dyn Texture> {
         let texture = self.device.create_texture(&TextureDescriptor {
             label: Some(label),
             size: Extent3d {
-                width: self.surface_config.width,
-                height: self.surface_config.height,
+                width,
+                height,
                 depth_or_array_layers: 1,
             },
             mip_level_count: 1,

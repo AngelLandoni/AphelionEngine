@@ -43,7 +43,7 @@ pub trait BufferCreator {
         data: &[u8],
     ) -> Box<dyn IndexBuffer>;
     
-    fn allocate_depth_texture(&self, label: &str) -> Box<dyn Texture>;
+    fn allocate_depth_texture(&self, label: &str, width: u32, height: u32) -> Box<dyn Texture>;
     
     fn allocate_target_texture(
         &self,

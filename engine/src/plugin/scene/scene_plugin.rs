@@ -99,7 +99,15 @@ fn allocate_scenes(world: &World) {
         );
 
         let depth_texture =
-            gpu.allocate_depth_texture("Main scene depth texture");
+            gpu.allocate_depth_texture("Main scene depth texture", s_scene
+            .resolution
+            .map(|s| s.width)
+            .unwrap_or(gpu.surface_size().width),
+            s_scene
+            .resolution
+            .map(|s| s.height)
+            .unwrap_or(gpu.surface_size().height)
+        );
 
         let scene = Scene {
             label: s_scene.label.clone(),
@@ -131,7 +139,15 @@ fn allocate_scenes(world: &World) {
             .unwrap_or(gpu.surface_size().height),
     );
 
-    let depth_texture = gpu.allocate_depth_texture("Main scene depth texture");
+    let depth_texture = gpu.allocate_depth_texture(
+        "Main scene depth texture",
+        main.resolution
+            .map(|s| s.width)
+            .unwrap_or(gpu.surface_size().width),
+            main.resolution
+            .map(|s| s.height)
+            .unwrap_or(gpu.surface_size().height)
+    );
 
     let main_scene = Scene {
         label: main.label.clone(),
