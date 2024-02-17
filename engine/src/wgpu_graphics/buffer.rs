@@ -18,8 +18,8 @@ pub struct WgpuUniformBuffer(pub(crate) Buffer);
 impl UniformBuffer for WgpuUniformBuffer {}
 
 pub struct WGPUTexture {
-    pub(crate) texture: wgpu::Texture,
-    pub(crate) view: wgpu::TextureView,
+    pub texture: wgpu::Texture,
+    pub view: wgpu::TextureView,
     pub(crate) sampler: Option<wgpu::Sampler>,
 }
 

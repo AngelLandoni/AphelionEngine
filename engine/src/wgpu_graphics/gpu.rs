@@ -25,7 +25,7 @@ pub(crate) const DEPTH_TEXTURE_FORMAT: TextureFormat =
     TextureFormat::Depth32Float;
 
 /// Holds all the essential information required for GPU interaction.
-pub(crate) struct Gpu {
+pub struct Gpu {
     pub surface: Surface,
     /// Represents a physical GPU device available in the system.
     #[allow(dead_code)]

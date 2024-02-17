@@ -8,6 +8,8 @@ pub enum Schedule {
     SceneConfiguration,
     PipelineUniformsSetup,
 
+    BeforeStart,
+
     Start,
     InitFrame,
 

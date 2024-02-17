@@ -27,7 +27,7 @@ pub struct EguiContext(pub Context);
 #[derive(Unique)]
 pub struct EguiRenderer {
     state: State,
-    renderer: Renderer,
+    pub renderer: Renderer,
     selector: EguiSceneSelector,
 }
 

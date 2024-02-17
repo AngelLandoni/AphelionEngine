@@ -1,6 +1,6 @@
-pub(crate) mod buffer;
+pub mod buffer;
 pub(crate) mod components;
-pub(crate) mod gpu;
+pub mod gpu;
 pub(crate) mod passes;
 pub(crate) mod pipelines;
 pub(crate) mod rendering;

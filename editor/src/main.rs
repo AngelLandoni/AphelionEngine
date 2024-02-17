@@ -36,13 +36,15 @@ pub fn main() {
                 projection: Projection::default(),
                 resolution: None,
             },
-            sub_scenes: vec![SceneDescriptor {
-                label: "Workbench Scene".to_owned(),
-                id: "WorkbenchScene".to_owned(),
-                camera: Camera::default(),
-                projection: Projection::default(),
-                resolution: Some(Size::new(1024, 768)),
-            }],
+            sub_scenes: vec![
+                SceneDescriptor {
+                    label: "Workbench Scene".to_owned(),
+                    id: "WorkbenchScene".to_owned(),
+                    camera: Camera::default(),
+                    projection: Projection::default(),
+                    resolution: Some(Size::new(1024, 768)),
+                }
+            ],
         })
         .add_plugin(ClockPlugin)
         .add_plugin(PrimitivesPlugin)

@@ -4,14 +4,11 @@ pub mod split_panel_tree;
 pub mod style;
 pub mod widgets;
 
-use shipyard::{Unique, UniqueView, UniqueViewMut};
+use shipyard::{AllStoragesViewMut, Unique, UniqueView, UniqueViewMut, World};
 use std::ops::{Deref, DerefMut};
 
 use engine::{
-    app::App,
-    egui::{Margin, Widget},
-    plugin::{graphics::egui::EguiContext, Pluggable},
-    schedule::Schedule,
+    app::App, egui::{Margin, Rect, Response, TextureId, Ui, Widget}, graphics::gpu::AbstractGpu, plugin::{graphics::egui::{self, EguiContext, EguiRenderer}, Pluggable}, scene::scene_state::SceneState, schedule::Schedule, wgpu_graphics::{buffer::WGPUTexture, gpu::Gpu}
 };
 
 use crate::gui::{
@@ -47,6 +44,11 @@ impl DerefMut for GuiPanelState {
     }
 }
 
+#[derive(Unique)]
+pub struct GuiResources {
+    workbench_texture_id: TextureId,
+}
+
 pub struct GuiPlugin;
 impl Pluggable for GuiPlugin {
     fn configure(&self, app: &mut App) {
@@ -56,6 +58,10 @@ impl Pluggable for GuiPlugin {
         app.world.add_unique(SharedData::default());
 
         app.world.run(configure_gui_system);
+
+        app.schedule(Schedule::BeforeStart, |world| {
+            register_workbench_texture(&world);
+        });
 
         app.schedule(Schedule::RequestRedraw, |world| {
             world.run(render_gui_system);
@@ -75,6 +81,33 @@ fn configure_gui_system(
     configure_icon_font(&mut egui.0);
     // Configure all the panels.
     configure_panels(&mut panel_state);
+}
+
+// TODO(Angel): Use AllStorageView
+fn register_workbench_texture(world: &World) {
+    let mut egui_renderer = world.borrow::<UniqueViewMut<EguiRenderer>>().unwrap();
+    let s_state = world.borrow::<UniqueView<SceneState>>().unwrap();
+    let gpu = world.borrow::<UniqueView<AbstractGpu>>().unwrap();
+    let gpu = gpu.downcast_ref::<Gpu>().unwrap();
+
+    // TODO(Angel): Try to make this reasonable.
+    let texture = s_state
+        .sub_scenes
+        .get("WorkbenchScene")
+        .unwrap()
+        .target_texture
+        .downcast_ref::<WGPUTexture>()
+        .unwrap();
+
+    let texture_id = egui_renderer.renderer.register_native_texture(
+        &gpu.device,
+        &texture.view,
+        engine::wgpu::FilterMode::Linear,
+    );
+
+    world.add_unique(GuiResources {
+        workbench_texture_id: texture_id,
+    });
 }
 
 /// Configures the default layout and distribution of panels within the editor.
@@ -113,6 +146,7 @@ fn render_gui_system(
     mut panel_state: UniqueViewMut<GuiPanelState>,
     mut start_drag: UniqueViewMut<TabDragStartPosition>,
     mut shared_data: UniqueViewMut<SharedData>,
+    mut gui_resources: UniqueView<GuiResources>,
 ) {
     engine::egui::CentralPanel::default()
         .frame(engine::egui::Frame {
@@ -123,6 +157,17 @@ fn render_gui_system(
         .show(&egui.0, |ui| {
             let rect = ToolbarWidget.ui(ui).rect;
 
+            let viewport_size = &panel_state.tree.iter().find_map(|n| match n {
+                split_panel_tree::PanelNode::Container { rect, tabs, active_tab } => {
+                    if tabs.iter().find(|t| t.identification == "Viewport").is_some() {
+                        Some(rect.clone())
+                    } else {
+                        None
+                    }
+                },
+                _ => None,
+            });          
+
             render_dynamic_panel_widget(
                 ui,
                 &mut panel_state.0,
@@ -130,7 +175,7 @@ fn render_gui_system(
                 &mut start_drag.0,
                 &mut shared_data,
                 |ui, tab| match tab.identification.as_str() {
-                    "Viewport" => ui.label("Viewport!"),
+                    "Viewport" => viewport(ui, gui_resources.workbench_texture_id, &viewport_size.unwrap_or(Rect::NOTHING)),
                     "GeneralLogs" => ui.label("Logs"),
                     "Properties" => ui.label("Props"),
                     "LandscapeEditor" => ui.label("Landscape editor"),
@@ -141,4 +186,8 @@ fn render_gui_system(
                 },
             );
         });
+}
+
+fn viewport(ui: &mut Ui, texture_id: TextureId, size: &Rect) -> Response {
+    ui.image((texture_id, engine::egui::Vec2::new(size.width(), size.height())))
 }
