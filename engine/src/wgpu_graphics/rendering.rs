@@ -51,6 +51,12 @@ pub(crate) fn reconfigure_main_textures_if_needed_system(
                 window.size.height,
             );
 
+            s_state.main.depth_texture = gpu.allocate_depth_texture(
+                &s_state.main.label,
+                window.size.width,
+                window.size.height,
+            );
+
             let main_texture = s_state
                 .main
                 .target_texture
