@@ -5,9 +5,10 @@ pub mod plugin;
 pub mod scene;
 pub mod schedule;
 pub mod types;
-mod wgpu_graphics;
+pub mod wgpu_graphics;
 mod workload;
 
 pub use egui;
+pub use wgpu;
 pub use nalgebra;
 pub use shipyard;

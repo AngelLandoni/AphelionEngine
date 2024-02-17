@@ -49,6 +49,20 @@ pub(crate) fn run_pipeline_uniform_configuration(app: &App) {
     }
 }
 
+pub(crate) fn run_before_start(app: &App) {
+    // Update events.
+    // Extract all the update callbacks from the user and execute them.
+    if let Some(update_fns) = app
+        .scheduler
+        .schedules
+        .get(&Schedule::BeforeStart)
+    {
+        for func in update_fns {
+            func(&app.world);
+        }
+    }
+}
+
 /// Coordinates all the update systems.
 pub(crate) fn run_before_request_redraw_workload(app: &App) {
     // Update events.

@@ -31,7 +31,9 @@ pub(crate) fn dynamic_mesh_pass_system(
         .main
         .mesh_transform_buffers
         .iter()
-        .map(|(mesh_id, (buffer, count))| (asset_server.load_mesh(mesh_id), buffer, count))
+        .map(|(mesh_id, (buffer, count))| {
+            (asset_server.load_mesh(mesh_id), buffer, count) 
+        })
         .collect::<Vec<_>>();
     
     let main_texture = scenes.main.target_texture.downcast_ref::<WGPUTexture>().expect("The provided scene texture is not a WGPU texture");
@@ -76,7 +78,12 @@ pub(crate) fn dynamic_mesh_pass_system(
         pass.set_pipeline(&dyn_mesh_pipeline.pipeline);
         pass.set_bind_group(0, main_camera_bind_group, &[]);
 
-        for (mesh, t_buffer, count) in main_meshes.iter() {
+        // Iterate over each mesh.
+        for (mesh, t_buffer, count) in main_meshes
+            .iter()
+            // Only execute the draw if there are entities for the mesh.
+            .filter(|(_,_,c)| **c >= 1) 
+        {
             let v_buffer = mesh
                 .vertex_buffer
                 .downcast_ref::<WgpuVertexBuffer>()
@@ -94,14 +101,11 @@ pub(crate) fn dynamic_mesh_pass_system(
             pass.set_vertex_buffer(0, v_buffer.0.slice(..));
             pass.set_vertex_buffer(1, t_buffer.0.slice(..));
             pass.set_index_buffer(i_buffer.0.slice(..), wgpu::IndexFormat::Uint16);
-
-
-            println!("is 0?: {}", **count);
             pass.draw_indexed(0..mesh.index_count, 0, 0..**count as u32);
         }
     }
 
-    /*for (id, scene) in &scenes.sub_scenes {
+    for (id, scene) in &scenes.sub_scenes {
         let main_meshes = scene
             .mesh_transform_buffers
             .iter()
@@ -150,7 +154,11 @@ pub(crate) fn dynamic_mesh_pass_system(
             pass.set_pipeline(&dyn_mesh_pipeline.pipeline);
             pass.set_bind_group(0, main_camera_bind_group, &[]);
 
-            for (mesh, t_buffer, count) in main_meshes.iter() {
+            for (mesh, t_buffer, count) in main_meshes
+                .iter()
+                // Only execute the draw if there are entities for the mesh.
+                .filter(|(_,_,c)| **c >= 1) 
+            {
                 let v_buffer = mesh
                     .vertex_buffer
                     .downcast_ref::<WgpuVertexBuffer>()
@@ -171,82 +179,11 @@ pub(crate) fn dynamic_mesh_pass_system(
                 pass.draw_indexed(0..mesh.index_count, 0, 0..**count as u32);
             }
         }
-    }*/
+    }
 
     let _ = queue.0.push(OrderCommandBuffer::new(
         Some("Render dynamic meshes".to_owned()),
         CommandSubmitOrder::DynamicMeshes,
         encoder.finish(),
     ));
-
-    /*
-    let preload_meshes: Vec<(Arc<Mesh>, &Buffer, &u64)> = triangle_pipeline
-        .mesh_transform_buffers
-        .iter()
-        .map(|(mesh_id, (buffer, count))| (asset_server.load_mesh(mesh_id), buffer, count))
-        .collect::<Vec<_>>();
-
-    // for scene in scenes {
-
-    {
-        let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("Tirangle test pass"),
-            color_attachments: &[
-                // @location(0)
-                Some(wgpu::RenderPassColorAttachment {
-                    view: s_texture,
-                    resolve_target: None,
-                    ops: Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.0,
-                            g: 0.0,
-                            b: 0.0,
-                            a: 1.0,
-                        }),
-                        store: wgpu::StoreOp::Store,
-                    },
-                }),
-            ],
-            depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
-                view: &d_texture.view,
-                depth_ops: Some(Operations {
-                    load: wgpu::LoadOp::Clear(1.0),
-                    store: wgpu::StoreOp::Store,
-                }),
-                stencil_ops: None,
-            }),
-            timestamp_writes: None,
-            occlusion_query_set: None,
-        });
-
-        pass.set_pipeline(&triangle_pipeline.pipeline);
-        // Camera position.
-        pass.set_bind_group(0, &triangle_pipeline.camera_bind_group, &[]);
-
-        for (mesh, buffer, count) in preload_meshes.iter() {
-            let v_buffer = mesh
-                .vertex_buffer
-                .downcast_ref::<WgpuVertexBuffer>()
-                .expect("Incorrect vertex buffer type, expecting WGPU vertex buffer");
-
-            let i_buffer = mesh
-                .index_buffer
-                .downcast_ref::<WgpuIndexBuffer>()
-                .expect("Incorrect vertex buffer type, expecting WGPU index buffer");
-
-            pass.set_vertex_buffer(0, v_buffer.0.slice(..));
-            pass.set_vertex_buffer(1, buffer.slice(..));
-            pass.set_index_buffer(i_buffer.0.slice(..), wgpu::IndexFormat::Uint16);
-            //pass.draw_indexed(0..mesh.index_count, 0, 0..**count as u32 + 1);
-            pass.draw_indexed(0..mesh.index_count, 0, 0..**count as u32);
-        }
-    }
-
-    // }
-
-    let _ = queue.0.push(OrderCommandBuffer::new(
-        Some("Render egui".to_owned()),
-        CommandSubmitOrder::TriangleTest,
-        encoder.finish(),
-    ));*/
 }

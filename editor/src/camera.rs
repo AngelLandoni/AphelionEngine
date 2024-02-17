@@ -1,7 +1,7 @@
 use engine::{
     app::App,
     nalgebra::{Point3, Vector3},
-    plugin::{core::clock::Clock, Pluggable},
+    plugin::{core::clock::Clock, scene, Pluggable},
     scene::{
         keyboard::{KeyCode, Keyboard},
         mouse::CursorDelta,
@@ -57,6 +57,11 @@ fn update_fly_camera_when_keys_are_pressed_system(
 ) {
     use std::f64::consts::PI;
 
+    let scene = s_state
+        .sub_scenes
+        .get_mut("WorkbenchScene")
+        .expect("Unable to find workbench scene.");
+
     fn deg_to_rads(grados: f64) -> f64 {
         (PI / 180.0) * grados
     }
@@ -75,33 +80,33 @@ fn update_fly_camera_when_keys_are_pressed_system(
 
     // Update camera position based on the keys pressed.
     if keyboard.is_key_down(&KeyCode::W) {
-        s_state.main.camera.position +=
+        scene.camera.position +=
             e_camera.direction * e_camera.speed * clock.delta_seconds() as f32;
-        s_state.main.camera.target +=
+        scene.camera.target +=
             e_camera.direction * e_camera.speed * clock.delta_seconds() as f32;
     }
 
     if keyboard.is_key_down(&KeyCode::S) {
-        s_state.main.camera.position -=
+        scene.camera.position -=
             e_camera.direction * e_camera.speed * clock.delta_seconds() as f32;
-        s_state.main.camera.target -=
+        scene.camera.target -=
             e_camera.direction * e_camera.speed * clock.delta_seconds() as f32;
     }
 
     if keyboard.is_key_down(&KeyCode::A) {
-        s_state.main.camera.position -= e_camera.tangent_direction
+        scene.camera.position -= e_camera.tangent_direction
             * e_camera.speed
             * clock.delta_seconds() as f32;
-        s_state.main.camera.target -= e_camera.tangent_direction
+        scene.camera.target -= e_camera.tangent_direction
             * e_camera.speed
             * clock.delta_seconds() as f32;
     }
 
     if keyboard.is_key_down(&KeyCode::D) {
-        s_state.main.camera.position += e_camera.tangent_direction
+        scene.camera.position += e_camera.tangent_direction
             * e_camera.speed
             * clock.delta_seconds() as f32;
-        s_state.main.camera.target += e_camera.tangent_direction
+        scene.camera.target += e_camera.tangent_direction
             * e_camera.speed
             * clock.delta_seconds() as f32;
     }
@@ -125,10 +130,10 @@ fn update_fly_camera_when_keys_are_pressed_system(
         rad_yaw.cos() as f32 * rad_pitch.cos() as f32,
     );
 
-    s_state.main.camera.target = Point3::new(
-        s_state.main.camera.position.x + dir.x,
-        s_state.main.camera.position.y + dir.y,
-        s_state.main.camera.position.z + dir.z,
+    scene.camera.target = Point3::new(
+        scene.camera.position.x + dir.x,
+        scene.camera.position.y + dir.y,
+        scene.camera.position.z + dir.z,
     );
 
     let tangent_direction = Vector3::new(

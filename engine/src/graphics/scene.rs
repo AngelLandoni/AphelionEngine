@@ -28,7 +28,7 @@ pub struct Scene {
 
     /// Contains the `Texture where the color will be rendered
     // TODO(Angel): Add here PBR.
-    pub(crate) target_texture: Box<dyn Texture>,
+    pub target_texture: Box<dyn Texture>,
     /// Contains the depth `Texture`.
     pub(crate) depth_texture: Box<dyn Texture>,
 
@@ -153,7 +153,8 @@ fn sync_scene(
         scene.mesh_transform_buffers.entry(*m).and_modify(|e| {
             gpu.write_vertex_buffer(&e.0, 0, b);
             e.1 = b.len() as u64 / Transform::raw_size();
-            println!("Numb instances: {}", e.1);
         });
     }
+
+    println!("1");
 }

@@ -303,9 +303,9 @@ impl Pluggable for PlayerPlugin {
             },
         ));*/
 
-        for i in 0..58 {
-            for j in 0..58 {
-                for k in 0..58 {
+        for i in 0..10 {
+            for j in 0..10 {
+                for k in 0..10 {
                     app.world.add_entity((
                         MeshComponent(CUBE_MESH_RESOURCE_ID),
                         Transform {
