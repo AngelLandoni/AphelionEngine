@@ -8,7 +8,7 @@ use shipyard::{AllStoragesViewMut, Unique, UniqueView, UniqueViewMut, World};
 use std::ops::{Deref, DerefMut};
 
 use engine::{
-    app::App, egui::{Margin, Rect, Response, TextureId, Ui, Widget}, graphics::gpu::AbstractGpu, plugin::{graphics::egui::{self, EguiContext, EguiRenderer}, Pluggable}, scene::scene_state::SceneState, schedule::Schedule, wgpu_graphics::{buffer::WGPUTexture, gpu::Gpu}
+    app::App, egui::{pos2, Color32, Image, Margin, Rect, Response, Rounding, Stroke, TextureId, Ui, Widget}, graphics::gpu::AbstractGpu, plugin::{graphics::egui::{self, EguiContext, EguiRenderer}, Pluggable}, scene::scene_state::SceneState, schedule::Schedule, wgpu_graphics::{buffer::WGPUTexture, gpu::Gpu}
 };
 
 use crate::gui::{
@@ -189,5 +189,13 @@ fn render_gui_system(
 }
 
 fn viewport(ui: &mut Ui, texture_id: TextureId, size: &Rect) -> Response {
-    ui.image((texture_id, engine::egui::Vec2::new(size.width(), size.height())))
+    let image = Image::new((texture_id, engine::egui::Vec2::new(size.width(), size.height() - 25.0)))
+        .rounding(Rounding {
+            nw: 0.0,
+            ne: 4.0,
+            sw: 4.0,
+            se: 4.0,
+        });
+
+    ui.add(image)
 }
