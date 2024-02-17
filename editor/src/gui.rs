@@ -8,7 +8,7 @@ use shipyard::{AllStoragesViewMut, Unique, UniqueView, UniqueViewMut, World};
 use std::ops::{Deref, DerefMut};
 
 use engine::{
-    app::App, egui::{pos2, Color32, Image, Margin, Rect, Response, Rounding, Stroke, TextureId, Ui, Widget}, graphics::gpu::AbstractGpu, plugin::{graphics::egui::{self, EguiContext, EguiRenderer}, Pluggable}, scene::scene_state::SceneState, schedule::Schedule, wgpu_graphics::{buffer::WGPUTexture, gpu::Gpu}
+    app::App, egui::{pos2, Color32, Image, Margin, Pos2, Rect, Response, Rounding, Stroke, TextureId, Ui, Widget}, graphics::gpu::AbstractGpu, plugin::{graphics::egui::{self, EguiContext, EguiRenderer}, Pluggable}, scene::scene_state::SceneState, schedule::Schedule, wgpu_graphics::{buffer::WGPUTexture, gpu::Gpu}
 };
 
 use crate::gui::{
@@ -47,6 +47,7 @@ impl DerefMut for GuiPanelState {
 #[derive(Unique)]
 pub struct GuiResources {
     workbench_texture_id: TextureId,
+    landscape_texture_id: TextureId,
 }
 
 pub struct GuiPlugin;
@@ -105,8 +106,24 @@ fn register_workbench_texture(world: &World) {
         engine::wgpu::FilterMode::Linear,
     );
 
+
+    let landscape_texture = s_state
+        .sub_scenes
+        .get("LandscapeScene")
+        .unwrap()
+        .target_texture
+        .downcast_ref::<WGPUTexture>()
+        .unwrap(); 
+
+    let landscape_texture_id = egui_renderer.renderer.register_native_texture(
+        &gpu.device,
+        &landscape_texture.view,
+        engine::wgpu::FilterMode::Linear,
+    );
+
     world.add_unique(GuiResources {
         workbench_texture_id: texture_id,
+        landscape_texture_id: landscape_texture_id,
     });
 }
 
@@ -168,6 +185,17 @@ fn render_gui_system(
                 _ => None,
             });          
 
+            let l_viewport_size = &panel_state.tree.iter().find_map(|n| match n {
+                split_panel_tree::PanelNode::Container { rect, tabs, active_tab } => {
+                    if tabs.iter().find(|t| t.identification == "LandscapeEditor").is_some() {
+                        Some(rect.clone())
+                    } else {
+                        None
+                    }
+                },
+                _ => None,
+            });   
+
             render_dynamic_panel_widget(
                 ui,
                 &mut panel_state.0,
@@ -178,7 +206,7 @@ fn render_gui_system(
                     "Viewport" => viewport(ui, gui_resources.workbench_texture_id, &viewport_size.unwrap_or(Rect::NOTHING)),
                     "GeneralLogs" => ui.label("Logs"),
                     "Properties" => ui.label("Props"),
-                    "LandscapeEditor" => ui.label("Landscape editor"),
+                    "LandscapeEditor" => viewport(ui, gui_resources.landscape_texture_id, &l_viewport_size.unwrap_or(Rect::NOTHING)),
                     "EntityHierarchy" => ui.label("Hierarchy"),
                     "Entities" => ui.label("Entities list"),
 
@@ -186,6 +214,14 @@ fn render_gui_system(
                 },
             );
         });
+
+    engine::egui::Window::new("TestWindow").show(&egui.0, |ui| {
+        let window_size = ui.available_size();
+        viewport(ui, gui_resources.landscape_texture_id, &Rect {
+            min: Pos2::ZERO,
+            max: pos2(window_size.x, window_size.y),
+        });
+    });
 }
 
 fn viewport(ui: &mut Ui, texture_id: TextureId, size: &Rect) -> Response {

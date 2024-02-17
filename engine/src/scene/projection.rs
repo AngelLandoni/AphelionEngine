@@ -25,7 +25,7 @@ impl Default for Projection {
             aspect_ratio: 1.0,
             fov: 45.0,
             znear: 0.1,
-            zfar: 100.0,
+            zfar: 500.0,
         }
     }
 }

@@ -43,6 +43,13 @@ pub fn main() {
                     camera: Camera::default(),
                     projection: Projection::default(),
                     resolution: Some(Size::new(1024, 768)),
+                },
+                SceneDescriptor {
+                    label: "Landscape Scene".to_owned(),
+                    id: "LandscapeScene".to_owned(),
+                    camera: Camera::default(),
+                    projection: Projection::default(),
+                    resolution: Some(Size::new(320, 260)),
                 }
             ],
         })
