@@ -289,8 +289,6 @@ impl SplitPanelTree {
                 PanelNode::None
             });
 
-        println!("Len: {}", number_of_elements_to_fill_level);
-
         // Check where the old content should go (left or right).
         match dir {
             // Insert old in the left (parent * 2 + 1).

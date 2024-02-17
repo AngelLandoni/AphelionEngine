@@ -155,6 +155,4 @@ fn sync_scene(
             e.1 = b.len() as u64 / Transform::raw_size();
         });
     }
-
-    println!("1");
 }
