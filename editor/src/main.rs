@@ -50,7 +50,7 @@ pub fn main() {
                     camera: Camera::default(),
                     projection: Projection::default(),
                     resolution: Some(Size::new(320, 260)),
-                }
+                },
             ],
         })
         .add_plugin(ClockPlugin)

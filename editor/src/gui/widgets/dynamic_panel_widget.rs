@@ -290,7 +290,7 @@ pub fn render_dynamic_panel_widget(
 fn render_list_of_tabs(
     ui: &mut Ui,
     rect: &Rect,
-    tabs: &Vec<Tab>,
+    tabs: &[Tab],
     panel_index: Index,
     active_tab: &mut Index,
     drag_start_position: &mut Option<Pos2>,
