@@ -1,7 +1,7 @@
 use engine::{
     app::App,
     nalgebra::{Point3, Vector3},
-    plugin::{core::clock::Clock, scene, Pluggable},
+    plugin::{core::clock::Clock, Pluggable},
     scene::{
         keyboard::{KeyCode, Keyboard},
         mouse::CursorDelta,

@@ -112,18 +112,12 @@ impl PanelNode {
     }
 
     pub fn is_container(&self) -> bool {
-        match self {
-            PanelNode::Container { .. } => true,
-            _ => false,
-        }
+        matches!(self, PanelNode::Container { .. })        
     }
 
     pub fn append_tab(&mut self, tab: Tab) {
-        match self {
-            PanelNode::Container { tabs, .. } => {
-                tabs.push(tab);
-            }
-            _ => {}
+        if let PanelNode::Container { tabs, .. } = self {
+            tabs.push(tab);
         }
     }
 
@@ -402,5 +396,18 @@ impl SplitPanelTree {
                 level += 1;
             }
         }
+    }
+
+    pub fn find_container_rect(&self, id: &str) -> Option<Rect> {
+        self.tree.iter().find_map(|n| match n {
+            PanelNode::Container { rect, tabs, .. } => {
+                if tabs.iter().any(|t| t.identification == id) {
+                    Some(*rect)
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        })
     }
 }

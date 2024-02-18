@@ -4,11 +4,23 @@ pub mod split_panel_tree;
 pub mod style;
 pub mod widgets;
 
-use shipyard::{AllStoragesViewMut, Unique, UniqueView, UniqueViewMut, World};
+use shipyard::{Unique, UniqueView, UniqueViewMut, World};
 use std::ops::{Deref, DerefMut};
 
 use engine::{
-    app::App, egui::{pos2, Color32, Image, Margin, Pos2, Rect, Response, Rounding, Stroke, TextureId, Ui, Widget}, graphics::gpu::AbstractGpu, plugin::{graphics::egui::{self, EguiContext, EguiRenderer}, Pluggable}, scene::scene_state::SceneState, schedule::Schedule, wgpu_graphics::{buffer::WGPUTexture, gpu::Gpu}
+    app::App,
+    egui::{
+        pos2, Image, Margin, Pos2, Rect, Response, Rounding, TextureId, Ui,
+        Widget,
+    },
+    graphics::gpu::AbstractGpu,
+    plugin::{
+        graphics::egui::{EguiContext, EguiRenderer},
+        Pluggable,
+    },
+    scene::{projection::Projection, scene_state::SceneState},
+    schedule::Schedule,
+    wgpu_graphics::{buffer::WGPUTexture, gpu::Gpu},
 };
 
 use crate::gui::{
@@ -61,7 +73,11 @@ impl Pluggable for GuiPlugin {
         app.world.run(configure_gui_system);
 
         app.schedule(Schedule::BeforeStart, |world| {
-            register_workbench_texture(&world);
+            register_workbench_texture(world);
+        });
+
+        app.schedule(Schedule::Update, |world| {
+            world.run(sync_aspect_ratio_when_viewport_changes);
         });
 
         app.schedule(Schedule::RequestRedraw, |world| {
@@ -86,7 +102,8 @@ fn configure_gui_system(
 
 // TODO(Angel): Use AllStorageView
 fn register_workbench_texture(world: &World) {
-    let mut egui_renderer = world.borrow::<UniqueViewMut<EguiRenderer>>().unwrap();
+    let mut egui_renderer =
+        world.borrow::<UniqueViewMut<EguiRenderer>>().unwrap();
     let s_state = world.borrow::<UniqueView<SceneState>>().unwrap();
     let gpu = world.borrow::<UniqueView<AbstractGpu>>().unwrap();
     let gpu = gpu.downcast_ref::<Gpu>().unwrap();
@@ -106,14 +123,13 @@ fn register_workbench_texture(world: &World) {
         engine::wgpu::FilterMode::Linear,
     );
 
-
     let landscape_texture = s_state
         .sub_scenes
         .get("LandscapeScene")
         .unwrap()
         .target_texture
         .downcast_ref::<WGPUTexture>()
-        .unwrap(); 
+        .unwrap();
 
     let landscape_texture_id = egui_renderer.renderer.register_native_texture(
         &gpu.device,
@@ -123,8 +139,52 @@ fn register_workbench_texture(world: &World) {
 
     world.add_unique(GuiResources {
         workbench_texture_id: texture_id,
-        landscape_texture_id: landscape_texture_id,
+        landscape_texture_id,
     });
+}
+
+/// Synchronizes the aspect ratio of the Viewport panel to prevent image stretching.
+fn sync_aspect_ratio_when_viewport_changes(
+    panel_state: UniqueView<GuiPanelState>,
+    mut scene_state: UniqueViewMut<SceneState>,
+) {
+    let viewport_rect = &panel_state.find_container_rect("Viewport");
+    let landscape_viewport_rect =
+        &panel_state.find_container_rect("LandscapeEditor");
+
+    scene_state
+        .sub_scenes
+        .iter_mut()
+        .filter(|(id, scene)| {
+            *id == "WorkbenchScene"
+                && matches!(scene.projection, Projection::Perspective { .. })
+        })
+        .map(|e| e.1)
+        .for_each(|s| {
+            if let Projection::Perspective { aspect_ratio, .. } =
+                &mut s.projection
+            {
+                *aspect_ratio = viewport_rect.unwrap().width()
+                    / viewport_rect.unwrap().height();
+            }
+        });
+
+    scene_state
+        .sub_scenes
+        .iter_mut()
+        .filter(|(id, scene)| {
+            *id == "LandscapeScene"
+                && matches!(scene.projection, Projection::Perspective { .. })
+        })
+        .map(|e| e.1)
+        .for_each(|s| {
+            if let Projection::Perspective { aspect_ratio, .. } =
+                &mut s.projection
+            {
+                *aspect_ratio = landscape_viewport_rect.unwrap().width()
+                    / landscape_viewport_rect.unwrap().height();
+            }
+        });
 }
 
 /// Configures the default layout and distribution of panels within the editor.
@@ -163,7 +223,7 @@ fn render_gui_system(
     mut panel_state: UniqueViewMut<GuiPanelState>,
     mut start_drag: UniqueViewMut<TabDragStartPosition>,
     mut shared_data: UniqueViewMut<SharedData>,
-    mut gui_resources: UniqueView<GuiResources>,
+    gui_resources: UniqueView<GuiResources>,
 ) {
     engine::egui::CentralPanel::default()
         .frame(engine::egui::Frame {
@@ -174,27 +234,9 @@ fn render_gui_system(
         .show(&egui.0, |ui| {
             let rect = ToolbarWidget.ui(ui).rect;
 
-            let viewport_size = &panel_state.tree.iter().find_map(|n| match n {
-                split_panel_tree::PanelNode::Container { rect, tabs, active_tab } => {
-                    if tabs.iter().find(|t| t.identification == "Viewport").is_some() {
-                        Some(rect.clone())
-                    } else {
-                        None
-                    }
-                },
-                _ => None,
-            });          
-
-            let l_viewport_size = &panel_state.tree.iter().find_map(|n| match n {
-                split_panel_tree::PanelNode::Container { rect, tabs, active_tab } => {
-                    if tabs.iter().find(|t| t.identification == "LandscapeEditor").is_some() {
-                        Some(rect.clone())
-                    } else {
-                        None
-                    }
-                },
-                _ => None,
-            });   
+            let viewport_rect = &panel_state.find_container_rect("Viewport");
+            let landscape_viewport_rect =
+                &panel_state.find_container_rect("LandscapeEditor");
 
             render_dynamic_panel_widget(
                 ui,
@@ -203,10 +245,18 @@ fn render_gui_system(
                 &mut start_drag.0,
                 &mut shared_data,
                 |ui, tab| match tab.identification.as_str() {
-                    "Viewport" => viewport(ui, gui_resources.workbench_texture_id, &viewport_size.unwrap_or(Rect::NOTHING)),
+                    "Viewport" => viewport(
+                        ui,
+                        gui_resources.workbench_texture_id,
+                        &viewport_rect.unwrap_or(Rect::NOTHING),
+                    ),
                     "GeneralLogs" => ui.label("Logs"),
                     "Properties" => ui.label("Props"),
-                    "LandscapeEditor" => viewport(ui, gui_resources.landscape_texture_id, &l_viewport_size.unwrap_or(Rect::NOTHING)),
+                    "LandscapeEditor" => viewport(
+                        ui,
+                        gui_resources.landscape_texture_id,
+                        &landscape_viewport_rect.unwrap_or(Rect::NOTHING),
+                    ),
                     "EntityHierarchy" => ui.label("Hierarchy"),
                     "Entities" => ui.label("Entities list"),
 
@@ -217,21 +267,28 @@ fn render_gui_system(
 
     engine::egui::Window::new("TestWindow").show(&egui.0, |ui| {
         let window_size = ui.available_size();
-        viewport(ui, gui_resources.landscape_texture_id, &Rect {
-            min: Pos2::ZERO,
-            max: pos2(window_size.x, window_size.y),
-        });
+        viewport(
+            ui,
+            gui_resources.landscape_texture_id,
+            &Rect {
+                min: Pos2::ZERO,
+                max: pos2(window_size.x, window_size.y),
+            },
+        );
     });
 }
 
 fn viewport(ui: &mut Ui, texture_id: TextureId, size: &Rect) -> Response {
-    let image = Image::new((texture_id, engine::egui::Vec2::new(size.width(), size.height() - 25.0)))
-        .rounding(Rounding {
-            nw: 0.0,
-            ne: 4.0,
-            sw: 4.0,
-            se: 4.0,
-        });
+    let image = Image::new((
+        texture_id,
+        engine::egui::Vec2::new(size.width(), size.height() - 25.0),
+    ))
+    .rounding(Rounding {
+        nw: 0.0,
+        ne: 4.0,
+        sw: 4.0,
+        se: 4.0,
+    });
 
     ui.add(image)
 }
