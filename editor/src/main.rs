@@ -35,6 +35,7 @@ pub fn main() {
                 camera: Camera::default(),
                 projection: Projection::default(),
                 resolution: None,
+                should_render_grid: true,
             },
             sub_scenes: vec![
                 SceneDescriptor {
@@ -43,13 +44,15 @@ pub fn main() {
                     camera: Camera::default(),
                     projection: Projection::default(),
                     resolution: Some(Size::new(1024, 768)),
+                    should_render_grid: true,
                 },
                 SceneDescriptor {
                     label: "Landscape Scene".to_owned(),
                     id: "LandscapeScene".to_owned(),
                     camera: Camera::default(),
                     projection: Projection::default(),
-                    resolution: Some(Size::new(320, 260)),
+                    resolution: Some(Size::new(1024, 768)),
+                    should_render_grid: true,
                 },
             ],
         })

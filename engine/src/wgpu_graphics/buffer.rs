@@ -1,7 +1,7 @@
 use wgpu::{Buffer, BufferUsages};
 
 use crate::{
-    graphics::{BufferUsage, IndexBuffer, Texture, UniformBuffer, VertexBuffer},
+    graphics::{BindGroup, BufferUsage, IndexBuffer, Texture, UniformBuffer, VertexBuffer},
     types::Size,
 };
 
@@ -16,6 +16,9 @@ impl IndexBuffer for WgpuIndexBuffer {}
 pub struct WgpuUniformBuffer(pub(crate) Buffer);
 
 impl UniformBuffer for WgpuUniformBuffer {}
+
+pub struct WGPUBindGroup(pub(crate) wgpu::BindGroup);
+impl BindGroup for WGPUBindGroup {}
 
 pub struct WGPUTexture {
     pub texture: wgpu::Texture,

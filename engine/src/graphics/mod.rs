@@ -22,6 +22,9 @@ pub trait Texture: Downcast + Send + Sync {
 }
 impl_downcast!(Texture);
 
+pub trait BindGroup: Downcast + Send + Sync {}
+impl_downcast!(BindGroup);
+
 pub trait SurfaceHandler {
     fn surface_size(&self) -> Size<u32>;
 }

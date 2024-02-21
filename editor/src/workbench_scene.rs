@@ -6,9 +6,16 @@ use engine::{
         core::clock::Clock, scene::primitives_plugin::CUBE_MESH_RESOURCE_ID,
         Pluggable,
     },
-    scene::{components::Transform, scene::SceneTarget},
+    scene::{
+        components::Transform,
+        hierarchy::{add_child, Hierarchy},
+        scene::SceneTarget,
+    },
 };
-use shipyard::{IntoIter, Unique, UniqueView, UniqueViewMut, View, ViewMut};
+use shipyard::{
+    AddComponent, EntitiesViewMut, EntityId, IntoIter, Unique, UniqueView,
+    UniqueViewMut, View, ViewMut,
+};
 
 use crate::camera::EditorCamera;
 
@@ -31,7 +38,7 @@ impl Pluggable for WorkbenchScenePlugin {
         let axis = Unit::new_normalize(Vector3::new(1.0, 2.0, 3.0));
         let rot = UnitQuaternion::from_axis_angle(&axis, 0.0);
 
-        app.world.add_entity((
+        let root_cube = app.world.add_entity((
             MeshComponent(CUBE_MESH_RESOURCE_ID),
             Transform {
                 position: Vector3::new(0.0, 0.0, -10.0),
@@ -39,7 +46,34 @@ impl Pluggable for WorkbenchScenePlugin {
                 scale: Vector3::new(1.0, 1.0, 1.0),
             },
             SceneTarget::SubScene("LandscapeScene".to_string()),
+            Hierarchy::new("Root cube".to_owned()),
         ));
+
+        let mut last_ent = root_cube;
+        let mut paris: Vec<(EntityId, EntityId)> = Vec::new();
+
+        for i in 0..20 {
+            let current = app.world.add_entity((
+                MeshComponent(CUBE_MESH_RESOURCE_ID),
+                Transform {
+                    position: Vector3::new(i as f32, 0.0, -10.0),
+                    rotation: rot,
+                    scale: Vector3::new(1.0, 1.0, 1.0),
+                },
+                SceneTarget::SubScene("LandscapeScene".to_string()),
+                Hierarchy::new("Root cube".to_owned()),
+            ));
+
+            paris.push((last_ent, current));
+            last_ent = current;
+        }
+
+        {
+            let mut h = app.world.borrow::<ViewMut<Hierarchy>>().unwrap();
+            for (r, c) in paris {
+                add_child(r, c, &mut h);
+            }
+        }
 
         for i in 0..10 {
             for j in 0..10 {
@@ -65,7 +99,6 @@ impl Pluggable for WorkbenchScenePlugin {
 
         app.schedule(engine::schedule::Schedule::Update, |world| {
             world.run(rotate_landscape_cube);
-            //world.run(sin_move);
         })
     }
 }
@@ -75,6 +108,7 @@ fn rotate_landscape_cube(
     mut transforms: ViewMut<Transform>,
     target: View<SceneTarget>,
     clock: UniqueView<Clock>,
+    _e: EntitiesViewMut,
 ) {
     for (t, _) in (&mut transforms, &target)
         .iter()
