@@ -112,7 +112,7 @@ impl PanelNode {
     }
 
     pub fn is_container(&self) -> bool {
-        matches!(self, PanelNode::Container { .. })        
+        matches!(self, PanelNode::Container { .. })
     }
 
     pub fn append_tab(&mut self, tab: Tab) {

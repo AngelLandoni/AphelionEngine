@@ -4,21 +4,27 @@ pub mod split_panel_tree;
 pub mod style;
 pub mod widgets;
 
-use shipyard::{Unique, UniqueView, UniqueViewMut, World};
-use std::ops::{Deref, DerefMut};
+use shipyard::{
+    AllStoragesBorrow, AllStoragesView, AllStoragesViewMut, EntitiesView,
+    EntitiesViewMut, EntityId, SparseSet, Unique, UniqueView, UniqueViewMut,
+    View, ViewMut, World,
+};
+use std::{
+    borrow::Borrow,
+    ops::{Deref, DerefMut},
+};
 
 use engine::{
     app::App,
-    egui::{
-        pos2, Image, Margin, Pos2, Rect, Response, Rounding, TextureId, Ui,
-        Widget,
-    },
+    egui::{Image, Margin, Rect, Response, Rounding, TextureId, Ui, Widget},
     graphics::gpu::AbstractGpu,
     plugin::{
         graphics::egui::{EguiContext, EguiRenderer},
         Pluggable,
     },
-    scene::{projection::Projection, scene_state::SceneState},
+    scene::{
+        hierarchy::Hierarchy, projection::Projection, scene_state::SceneState,
+    },
     schedule::Schedule,
     wgpu_graphics::{buffer::WGPUTexture, gpu::Gpu},
 };
@@ -31,11 +37,14 @@ use crate::gui::{
 };
 
 use self::{
-    split_panel_tree::VSplitDir,
+    split_panel_tree::{Tab, VSplitDir},
     style::{configure_fonts, configure_icon_font},
-    widgets::dynamic_panel_widget::{
-        calculate_tag_dragging_system, render_dynamic_panel_widget, SharedData,
-        TabDragStartPosition,
+    widgets::{
+        dynamic_panel_widget::{
+            calculate_tag_dragging_system, render_dynamic_panel_widget,
+            SharedData, TabDragStartPosition,
+        },
+        hierarchy_widget::{render_hierarchy_widget, HierarchyDeletionFlag},
     },
 };
 
@@ -67,6 +76,7 @@ impl Pluggable for GuiPlugin {
     fn configure(&self, app: &mut App) {
         app.world
             .add_unique(GuiPanelState(SplitPanelTree::default()));
+
         app.world.add_unique(TabDragStartPosition(None));
         app.world.add_unique(SharedData::default());
 
@@ -83,6 +93,7 @@ impl Pluggable for GuiPlugin {
         app.schedule(Schedule::RequestRedraw, |world| {
             world.run(render_gui_system);
             world.run(calculate_tag_dragging_system);
+            world.run(mantain_removed_entities_system);
         });
     }
 }
@@ -219,10 +230,13 @@ fn configure_panels(tree: &mut SplitPanelTree) {
 
 /// Renders the UI based on the Panel states.
 fn render_gui_system(
+    entities: EntitiesView,
     egui: UniqueView<EguiContext>,
     mut panel_state: UniqueViewMut<GuiPanelState>,
     mut start_drag: UniqueViewMut<TabDragStartPosition>,
     mut shared_data: UniqueViewMut<SharedData>,
+    mut entity_deletion_flags: ViewMut<HierarchyDeletionFlag>,
+    hierarchy: View<Hierarchy>,
     gui_resources: UniqueView<GuiResources>,
 ) {
     engine::egui::CentralPanel::default()
@@ -244,7 +258,7 @@ fn render_gui_system(
                 rect.height(),
                 &mut start_drag.0,
                 &mut shared_data,
-                |ui, tab| match tab.identification.as_str() {
+                &mut |ui, tab: &Tab| match tab.identification.as_str() {
                     "Viewport" => viewport(
                         ui,
                         gui_resources.workbench_texture_id,
@@ -257,25 +271,18 @@ fn render_gui_system(
                         gui_resources.landscape_texture_id,
                         &landscape_viewport_rect.unwrap_or(Rect::NOTHING),
                     ),
-                    "EntityHierarchy" => ui.label("Hierarchy"),
+                    "EntityHierarchy" => render_hierarchy_widget(
+                        ui,
+                        &entities,
+                        &hierarchy,
+                        &mut entity_deletion_flags,
+                    ),
                     "Entities" => ui.label("Entities list"),
 
                     _ => ui.label("Error unkown zone"),
                 },
             );
         });
-
-    engine::egui::Window::new("TestWindow").show(&egui.0, |ui| {
-        let window_size = ui.available_size();
-        viewport(
-            ui,
-            gui_resources.landscape_texture_id,
-            &Rect {
-                min: Pos2::ZERO,
-                max: pos2(window_size.x, window_size.y),
-            },
-        );
-    });
 }
 
 fn viewport(ui: &mut Ui, texture_id: TextureId, size: &Rect) -> Response {
@@ -291,4 +298,8 @@ fn viewport(ui: &mut Ui, texture_id: TextureId, size: &Rect) -> Response {
     });
 
     ui.add(image)
+}
+
+fn mantain_removed_entities_system(mut all_storages: AllStoragesViewMut) {
+    all_storages.delete_any::<SparseSet<HierarchyDeletionFlag>>();
 }

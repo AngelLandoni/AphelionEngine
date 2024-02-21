@@ -9,7 +9,7 @@ use crate::{
     },
 };
 
-use super::{components::MeshComponent, gpu::AbstractGpu, BufferUsage, Texture, VertexBuffer};
+use super::{components::MeshComponent, gpu::AbstractGpu, BindGroup, BufferUsage, Texture, VertexBuffer};
 
 pub struct Scene {
     /// Contains a debug tag.
@@ -32,7 +32,11 @@ pub struct Scene {
     /// Contains the depth `Texture`.
     pub(crate) depth_texture: Box<dyn Texture>,
 
+    /// Contains the bindgroup used to bind the camera information.
+    pub(crate) camera_bind_group: Option<Box<dyn BindGroup>>,
+
     pub(crate) should_sync_resolution_to_window: bool,
+    pub(crate) should_render_grid: bool,
 }
 
 impl Scene {
@@ -64,7 +68,6 @@ pub(crate) fn sync_main_scene_dynamic_entities_transform(
         sync_scene(scene, Some(id), &gpu, &entities, &transforms, &meshes, &scene_targets);
     }
 }
-
 
 fn sync_scene(
     scene: &mut Scene,

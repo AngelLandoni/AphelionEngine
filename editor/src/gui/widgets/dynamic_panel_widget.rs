@@ -115,7 +115,7 @@ pub fn render_dynamic_panel_widget(
     header_height: f32,
     drag_start_position: &mut Option<Pos2>,
     shared_data: &mut SharedData,
-    builder: impl Fn(&mut Ui, &Tab) -> Response,
+    mut builder: &mut impl FnMut(&mut Ui, &Tab) -> Response,
 ) {
     let full_size = ui.available_size();
 
@@ -279,7 +279,7 @@ pub fn render_dynamic_panel_widget(
                     active_tab,
                     drag_start_position,
                     shared_data,
-                    &builder,
+                    Box::new(&mut builder),
                 );
             }
         }
@@ -287,6 +287,7 @@ pub fn render_dynamic_panel_widget(
 }
 
 /// Renders all the tabs and the content of the seleted one.
+#[inline]
 fn render_list_of_tabs(
     ui: &mut Ui,
     rect: &Rect,
@@ -295,7 +296,9 @@ fn render_list_of_tabs(
     active_tab: &mut Index,
     drag_start_position: &mut Option<Pos2>,
     shared_data: &mut SharedData,
-    ui_builder: impl Fn(&mut Ui, &Tab) -> Response,
+    // TODO(Angel): For some reason Rust does not like the the use of
+    // `impl FnMut(&mut Ui, &Tab) -> Response` in this case. Research.
+    mut ui_builder: Box<&mut dyn FnMut(&mut Ui, &Tab) -> Response>, //impl FnMut(&mut Ui, &Tab) -> Response,
 ) {
     let full_response = ui.allocate_rect(*rect, Sense::hover());
 

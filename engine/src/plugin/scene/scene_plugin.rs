@@ -1,13 +1,19 @@
 use ahash::AHashMap;
-use shipyard::{Unique, UniqueView, UniqueViewMut, World};
+use shipyard::{
+    EntitiesView, Get, Unique, UniqueView, UniqueViewMut, View, ViewMut, World,
+};
 
 use crate::{
     app::App,
-    graphics::{gpu::AbstractGpu, scene::{sync_main_scene_dynamic_entities_transform, Scene}},
+    graphics::{
+        gpu::AbstractGpu,
+        scene::{sync_main_scene_dynamic_entities_transform, Scene},
+    },
     host::window::Window,
     plugin::Pluggable,
     scene::{
         asset_server::AssetServer,
+        hierarchy::{sync_children_level, Hierarchy},
         keyboard::Keyboard,
         mouse::{Cursor, CursorDelta},
         scene::SceneDescriptor,
@@ -98,15 +104,16 @@ fn allocate_scenes(world: &World) {
                 .unwrap_or(gpu.surface_size().height),
         );
 
-        let depth_texture =
-            gpu.allocate_depth_texture("Main scene depth texture", s_scene
-            .resolution
-            .map(|s| s.width)
-            .unwrap_or(gpu.surface_size().width),
+        let depth_texture = gpu.allocate_depth_texture(
+            "Main scene depth texture",
             s_scene
-            .resolution
-            .map(|s| s.height)
-            .unwrap_or(gpu.surface_size().height)
+                .resolution
+                .map(|s| s.width)
+                .unwrap_or(gpu.surface_size().width),
+            s_scene
+                .resolution
+                .map(|s| s.height)
+                .unwrap_or(gpu.surface_size().height),
         );
 
         let scene = Scene {
@@ -118,6 +125,8 @@ fn allocate_scenes(world: &World) {
             target_texture,
             depth_texture,
             should_sync_resolution_to_window: s_scene.resolution.is_none(),
+            should_render_grid: s_scene.should_render_grid,
+            camera_bind_group: None,
         };
 
         sub_scenes_finished.insert(s_scene.id.clone(), scene);
@@ -144,9 +153,9 @@ fn allocate_scenes(world: &World) {
         main.resolution
             .map(|s| s.width)
             .unwrap_or(gpu.surface_size().width),
-            main.resolution
+        main.resolution
             .map(|s| s.height)
-            .unwrap_or(gpu.surface_size().height)
+            .unwrap_or(gpu.surface_size().height),
     );
 
     let main_scene = Scene {
@@ -158,6 +167,8 @@ fn allocate_scenes(world: &World) {
         target_texture,
         depth_texture,
         should_sync_resolution_to_window: main.resolution.is_none(),
+        should_render_grid: main.should_render_grid,
+        camera_bind_group: None,
     };
 
     world.add_unique(SceneState {

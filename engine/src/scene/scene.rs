@@ -21,8 +21,10 @@ pub struct SceneDescriptor {
     pub camera: Camera,
     /// Contains the `Projection` used.
     pub projection: Projection,
-    /// Conatins the resolution that the target texture will use.
+    /// Contains the resolution that the target texture will use.
     pub resolution: Option<Size<u32>>,
+    /// Contains an state determining if the debug grid must be rendered or not.
+    pub should_render_grid: bool,
 }
 
 impl SceneDescriptor {
@@ -35,6 +37,7 @@ impl SceneDescriptor {
             camera: Camera::default(),
             projection: Projection::default(),
             resolution: Some(Size::new(2048, 1600)),
+            should_render_grid: false,
         }
     }
 }

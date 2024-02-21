@@ -18,6 +18,7 @@ pub struct CommandQueue(pub(crate) OrderCommandQueue);
 pub(crate) enum CommandSubmitOrder {
     FrameComposition,
     DebugGui,
+    DebugGrid,
     DynamicMeshes,
 }
 

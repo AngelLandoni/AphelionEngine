@@ -11,14 +11,14 @@ use crate::{
         gpu::Gpu,
         passes::{
             dynamic_mesh_pass::dynamic_mesh_pass_system,
-            frame_composition_pass_system::frame_composition_pass_system,
+            frame_composition_pass_system::frame_composition_pass_system, infinite_grid_pass::infinite_grid_pass_system,
         },
         pipelines::{
             dynamic_mesh_pipeline::{setup_dynamic_mesh_pipelines_uniforms_system, DynamicMeshPipeline},
             frame_composition_pipeline::{
                 setup_frame_composition_pipelines_uniforms_system,
                 FrameCompositionPipeline,
-            },
+            }, infinite_grid_pipeline::InfiniteGridPipeline,
         },
         rendering::{
             acquire_screen_texture, present_screen_texture,
@@ -77,6 +77,7 @@ impl Pluggable for WgpuRendererPlugin {
             app.schedule(Schedule::RequestRedraw, |world| {
                 world.run(dynamic_mesh_pass_system);
                 world.run(frame_composition_pass_system);
+                world.run(infinite_grid_pass_system);
             });
 
             app.schedule(Schedule::QueueSubmit, |world| {
@@ -130,7 +131,9 @@ fn setup_pipelines(world: &World) {
 
     let dynamic_mesh = DynamicMeshPipeline::new(gpu);
     let frame_composition = FrameCompositionPipeline::new(gpu);
-
+    let infinite_grid = InfiniteGridPipeline::new(gpu);
+    
     world.add_unique(dynamic_mesh);
     world.add_unique(frame_composition);
+    world.add_unique(infinite_grid);
 }
