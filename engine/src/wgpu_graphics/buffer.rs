@@ -1,7 +1,10 @@
 use wgpu::{Buffer, BufferUsages};
 
 use crate::{
-    graphics::{BindGroup, BufferUsage, IndexBuffer, Texture, UniformBuffer, VertexBuffer},
+    graphics::{
+        BindGroup, BufferUsage, IndexBuffer, Texture, UniformBuffer,
+        VertexBuffer,
+    },
     types::Size,
 };
 

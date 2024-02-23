@@ -1,4 +1,4 @@
-use std::borrow::BorrowMut;
+
 
 use engine::{
     egui::{
@@ -9,11 +9,11 @@ use engine::{
     nalgebra::UnitQuaternion,
     scene::{
         components::Transform,
-        hierarchy::{self, Hierarchy},
+        hierarchy::{Hierarchy},
     },
 };
 use shipyard::{
-    AllStorages, AllStoragesView, EntitiesView, EntityId, Get, IntoIter, View,
+    AllStoragesView, EntitiesView, EntityId, Get, IntoIter,
     ViewMut,
 };
 
@@ -197,7 +197,7 @@ fn convert_euler_angle_to_degrees(angle: f32) -> f32 {
 }
 
 fn render_mesh_if_required(
-    ui: &mut Ui,
+    _ui: &mut Ui,
     entity: &EntityId,
     all_storages: &AllStoragesView,
 ) {
@@ -206,7 +206,7 @@ fn render_mesh_if_required(
         _ => return,
     };
     let m: &mut ViewMut<MeshComponent> = m.as_mut();
-    let mesh: &mut MeshComponent = match m.get(*entity) {
+    let _mesh: &mut MeshComponent = match m.get(*entity) {
         Ok(m) => m,
         _ => return,
     };

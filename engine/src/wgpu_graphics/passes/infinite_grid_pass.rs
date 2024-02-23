@@ -2,9 +2,14 @@ use shipyard::UniqueView;
 use wgpu::{CommandEncoderDescriptor, Operations};
 
 use crate::{
-    graphics::gpu::AbstractGpu, scene::scene_state::SceneState, wgpu_graphics::{
-        buffer::{WGPUBindGroup, WGPUTexture}, gpu::Gpu, pipelines::infinite_grid_pipeline::InfiniteGridPipeline, CommandQueue, CommandSubmitOrder, OrderCommandBuffer
-    }
+    graphics::gpu::AbstractGpu,
+    scene::scene_state::SceneState,
+    wgpu_graphics::{
+        buffer::{WGPUBindGroup, WGPUTexture},
+        gpu::Gpu,
+        pipelines::infinite_grid_pipeline::InfiniteGridPipeline,
+        CommandQueue, CommandSubmitOrder, OrderCommandBuffer,
+    },
 };
 
 pub(crate) fn infinite_grid_pass_system(
@@ -22,9 +27,9 @@ pub(crate) fn infinite_grid_pass_system(
             .create_command_encoder(&CommandEncoderDescriptor {
                 label: Some("Infinite grid encoder"),
             });
-        
+
     // Iterate over each scene and draw the grid only if it is requested.
-    for (id, scene) in &scenes.sub_scenes {
+    for (_id, scene) in &scenes.sub_scenes {
         let camera_bind_group = match &scene.camera_bind_group {
             Some(c) => c,
             None => continue,
@@ -40,23 +45,27 @@ pub(crate) fn infinite_grid_pass_system(
             .expect("The provided scene texture is not a WGPU texture");
 
         {
-            let mut pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some(&format!("Infinite grid pass, {}", scene.label)),
-                color_attachments: &[
-                    // @location(0)
-                    Some(wgpu::RenderPassColorAttachment {
-                        view: &target_texture.view,
-                        resolve_target: None,
-                        ops: Operations {
-                            load: wgpu::LoadOp::Load,
-                            store: wgpu::StoreOp::Store,
-                        },
-                    }),
-                ],
-                depth_stencil_attachment: None,
-                timestamp_writes: None,
-                occlusion_query_set: None,
-            });
+            let mut pass =
+                encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                    label: Some(&format!(
+                        "Infinite grid pass, {}",
+                        scene.label
+                    )),
+                    color_attachments: &[
+                        // @location(0)
+                        Some(wgpu::RenderPassColorAttachment {
+                            view: &target_texture.view,
+                            resolve_target: None,
+                            ops: Operations {
+                                load: wgpu::LoadOp::Load,
+                                store: wgpu::StoreOp::Store,
+                            },
+                        }),
+                    ],
+                    depth_stencil_attachment: None,
+                    timestamp_writes: None,
+                    occlusion_query_set: None,
+                });
 
             pass.set_pipeline(&pipeline.pipeline);
             pass.set_bind_group(0, &camera_bind_group.0, &[]);
@@ -70,4 +79,3 @@ pub(crate) fn infinite_grid_pass_system(
         encoder.finish(),
     ));
 }
-

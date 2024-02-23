@@ -1,4 +1,4 @@
-use shipyard::{Component, EntityId, Get, IntoIter, View, ViewMut};
+use shipyard::{Component, EntityId, Get, ViewMut};
 
 #[derive(Component)]
 pub struct Hierarchy {

@@ -1,7 +1,9 @@
 use shipyard::Unique;
 
 use wgpu::{
-    BindGroupLayoutDescriptor, BindGroupLayoutEntry, BlendComponent, ColorTargetState, ColorWrites, FragmentState, PipelineLayoutDescriptor, RenderPipeline, RenderPipelineDescriptor, ShaderStages, VertexState
+    BindGroupLayoutDescriptor, BindGroupLayoutEntry, BlendComponent,
+    ColorTargetState, ColorWrites, FragmentState, PipelineLayoutDescriptor,
+    RenderPipeline, RenderPipelineDescriptor, ShaderStages, VertexState,
 };
 
 use crate::wgpu_graphics::gpu::Gpu;
@@ -21,21 +23,21 @@ impl InfiniteGridPipeline {
         );
 
         let camera_bind_group_layout =
-        gpu.device
-            .create_bind_group_layout(&BindGroupLayoutDescriptor {
-                label: Some("Camera bind group"),
-                entries: &[BindGroupLayoutEntry {
-                    binding: 0,
-                    visibility: ShaderStages::VERTEX,
-                    ty: wgpu::BindingType::Buffer {
-                        ty: wgpu::BufferBindingType::Uniform,
-                        has_dynamic_offset: false,
-                        min_binding_size: None,
-                    },
-                    count: None,
-                }],
-            });
-        
+            gpu.device
+                .create_bind_group_layout(&BindGroupLayoutDescriptor {
+                    label: Some("Camera bind group"),
+                    entries: &[BindGroupLayoutEntry {
+                        binding: 0,
+                        visibility: ShaderStages::VERTEX,
+                        ty: wgpu::BindingType::Buffer {
+                            ty: wgpu::BufferBindingType::Uniform,
+                            has_dynamic_offset: false,
+                            min_binding_size: None,
+                        },
+                        count: None,
+                    }],
+                });
+
         let layout =
             gpu.device
                 .create_pipeline_layout(&PipelineLayoutDescriptor {
@@ -72,8 +74,6 @@ impl InfiniteGridPipeline {
                     multiview: None,
                 });
 
-        InfiniteGridPipeline {
-            pipeline,
-        }
+        InfiniteGridPipeline { pipeline }
     }
 }

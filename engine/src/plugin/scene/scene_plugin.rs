@@ -1,6 +1,6 @@
 use ahash::AHashMap;
 use shipyard::{
-    EntitiesView, Get, Unique, UniqueView, UniqueViewMut, View, ViewMut, World,
+    Unique, UniqueView, UniqueViewMut, World,
 };
 
 use crate::{
@@ -13,7 +13,6 @@ use crate::{
     plugin::Pluggable,
     scene::{
         asset_server::AssetServer,
-        hierarchy::{sync_children_level, Hierarchy},
         keyboard::Keyboard,
         mouse::{Cursor, CursorDelta},
         scene::SceneDescriptor,

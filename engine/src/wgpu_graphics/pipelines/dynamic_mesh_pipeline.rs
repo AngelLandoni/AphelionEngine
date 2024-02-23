@@ -1,12 +1,22 @@
-use ahash::AHashMap;
+
 use shipyard::{Unique, UniqueView, UniqueViewMut};
 
 use wgpu::{
-    vertex_attr_array, BindGroup, BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BlendComponent, BufferAddress, ColorTargetState, ColorWrites, DepthBiasState, DepthStencilState, FragmentState, MultisampleState, PipelineLayoutDescriptor, PrimitiveState, RenderPipeline, RenderPipelineDescriptor, ShaderStages, StencilState, VertexBufferLayout, VertexState
+    vertex_attr_array, BindGroup, BindGroupLayout, BindGroupLayoutDescriptor,
+    BindGroupLayoutEntry, BlendComponent, BufferAddress, ColorTargetState,
+    ColorWrites, DepthBiasState, DepthStencilState, FragmentState,
+    MultisampleState, PipelineLayoutDescriptor, PrimitiveState, RenderPipeline,
+    RenderPipelineDescriptor, ShaderStages, StencilState, VertexBufferLayout,
+    VertexState,
 };
 
 use crate::{
-    graphics::{gpu::AbstractGpu, vertex::Vertex}, scene::scene_state::SceneState, wgpu_graphics::{buffer::{WGPUBindGroup, WgpuUniformBuffer}, gpu::{Gpu, DEPTH_TEXTURE_FORMAT}}
+    graphics::{gpu::AbstractGpu, vertex::Vertex},
+    scene::scene_state::SceneState,
+    wgpu_graphics::{
+        buffer::{WGPUBindGroup, WgpuUniformBuffer},
+        gpu::{Gpu, DEPTH_TEXTURE_FORMAT},
+    },
 };
 
 #[derive(Unique)]
@@ -119,13 +129,13 @@ impl DynamicMeshPipeline {
             pipeline,
             camera_bind_group_layout,
             camera_bind_group: None,
-         }
+        }
     }
 }
 
 pub(crate) fn setup_dynamic_mesh_pipelines_uniforms_system(
     gpu: UniqueView<AbstractGpu>,
-    mut dyn_mesh_pipeline: UniqueViewMut<DynamicMeshPipeline>,
+    dyn_mesh_pipeline: UniqueViewMut<DynamicMeshPipeline>,
     mut s_state: UniqueViewMut<SceneState>,
 ) {
     let gpu = gpu
@@ -140,41 +150,32 @@ pub(crate) fn setup_dynamic_mesh_pipelines_uniforms_system(
         .downcast_ref::<WgpuUniformBuffer>()
         .expect("Incorrect uniform buffer type");
 
-    s_state.main.camera_bind_group = Some(
-        Box::new(WGPUBindGroup(
-            gpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
-                layout: &dyn_mesh_pipeline.camera_bind_group_layout,
-                entries: &[
-                    wgpu::BindGroupEntry {
-                        binding: 0,
-                        resource: camera_buffer.0.as_entire_binding(),
-                    },
-                ],
-                label: Some("frame_composition_diffuse_bind_group"),
-            })
-        ))
-    );
+    s_state.main.camera_bind_group = Some(Box::new(WGPUBindGroup(
+        gpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
+            layout: &dyn_mesh_pipeline.camera_bind_group_layout,
+            entries: &[wgpu::BindGroupEntry {
+                binding: 0,
+                resource: camera_buffer.0.as_entire_binding(),
+            }],
+            label: Some("frame_composition_diffuse_bind_group"),
+        }),
+    )));
 
-    for (id, scene) in &mut s_state.sub_scenes {
+    for (_id, scene) in &mut s_state.sub_scenes {
         let camera_buffer = scene
             .camera_buffer
             .downcast_ref::<WgpuUniformBuffer>()
             .expect("Incorrect uniform buffer type");
 
-        scene.camera_bind_group = Some(
-            Box::new(WGPUBindGroup(
-                gpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
-                    layout: &dyn_mesh_pipeline.camera_bind_group_layout,
-                    entries: &[
-                        wgpu::BindGroupEntry {
-                            binding: 0,
-                            resource: camera_buffer.0.as_entire_binding(),
-                        },
-                    ],
-                    label: Some("frame_composition_diffuse_bind_group"),
-                })
-            ))
-        );
+        scene.camera_bind_group = Some(Box::new(WGPUBindGroup(
+            gpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                layout: &dyn_mesh_pipeline.camera_bind_group_layout,
+                entries: &[wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: camera_buffer.0.as_entire_binding(),
+                }],
+                label: Some("frame_composition_diffuse_bind_group"),
+            }),
+        )));
     }
 }
-
