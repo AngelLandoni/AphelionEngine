@@ -1,14 +1,12 @@
 use engine::{
     egui::{
-        pos2, vec2, Align2, Color32, FontId, Id, Rect, Response, ScrollArea,
+        vec2, Align2, Color32, FontId, Rect, Response, ScrollArea,
         Sense, Ui,
     },
     scene::hierarchy::Hierarchy,
 };
 use shipyard::{
-    AddComponent, AllStoragesViewMut, Component, Delete, EntitiesView,
-    EntitiesViewMut, EntityId, Get, Label, Remove, Unique, UniqueView,
-    UniqueViewMut, View, ViewMut, World,
+    AddComponent, Component, Delete, EntitiesView, EntityId, Get, Remove, ViewMut,
 };
 
 use crate::gui::{
@@ -37,9 +35,9 @@ pub fn render_hierarchy_widget(
     ui: &mut Ui,
     entities: &EntitiesView,
     items: &ViewMut<Hierarchy>,
-    mut deletion_flags: &mut ViewMut<HierarchyDeletionFlag>,
-    mut selection_flags: &mut ViewMut<HierarchySelectionFlag>,
-    mut expanded_flags: &mut ViewMut<HierarchyExpandedFlag>,
+    deletion_flags: &mut ViewMut<HierarchyDeletionFlag>,
+    selection_flags: &mut ViewMut<HierarchySelectionFlag>,
+    expanded_flags: &mut ViewMut<HierarchyExpandedFlag>,
 ) -> Response {
     ui.vertical(|ui| {
         ui.label("The search part");
@@ -60,10 +58,10 @@ pub fn render_hierarchy_widget(
                         render_item(
                             ui,
                             &e,
-                            &mut deletion_flags,
+                            deletion_flags,
                             items,
-                            &mut selection_flags,
-                            &mut expanded_flags,
+                            selection_flags,
+                            expanded_flags,
                         );
                     });
             });

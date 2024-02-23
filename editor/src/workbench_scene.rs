@@ -13,7 +13,7 @@ use engine::{
     },
 };
 use shipyard::{
-    AddComponent, EntitiesViewMut, EntityId, IntoIter, Unique, UniqueView,
+    EntitiesViewMut, EntityId, IntoIter, Unique, UniqueView,
     UniqueViewMut, View, ViewMut,
 };
 

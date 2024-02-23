@@ -356,6 +356,7 @@ pub fn main() {
                 camera: Camera::default(),
                 projection: Projection::default(),
                 resolution: None,
+                should_render_grid: false,
             },
             sub_scenes: Vec::new(),
         })

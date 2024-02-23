@@ -39,28 +39,33 @@ pub trait BufferCreator {
         label: &str,
         data: &[u8],
     ) -> Box<dyn VertexBuffer>;
-    
+
     fn allocate_index_buffer(
         &self,
         label: &str,
         data: &[u8],
     ) -> Box<dyn IndexBuffer>;
-    
-    fn allocate_depth_texture(&self, label: &str, width: u32, height: u32) -> Box<dyn Texture>;
-    
+
+    fn allocate_depth_texture(
+        &self,
+        label: &str,
+        width: u32,
+        height: u32,
+    ) -> Box<dyn Texture>;
+
     fn allocate_target_texture(
         &self,
         label: &str,
         width: u32,
         height: u32,
     ) -> Box<dyn Texture>;
-    
+
     fn allocate_uniform_buffer(
         &self,
         label: &str,
         data: &[u8],
     ) -> Box<dyn UniformBuffer>;
-    
+
     fn allocate_aligned_zero_vertex_buffer(
         &self,
         label: &str,

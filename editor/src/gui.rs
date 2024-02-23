@@ -5,9 +5,9 @@ pub mod style;
 pub mod widgets;
 
 use shipyard::{
-    AllStorages, AllStoragesBorrow, AllStoragesView, AllStoragesViewMut,
-    EntitiesView, EntitiesViewMut, EntityId, SparseSet, Unique, UniqueView,
-    UniqueViewMut, View, ViewMut, World,
+    AllStoragesView, AllStoragesViewMut,
+    EntitiesView, SparseSet, Unique, UniqueView,
+    UniqueViewMut, ViewMut, World,
 };
 use std::{
     borrow::Borrow,

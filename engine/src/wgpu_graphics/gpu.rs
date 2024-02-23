@@ -18,7 +18,8 @@ use crate::{
 };
 
 use super::buffer::{
-    map_usages, WGPUTexture, WgpuIndexBuffer, WgpuUniformBuffer, WgpuVertexBuffer
+    map_usages, WGPUTexture, WgpuIndexBuffer, WgpuUniformBuffer,
+    WgpuVertexBuffer,
 };
 
 pub(crate) const DEPTH_TEXTURE_FORMAT: TextureFormat =
@@ -212,7 +213,12 @@ impl BufferCreator for Gpu {
         Box::new(WgpuIndexBuffer(buffer))
     }
 
-    fn allocate_depth_texture(&self, label: &str, width: u32, height: u32) -> Box<dyn Texture> {
+    fn allocate_depth_texture(
+        &self,
+        label: &str,
+        width: u32,
+        height: u32,
+    ) -> Box<dyn Texture> {
         let texture = self.device.create_texture(&TextureDescriptor {
             label: Some(label),
             size: Extent3d {
@@ -316,7 +322,7 @@ impl BufferCreator for Gpu {
         Box::new(WgpuVertexBuffer(self.allocate_aligned_zero_buffer(
             label,
             size,
-            BufferUsages::VERTEX | map_usages(uses)
+            BufferUsages::VERTEX | map_usages(uses),
         )))
     }
 }

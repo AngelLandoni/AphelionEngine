@@ -128,7 +128,7 @@ pub(crate) fn dynamic_mesh_pass_system(
         }
     }
 
-    for (id, scene) in &scenes.sub_scenes {
+    for (_id, scene) in &scenes.sub_scenes {
         let main_meshes = scene
             .mesh_transform_buffers
             .iter()
