@@ -1,28 +1,45 @@
 use engine::{
     egui::{
-        vec2, Align2, Color32, FontId, Id, Response, ScrollArea, Sense, Ui,
+        pos2, vec2, Align2, Color32, FontId, Id, Rect, Response, ScrollArea,
+        Sense, Ui,
     },
     scene::hierarchy::Hierarchy,
 };
 use shipyard::{
-    AddComponent, AllStoragesViewMut, Component, EntitiesView, EntitiesViewMut,
-    EntityId, Get, Unique, UniqueView, UniqueViewMut, View, ViewMut, World,
+    AddComponent, AllStoragesViewMut, Component, Delete, EntitiesView,
+    EntitiesViewMut, EntityId, Get, Label, Remove, Unique, UniqueView,
+    UniqueViewMut, View, ViewMut, World,
+};
+
+use crate::gui::{
+    colors::HIGHLIGHT,
+    icons::{DISCLOSURE_TRI_DOWN, DISCLOSURE_TRI_RIGHT},
 };
 
 /// A constant which defines how much space there should be in the
 /// left side of the tree item.
 const LEFT_OFFSET: f32 = 16.0;
+const LEFT_MARGIN: f32 = 5.0;
 const ITEM_HEIGHT: f32 = 20.0;
+const ICON_SIZE: f32 = 16.0;
+const TEXT_SIZE: f32 = 14.0;
+const CHEVRON_SIZE: f32 = 18.0;
 
 #[derive(Component)]
 pub struct HierarchyDeletionFlag;
+#[derive(Component)]
+pub struct HierarchySelectionFlag;
+#[derive(Component)]
+pub struct HierarchyExpandedFlag;
 
 /// Renders a nice hierarcy widget.
 pub fn render_hierarchy_widget(
     ui: &mut Ui,
     entities: &EntitiesView,
-    items: &View<Hierarchy>,
+    items: &ViewMut<Hierarchy>,
     mut deletion_flags: &mut ViewMut<HierarchyDeletionFlag>,
+    mut selection_flags: &mut ViewMut<HierarchySelectionFlag>,
+    mut expanded_flags: &mut ViewMut<HierarchyExpandedFlag>,
 ) -> Response {
     ui.vertical(|ui| {
         ui.label("The search part");
@@ -40,7 +57,14 @@ pub fn render_hierarchy_widget(
                     // in charge of render the children.
                     .filter(|(_, h)| h.level == 0)
                     .for_each(|(e, _)| {
-                        render_item(ui, &e, &mut deletion_flags, items);
+                        render_item(
+                            ui,
+                            &e,
+                            &mut deletion_flags,
+                            items,
+                            &mut selection_flags,
+                            &mut expanded_flags,
+                        );
                     });
             });
         });
@@ -54,7 +78,9 @@ fn render_item(
     ui: &mut Ui,
     entity: &EntityId,
     deletion_flags: &mut ViewMut<HierarchyDeletionFlag>,
-    hierarchies: &View<Hierarchy>,
+    hierarchies: &ViewMut<Hierarchy>,
+    hierarchy_selection: &mut ViewMut<HierarchySelectionFlag>,
+    hierarchy_expanded: &mut ViewMut<HierarchyExpandedFlag>,
 ) {
     // Extract hierarchy information related to the provided entity.
     // We already filtered only entities which contains the component therefore
@@ -67,36 +93,132 @@ fn render_item(
     let level = hierarchy.level;
     let children = &hierarchy.children;
     let title = &hierarchy.title;
+    let icon = &hierarchy.icon;
 
     let full_width = ui.available_width();
     let full_size = vec2(full_width, ITEM_HEIGHT);
-    //let (rect, response_bg) = ui.allocate_exact_size(full_size, Sense::hover());
     let (rect, response_bg) = ui.allocate_exact_size(full_size, Sense::click());
 
-    let bg_color = if response_bg.hovered() {
-        Color32::DARK_RED
+    let is_selected = hierarchy_selection.get(*entity).is_ok();
+
+    let bg_color = if response_bg.hovered() || is_selected {
+        Color32::from_hex(HIGHLIGHT).unwrap_or_default()
     } else {
         Color32::TRANSPARENT
     };
 
+    // Pain the background color of each item.
+    ui.painter().rect_filled(rect, 0.0, bg_color);
+
     // Calculate the left space associated with the item.
     let left_offset = vec2(LEFT_OFFSET * level as f32, 0.0);
+    let chevron_pos = rect.left_top()
+        + vec2(0.0, ITEM_HEIGHT * 0.5 - CHEVRON_SIZE * 0.5)
+        + left_offset
+        + vec2(LEFT_MARGIN, 0.0);
+    // Calculate the icon position.
+    let icon_pos = rect.left_top()
+        + vec2(0.0, ITEM_HEIGHT * 0.5 - ICON_SIZE * 0.5)
+        + left_offset
+        + vec2(CHEVRON_SIZE, 0.0)
+        + vec2(LEFT_MARGIN, 0.0);
     // Calculate the position of the title.
-    let title_pos = rect.left_center() + left_offset;
+    let title_pos = rect.left_center()
+        + left_offset
+        + vec2(20.0, 0.0)
+        + vec2(CHEVRON_SIZE, 0.0)
+        + vec2(LEFT_MARGIN, 0.0);
 
-    // Pain the background color of each item.
-    ui.painter().rect_filled(response_bg.rect, 0.0, bg_color);
+    // Drow chevron.
+    let chevron_response_bg = ui.allocate_rect(
+        Rect::from_min_size(chevron_pos, vec2(CHEVRON_SIZE, CHEVRON_SIZE)),
+        Sense::click(),
+    );
+
+    if !children.is_empty() {
+        ui.painter().text(
+            chevron_pos,
+            Align2::LEFT_TOP,
+            if hierarchy_expanded.contains(*entity) {
+                DISCLOSURE_TRI_DOWN
+            } else {
+                DISCLOSURE_TRI_RIGHT
+            },
+            FontId::proportional(CHEVRON_SIZE),
+            Color32::WHITE,
+        );
+    }
+
+    // Draw icon.
+    ui.painter().text(
+        icon_pos,
+        Align2::LEFT_TOP,
+        icon,
+        FontId::proportional(ICON_SIZE),
+        Color32::WHITE,
+    );
+
+    // Draw title.
     ui.painter().text(
         title_pos,
         Align2::LEFT_CENTER,
         title,
-        FontId::proportional(16.0),
+        FontId::proportional(TEXT_SIZE),
         Color32::WHITE,
     );
 
-    // TODO(Angel): Just testing, we should also add all children and sub children.
-    // TODO(Angel): Remove Children from parent in the hierarchy.
+    // If the chevron is pressed the list must be expanded.
+    if chevron_response_bg.clicked() {
+        if hierarchy_expanded.contains(*entity) {
+            hierarchy_expanded.remove(*entity);
+        } else {
+            hierarchy_expanded
+                .add_component_unchecked(*entity, HierarchyExpandedFlag);
+        }
+    }
+
     if response_bg.clicked() {
+        if is_selected {
+            hierarchy_selection.delete(*entity);
+        } else {
+            hierarchy_selection.clear();
+            hierarchy_selection
+                .add_component_unchecked(*entity, HierarchySelectionFlag);
+        }
+    }
+
+    response_bg.context_menu(|ui| {
+        entity_action_menus(ui, entity, deletion_flags, hierarchies);
+    });
+
+    // Recursivelly render each child.
+    // Only render the children if there are and if they are visible.
+    if hierarchy_expanded.contains(*entity) && !children.is_empty() {
+        for e in children {
+            render_item(
+                ui,
+                e,
+                deletion_flags,
+                hierarchies,
+                hierarchy_selection,
+                hierarchy_expanded,
+            );
+        }
+    }
+}
+
+fn entity_action_menus(
+    ui: &mut Ui,
+    entity: &EntityId,
+    deletion_flags: &mut ViewMut<HierarchyDeletionFlag>,
+    hierarchies: &ViewMut<Hierarchy>,
+) {
+    if ui
+        .button(format!("{} Delete", crate::gui::icons::REMOVE))
+        .clicked()
+    {
+        // TODO(Angel): Just testing, we should also add all children and sub children.
+        // TODO(Angel): Remove Children from parent in the hierarchy.
         let mut to_mark_as_deleted = vec![*entity];
 
         let mut i = 0;
@@ -116,10 +238,14 @@ fn render_item(
 
             i += 1;
         }
+
+        ui.close_menu();
     }
 
-    // Recursivelly render each child.
-    for e in children {
-        render_item(ui, e, deletion_flags, hierarchies);
+    if ui
+        .button(format!("{} Rename", crate::gui::icons::EDITMODE_HLT))
+        .clicked()
+    {
+        ui.close_menu();
     }
 }

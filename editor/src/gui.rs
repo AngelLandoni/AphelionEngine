@@ -44,7 +44,11 @@ use self::{
             calculate_tag_dragging_system, render_dynamic_panel_widget,
             SharedData, TabDragStartPosition,
         },
-        hierarchy_widget::{render_hierarchy_widget, HierarchyDeletionFlag},
+        hierarchy_widget::{
+            render_hierarchy_widget, HierarchyDeletionFlag,
+            HierarchyExpandedFlag, HierarchySelectionFlag,
+        },
+        properties_widget::properties_widget,
     },
 };
 
@@ -236,7 +240,9 @@ fn render_gui_system(
     mut start_drag: UniqueViewMut<TabDragStartPosition>,
     mut shared_data: UniqueViewMut<SharedData>,
     mut entity_deletion_flags: ViewMut<HierarchyDeletionFlag>,
-    hierarchy: View<Hierarchy>,
+    mut entity_selection_flags: ViewMut<HierarchySelectionFlag>,
+    mut entity_expanded_flags: ViewMut<HierarchyExpandedFlag>,
+    mut hierarchy: ViewMut<Hierarchy>,
     gui_resources: UniqueView<GuiResources>,
 ) {
     engine::egui::CentralPanel::default()
@@ -265,7 +271,12 @@ fn render_gui_system(
                         &viewport_rect.unwrap_or(Rect::NOTHING),
                     ),
                     "GeneralLogs" => ui.label("Logs"),
-                    "Properties" => ui.label("Props"),
+                    "Properties" => properties_widget(
+                        ui,
+                        &entities,
+                        &mut hierarchy,
+                        &mut entity_selection_flags,
+                    ),
                     "LandscapeEditor" => viewport(
                         ui,
                         gui_resources.landscape_texture_id,
@@ -276,6 +287,8 @@ fn render_gui_system(
                         &entities,
                         &hierarchy,
                         &mut entity_deletion_flags,
+                        &mut entity_selection_flags,
+                        &mut entity_expanded_flags,
                     ),
                     "Entities" => ui.label("Entities list"),
 

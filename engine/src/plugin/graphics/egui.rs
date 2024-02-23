@@ -107,7 +107,10 @@ impl Pluggable for EguiPlugin {
                 world.run(egui_render_system);
             });
 
-            app.schedule(Schedule::WindowEvent, |world| {
+            // We have to listen to any event that happen on the window,
+            // nust just the Window one due the engine separetes window
+            // event from keyboard event.
+            app.schedule(Schedule::GenericEvent, |world| {
                 world.run(egui_handle_events_system);
             });
         }

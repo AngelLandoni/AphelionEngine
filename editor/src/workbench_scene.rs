@@ -46,7 +46,10 @@ impl Pluggable for WorkbenchScenePlugin {
                 scale: Vector3::new(1.0, 1.0, 1.0),
             },
             SceneTarget::SubScene("LandscapeScene".to_string()),
-            Hierarchy::new("Root cube".to_owned()),
+            Hierarchy::new(
+                crate::gui::icons::MESH_CUBE,
+                "Root cube".to_owned(),
+            ),
         ));
 
         let mut last_ent = root_cube;
@@ -56,12 +59,15 @@ impl Pluggable for WorkbenchScenePlugin {
             let current = app.world.add_entity((
                 MeshComponent(CUBE_MESH_RESOURCE_ID),
                 Transform {
-                    position: Vector3::new(i as f32, 0.0, -10.0),
+                    position: Vector3::new(i as f32 * 5.0, 0.0, -10.0),
                     rotation: rot,
                     scale: Vector3::new(1.0, 1.0, 1.0),
                 },
-                SceneTarget::SubScene("LandscapeScene".to_string()),
-                Hierarchy::new("Root cube".to_owned()),
+                SceneTarget::SubScene("WorkbenchScene".to_string()),
+                Hierarchy::new(
+                    crate::gui::icons::MESH_UVSPHERE,
+                    "Sub".to_owned(),
+                ),
             ));
 
             paris.push((last_ent, current));
@@ -75,10 +81,12 @@ impl Pluggable for WorkbenchScenePlugin {
             }
         }
 
-        for i in 0..10 {
-            for j in 0..10 {
-                for k in 0..10 {
-                    app.world.add_entity((
+        let mut created_entities = Vec::new();
+
+        for i in 0..1 {
+            for j in 0..1 {
+                for k in 0..1 {
+                    let e = app.world.add_entity((
                         MeshComponent(CUBE_MESH_RESOURCE_ID),
                         Transform {
                             position: Vector3::new(
@@ -92,7 +100,12 @@ impl Pluggable for WorkbenchScenePlugin {
                             scale: Vector3::new(1.0, 1.0, 1.0),
                         },
                         SceneTarget::SubScene("WorkbenchScene".to_string()),
+                        Hierarchy::new(
+                            crate::gui::icons::MESH_CUBE,
+                            format!("Ent({},{},{})", i, j, k),
+                        ),
                     ));
+                    created_entities.push(e);
                 }
             }
         }
