@@ -9,6 +9,14 @@ use crate::{
     schedule::Schedule,
 };
 
+pub(crate) fn run_generic_event_workload(app: &App) {
+    if let Some(s_fns) = app.scheduler.schedules.get(&Schedule::GenericEvent) {
+        for func in s_fns {
+            func(&app.world);
+        }
+    }
+}
+
 pub(crate) fn run_pipeline_configuration(app: &App) {
     // Update events.
     // Extract all the update callbacks from the user and execute them.
@@ -52,10 +60,8 @@ pub(crate) fn run_pipeline_uniform_configuration(app: &App) {
 pub(crate) fn run_before_start(app: &App) {
     // Update events.
     // Extract all the update callbacks from the user and execute them.
-    if let Some(update_fns) = app
-        .scheduler
-        .schedules
-        .get(&Schedule::BeforeStart)
+    if let Some(update_fns) =
+        app.scheduler.schedules.get(&Schedule::BeforeStart)
     {
         for func in update_fns {
             func(&app.world);

@@ -5,7 +5,14 @@ use crate::{
     plugin::Pluggable,
     schedule::{Schedule, Scheduler},
     workload::{
-        finish_frame_workload, init_frame_workload, run_after_request_redraw_workload, run_before_request_redraw_workload, run_before_start, run_pipeline_configuration, run_pipeline_uniform_configuration, run_request_redraw_workload, run_scene_configuration, run_submit_queue_workload, run_update_workload, run_window_event_workload, start_frame_workload, update_cursor_delta, update_cursor_position, update_keyboard_events, update_window_size
+        finish_frame_workload, init_frame_workload,
+        run_after_request_redraw_workload, run_before_request_redraw_workload,
+        run_before_start, run_generic_event_workload,
+        run_pipeline_configuration, run_pipeline_uniform_configuration,
+        run_request_redraw_workload, run_scene_configuration,
+        run_submit_queue_workload, run_update_workload,
+        run_window_event_workload, start_frame_workload, update_cursor_delta,
+        update_cursor_position, update_keyboard_events, update_window_size,
     },
 };
 
@@ -74,6 +81,8 @@ impl<'app> App<'app> {
     /// A function what must be called everytime there is an event. In case
     /// of inmediate mode it must be called once per frame.
     pub fn tick(&mut self, event: &Event) {
+        run_generic_event_workload(self);
+
         match event {
             Event::Window(w_event) => {
                 match w_event {

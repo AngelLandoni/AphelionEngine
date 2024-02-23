@@ -4,9 +4,11 @@ use shipyard::{Component, EntityId, Get, IntoIter, View, ViewMut};
 pub struct Hierarchy {
     /// Contains the level assigned to the entity.
     pub level: u32,
-    /// Contains teh title of the entity realted with this
+    /// Contains the title of the entity realted with this
     /// hierarchy.
     pub title: String,
+    /// Conatins the icon associated with the entity.
+    pub icon: char,
     /// Contains the parent assocaited to the entity.
     pub parent: Option<EntityId>,
     /// Contains the children associated with the entity.
@@ -15,29 +17,32 @@ pub struct Hierarchy {
 
 impl Hierarchy {
     /// Creates and returns a new `Hierarchy` component without children.
-    pub fn empty_root(title: String) -> Self {
+    pub fn empty_root(icon: char, title: String) -> Self {
         Self {
             level: 0,
             title,
             parent: None,
+            icon,
             children: vec![],
         }
     }
 
-    pub fn attached_to(parent: EntityId, title: String) -> Self {
+    pub fn attached_to(icon: char, parent: EntityId, title: String) -> Self {
         Self {
             level: 0,
             title,
             parent: Some(parent),
+            icon,
             children: vec![],
         }
     }
 
-    pub fn new(title: String) -> Self {
+    pub fn new(icon: char, title: String) -> Self {
         Self {
             level: 0,
             title,
             parent: None,
+            icon,
             children: vec![],
         }
     }
