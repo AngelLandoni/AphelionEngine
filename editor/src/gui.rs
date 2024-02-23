@@ -5,9 +5,9 @@ pub mod style;
 pub mod widgets;
 
 use shipyard::{
-    AllStoragesBorrow, AllStoragesView, AllStoragesViewMut, EntitiesView,
-    EntitiesViewMut, EntityId, SparseSet, Unique, UniqueView, UniqueViewMut,
-    View, ViewMut, World,
+    AllStorages, AllStoragesBorrow, AllStoragesView, AllStoragesViewMut,
+    EntitiesView, EntitiesViewMut, EntityId, SparseSet, Unique, UniqueView,
+    UniqueViewMut, View, ViewMut, World,
 };
 use std::{
     borrow::Borrow,
@@ -95,7 +95,7 @@ impl Pluggable for GuiPlugin {
         });
 
         app.schedule(Schedule::RequestRedraw, |world| {
-            world.run(render_gui_system);
+            render_gui_system(world);
             world.run(calculate_tag_dragging_system);
             world.run(mantain_removed_entities_system);
         });
@@ -233,18 +233,25 @@ fn configure_panels(tree: &mut SplitPanelTree) {
 }
 
 /// Renders the UI based on the Panel states.
-fn render_gui_system(
-    entities: EntitiesView,
-    egui: UniqueView<EguiContext>,
-    mut panel_state: UniqueViewMut<GuiPanelState>,
-    mut start_drag: UniqueViewMut<TabDragStartPosition>,
-    mut shared_data: UniqueViewMut<SharedData>,
-    mut entity_deletion_flags: ViewMut<HierarchyDeletionFlag>,
-    mut entity_selection_flags: ViewMut<HierarchySelectionFlag>,
-    mut entity_expanded_flags: ViewMut<HierarchyExpandedFlag>,
-    mut hierarchy: ViewMut<Hierarchy>,
-    gui_resources: UniqueView<GuiResources>,
-) {
+fn render_gui_system(world: &World) {
+    let entities = world.borrow::<EntitiesView>().unwrap();
+    let all_storages = world.borrow::<AllStoragesView>().unwrap();
+    let egui = world.borrow::<UniqueView<EguiContext>>().unwrap();
+    let mut panel_state =
+        world.borrow::<UniqueViewMut<GuiPanelState>>().unwrap();
+    let mut start_drag = world
+        .borrow::<UniqueViewMut<TabDragStartPosition>>()
+        .unwrap();
+    let mut shared_data = world.borrow::<UniqueViewMut<SharedData>>().unwrap();
+    let mut entity_deletion_flags =
+        world.borrow::<ViewMut<HierarchyDeletionFlag>>().unwrap();
+    let mut entity_selection_flags =
+        world.borrow::<ViewMut<HierarchySelectionFlag>>().unwrap();
+    let mut entity_expanded_flags =
+        world.borrow::<ViewMut<HierarchyExpandedFlag>>().unwrap();
+    let mut hierarchy = world.borrow::<ViewMut<Hierarchy>>().unwrap();
+    let gui_resources = world.borrow::<UniqueView<GuiResources>>().unwrap();
+
     engine::egui::CentralPanel::default()
         .frame(engine::egui::Frame {
             inner_margin: Margin::ZERO,
@@ -275,6 +282,7 @@ fn render_gui_system(
                         ui,
                         &entities,
                         &mut hierarchy,
+                        &all_storages,
                         &mut entity_selection_flags,
                     ),
                     "LandscapeEditor" => viewport(

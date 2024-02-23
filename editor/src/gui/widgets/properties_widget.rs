@@ -1,8 +1,21 @@
+use std::borrow::BorrowMut;
+
 use engine::{
-    egui::{Frame, Margin, Response, ScrollArea, TextEdit, Ui},
-    scene::hierarchy::{self, Hierarchy},
+    egui::{
+        DragValue, Frame, InnerResponse, Margin, Response, ScrollArea,
+        TextEdit, Ui,
+    },
+    graphics::components::MeshComponent,
+    nalgebra::UnitQuaternion,
+    scene::{
+        components::Transform,
+        hierarchy::{self, Hierarchy},
+    },
 };
-use shipyard::{EntitiesView, EntityId, Get, IntoIter, ViewMut};
+use shipyard::{
+    AllStorages, AllStoragesView, EntitiesView, EntityId, Get, IntoIter, View,
+    ViewMut,
+};
 
 use super::hierarchy_widget::HierarchySelectionFlag;
 
@@ -11,6 +24,7 @@ pub fn properties_widget(
     ui: &mut Ui,
     entities: &EntitiesView,
     hierarchy: &mut ViewMut<Hierarchy>,
+    all_storages: &AllStoragesView,
     selection_flag: &mut ViewMut<HierarchySelectionFlag>,
 ) -> Response {
     ui.vertical(|ui| {
@@ -21,7 +35,7 @@ pub fn properties_widget(
                     .iter()
                     .filter(|e| selection_flag.get(*e).is_ok())
                     .for_each(|e| {
-                        render_section(ui, &e, hierarchy);
+                        render_section(ui, &e, all_storages, hierarchy);
                     });
             })
     })
@@ -31,24 +45,176 @@ pub fn properties_widget(
 fn render_section(
     ui: &mut Ui,
     entity: &EntityId,
+    all_storages: &AllStoragesView,
     hierarchy: &mut ViewMut<Hierarchy>,
 ) {
     Frame::none()
-        .inner_margin(Margin::same(20.0))
+        .inner_margin(Margin::same(10.0))
         .show(ui, |ui| {
             let h = match hierarchy.get(*entity) {
                 Ok(h) => h,
                 _ => return,
             };
 
-            ui.horizontal_centered(|ui| {
-                if ui.button(format!("{}", h.icon)).clicked() {
-                    h.title = "Hello!!!".to_owned()
-                }
+            ui.vertical(|ui| {
+                ui.horizontal(|ui| {
+                    let InnerResponse { inner, response } =
+                        ui.menu_button(format!("{}", h.icon), |ui| {
+                            ScrollArea::vertical()
+                                .auto_shrink([false; 2])
+                                .max_height(250.0)
+                                .id_source("inspector icons")
+                                .show(ui, |ui| {
+                                    ui.set_width(200.0);
+                                    ui.set_height(250.0);
+                                    ui.horizontal_wrapped(|ui| {
+                                        for c in 0xE900..=0xEB99 {
+                                            let c = char::from_u32(c).unwrap();
+                                            if ui
+                                                .button(String::from(c))
+                                                .clicked()
+                                            {
+                                                ui.close_menu();
+                                                return Some(c);
+                                            }
+                                        }
 
-                ui.add_space(4.0);
-                let response = ui.add(TextEdit::singleline(&mut h.title));
-                if response.changed() {}
+                                        None
+                                    })
+                                })
+                        });
+                    response.on_hover_cursor(
+                        engine::egui::CursorIcon::PointingHand,
+                    );
+
+                    if let Some(icon) = inner.and_then(|r| r.inner.inner) {
+                        h.icon = icon;
+                    }
+
+                    ui.add_space(4.0);
+                    ui.add(TextEdit::singleline(&mut h.title));
+                });
+
+                render_transform_component_if_required(ui, entity, all_storages)
             });
         });
+}
+
+fn render_transform_component_if_required(
+    ui: &mut Ui,
+    entity: &EntityId,
+    all_storages: &AllStoragesView,
+) {
+    let mut t = match all_storages.borrow::<ViewMut<Transform>>() {
+        Ok(t) => t,
+        _ => return,
+    };
+    let t: &mut ViewMut<Transform> = t.as_mut();
+    let transform: &mut Transform = match t.get(*entity) {
+        Ok(t) => t,
+        _ => return,
+    };
+
+    ui.vertical(|ui| {
+        ui.label("Trasnform");
+        ui.horizontal(|ui| {
+            ui.label("Position");
+            ui.add(
+                DragValue::new(&mut transform.position.x)
+                    .speed(0.01)
+                    .prefix("x: "),
+            );
+            ui.add(
+                DragValue::new(&mut transform.position.y)
+                    .speed(0.01)
+                    .prefix("y: "),
+            );
+            ui.add(
+                DragValue::new(&mut transform.position.z)
+                    .speed(0.01)
+                    .prefix("z: "),
+            );
+        });
+
+        ui.horizontal(|ui| {
+            ui.label("Scale");
+            ui.add(
+                DragValue::new(&mut transform.scale.x)
+                    .speed(0.01)
+                    .prefix("x: "),
+            );
+            ui.add(
+                DragValue::new(&mut transform.scale.y)
+                    .speed(0.01)
+                    .prefix("y: "),
+            );
+            ui.add(
+                DragValue::new(&mut transform.scale.z)
+                    .speed(0.01)
+                    .prefix("z: "),
+            );
+        });
+
+        let (mut r_x, mut r_y, mut r_z) = transform.rotation.euler_angles();
+        r_x = convert_euler_angle_to_degrees(r_x);
+        r_y = convert_euler_angle_to_degrees(r_y);
+        r_z = convert_euler_angle_to_degrees(r_z);
+        ui.horizontal(|ui| {
+            ui.label("Rotation");
+            ui.add(
+                DragValue::new(&mut r_x)
+                    .speed(1.0)
+                    .prefix("x: ")
+                    .suffix("°"),
+            );
+            ui.add(
+                DragValue::new(&mut r_y)
+                    .speed(1.0)
+                    .prefix("y: ")
+                    .suffix("°"),
+            );
+            ui.add(
+                DragValue::new(&mut r_z)
+                    .speed(1.0)
+                    .prefix("z: ")
+                    .suffix("°"),
+            );
+        });
+        r_x = r_x.to_radians();
+        r_y = r_y.to_radians();
+        r_z = r_z.to_radians();
+        transform.rotation = UnitQuaternion::from_euler_angles(r_x, r_y, r_z);
+    });
+}
+
+fn convert_euler_angle_to_degrees(angle: f32) -> f32 {
+    let rest = angle.to_degrees() % 360.0;
+    if rest < 0.0 {
+        rest + 360.0
+    } else {
+        rest
+    }
+}
+
+fn render_mesh_if_required(
+    ui: &mut Ui,
+    entity: &EntityId,
+    all_storages: &AllStoragesView,
+) {
+    let mut m = match all_storages.borrow::<ViewMut<MeshComponent>>() {
+        Ok(t) => t,
+        _ => return,
+    };
+    let m: &mut ViewMut<MeshComponent> = m.as_mut();
+    let mesh: &mut MeshComponent = match m.get(*entity) {
+        Ok(m) => m,
+        _ => return,
+    };
+
+    /*let mut res = mesh.0.;
+
+    ui.horizontal(|ui| {
+        ui.label("Mesh");
+        ui.add(TextEdit::singleline(&mut res))
+        });*/
 }

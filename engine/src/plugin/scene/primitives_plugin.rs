@@ -17,18 +17,16 @@ pub struct PrimitivesPlugin;
 impl Pluggable for PrimitivesPlugin {
     fn configure(&self, app: &mut App) {
         // Borrow the server in order to insert all the primitive meshes.
-        let mut a_server = match app
-            .world
-            .borrow::<UniqueViewMut<AssetServer>>()
-        {
-            Ok(s) => s,
-            Err(_) => {
-                println!(
+        let mut a_server =
+            match app.world.borrow::<UniqueViewMut<AssetServer>>() {
+                Ok(s) => s,
+                Err(_) => {
+                    println!(
                     "Primitives are not configured, AssetServer not configured"
                 );
-                return;
-            }
-        };
+                    return;
+                }
+            };
 
         let gpu = match app.world.borrow::<UniqueView<AbstractGpu>>() {
             Ok(s) => s,
