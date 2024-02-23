@@ -5,11 +5,15 @@ use shipyard::{EntitiesView, Get, IntoIter, UniqueView, UniqueViewMut, View};
 use crate::{
     graphics::UniformBuffer,
     scene::{
-        asset_server::MeshResourceID, camera::Camera, components::Transform, projection::Projection, scene::SceneTarget, scene_state::SceneState
+        asset_server::MeshResourceID, camera::Camera, components::Transform,
+        projection::Projection, scene::SceneTarget, scene_state::SceneState,
     },
 };
 
-use super::{components::MeshComponent, gpu::AbstractGpu, BindGroup, BufferUsage, Texture, VertexBuffer};
+use super::{
+    components::MeshComponent, gpu::AbstractGpu, BindGroup, BufferUsage,
+    Texture, VertexBuffer,
+};
 
 pub struct Scene {
     /// Contains a debug tag.
@@ -62,10 +66,26 @@ pub(crate) fn sync_main_scene_dynamic_entities_transform(
     mut scenes: UniqueViewMut<SceneState>,
 ) {
     // Main scene.
-    sync_scene(&mut scenes.main, None, &gpu, &entities, &transforms, &meshes, &scene_targets);
+    sync_scene(
+        &mut scenes.main,
+        None,
+        &gpu,
+        &entities,
+        &transforms,
+        &meshes,
+        &scene_targets,
+    );
     // Sub scenes.
     for (id, scene) in &mut scenes.sub_scenes {
-        sync_scene(scene, Some(id), &gpu, &entities, &transforms, &meshes, &scene_targets);
+        sync_scene(
+            scene,
+            Some(id),
+            &gpu,
+            &entities,
+            &transforms,
+            &meshes,
+            &scene_targets,
+        );
     }
 }
 
@@ -78,7 +98,8 @@ fn sync_scene(
     meshes: &View<MeshComponent>,
     scene_targets: &View<SceneTarget>,
 ) {
-    let mut scene_raw_transforms: AHashMap<MeshResourceID, Vec<u8>> = AHashMap::new();
+    let mut scene_raw_transforms: AHashMap<MeshResourceID, Vec<u8>> =
+        AHashMap::new();
 
     for ent in meshes.iter() {
         scene
@@ -125,7 +146,7 @@ fn sync_scene(
                             vec
                         });
                 }
-            },
+            }
 
             Ok(SceneTarget::SubScene(s)) => {
                 if let Some(scene_id) = scene_id {
@@ -146,9 +167,9 @@ fn sync_scene(
                                 vec.extend_from_slice(a);
                                 vec
                             });
-                    } 
+                    }
                 }
-            },
+            }
         }
     }
 
