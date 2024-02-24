@@ -13,8 +13,8 @@ use engine::{
     },
 };
 use shipyard::{
-    EntitiesViewMut, EntityId, IntoIter, Unique, UniqueView,
-    UniqueViewMut, View, ViewMut,
+    EntitiesViewMut, EntityId, IntoIter, Unique, UniqueView, UniqueViewMut,
+    View, ViewMut,
 };
 
 use crate::camera::EditorCamera;
@@ -38,50 +38,103 @@ impl Pluggable for WorkbenchScenePlugin {
         let axis = Unit::new_normalize(Vector3::new(1.0, 2.0, 3.0));
         let rot = UnitQuaternion::from_axis_angle(&axis, 0.0);
 
-        let root_cube = app.world.add_entity((
+        /*let root_cube = app.world.add_entity((
+        MeshComponent(CUBE_MESH_RESOURCE_ID),
+        Transform {
+            position: Vector3::new(0.0, 0.0, -10.0),
+            rotation: rot,
+            scale: Vector3::new(1.0, 1.0, 1.0),
+        },
+        SceneTarget::SubScene("LandscapeScene".to_string()),
+        Hierarchy::new(
+            crate::gui::icons::MESH_CUBE,
+            "Root cube".to_owned(),
+        ),
+        ));*/
+
+        let c_1 = app.world.add_entity((
             MeshComponent(CUBE_MESH_RESOURCE_ID),
             Transform {
-                position: Vector3::new(0.0, 0.0, -10.0),
+                position: Vector3::new(0.0, 0.0, 0.0),
                 rotation: rot,
                 scale: Vector3::new(1.0, 1.0, 1.0),
             },
-            SceneTarget::SubScene("LandscapeScene".to_string()),
+            SceneTarget::SubScene("WorkbenchScene".to_string()),
             Hierarchy::new(
-                crate::gui::icons::MESH_CUBE,
-                "Root cube".to_owned(),
+                crate::gui::icons::MESH_UVSPHERE,
+                "Cube 1".to_owned(),
             ),
         ));
 
-        let mut last_ent = root_cube;
-        let mut paris: Vec<(EntityId, EntityId)> = Vec::new();
+        let c_2 = app.world.add_entity((
+            MeshComponent(CUBE_MESH_RESOURCE_ID),
+            Transform {
+                position: Vector3::new(5.0, 0.0, 0.0),
+                rotation: rot,
+                scale: Vector3::new(1.0, 1.0, 1.0),
+            },
+            SceneTarget::SubScene("WorkbenchScene".to_string()),
+            Hierarchy::new(
+                crate::gui::icons::MESH_UVSPHERE,
+                "Cube 2".to_owned(),
+            ),
+        ));
 
-        for i in 0..20 {
-            let current = app.world.add_entity((
-                MeshComponent(CUBE_MESH_RESOURCE_ID),
-                Transform {
-                    position: Vector3::new(i as f32 * 5.0, 0.0, -10.0),
-                    rotation: rot,
-                    scale: Vector3::new(1.0, 1.0, 1.0),
-                },
-                SceneTarget::SubScene("WorkbenchScene".to_string()),
-                Hierarchy::new(
-                    crate::gui::icons::MESH_UVSPHERE,
-                    "Sub".to_owned(),
-                ),
-            ));
+        let c_3 = app.world.add_entity((
+            MeshComponent(CUBE_MESH_RESOURCE_ID),
+            Transform {
+                position: Vector3::new(10.0, 0.0, 0.0),
+                rotation: rot,
+                scale: Vector3::new(1.0, 1.0, 1.0),
+            },
+            SceneTarget::SubScene("WorkbenchScene".to_string()),
+            Hierarchy::new(
+                crate::gui::icons::MESH_UVSPHERE,
+                "Cube 3".to_owned(),
+            ),
+        ));
 
-            paris.push((last_ent, current));
-            last_ent = current;
-        }
+        let c_4 = app.world.add_entity((
+            MeshComponent(CUBE_MESH_RESOURCE_ID),
+            Transform {
+                position: Vector3::new(15.0, 0.0, 0.0),
+                rotation: rot,
+                scale: Vector3::new(1.0, 1.0, 1.0),
+            },
+            SceneTarget::SubScene("WorkbenchScene".to_string()),
+            Hierarchy::new(
+                crate::gui::icons::MESH_UVSPHERE,
+                "Cube 4".to_owned(),
+            ),
+        ));
+
+        let c_5 = app.world.add_entity((
+            MeshComponent(CUBE_MESH_RESOURCE_ID),
+            Transform {
+                position: Vector3::new(20.0, 0.0, 0.0),
+                rotation: rot,
+                scale: Vector3::new(1.0, 1.0, 1.0),
+            },
+            SceneTarget::SubScene("WorkbenchScene".to_string()),
+            Hierarchy::new(
+                crate::gui::icons::MESH_UVSPHERE,
+                "Cube 4".to_owned(),
+            ),
+        ));
 
         {
             let mut h = app.world.borrow::<ViewMut<Hierarchy>>().unwrap();
-            for (r, c) in paris {
-                add_child(r, c, &mut h);
-            }
+            add_child(c_1, c_2, &mut h);
+            add_child(c_2, c_3, &mut h);
+            add_child(c_3, c_4, &mut h);
+            add_child(c_4, c_5, &mut h);
+
+            /*for (r, c) in paris {
+            add_child(r, c, &mut h);
+            }*/
         }
 
-        let mut created_entities = Vec::new();
+        /*let mut created_entities = Vec::new();
 
         for i in 0..1 {
             for j in 0..1 {
@@ -108,7 +161,7 @@ impl Pluggable for WorkbenchScenePlugin {
                     created_entities.push(e);
                 }
             }
-        }
+            }*/
 
         app.schedule(engine::schedule::Schedule::Update, |world| {
             world.run(rotate_landscape_cube);
@@ -125,7 +178,7 @@ fn rotate_landscape_cube(
 ) {
     for (t, _) in (&mut transforms, &target)
         .iter()
-        .filter(|(_, t)| matches!(t, SceneTarget::SubScene(id) if id == "LandscapeScene"))
+        .filter(|(_, t)| matches!(t, SceneTarget::SubScene(id) if id == "WorkbenchScene"))
     {
         t.rotation = angle_to_quaternion(angle.angle, Vector3::y());
     }

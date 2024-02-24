@@ -1,12 +1,21 @@
+use std::cmp::Ordering;
+
 use ahash::AHashMap;
-use nalgebra::Matrix;
-use shipyard::{EntitiesView, Get, IntoIter, UniqueView, UniqueViewMut, View};
+use nalgebra::{Matrix, Matrix4};
+use shipyard::{
+    EntitiesView, EntityId, Get, IntoIter, UniqueView, UniqueViewMut, View,
+};
 
 use crate::{
     graphics::UniformBuffer,
     scene::{
-        asset_server::MeshResourceID, camera::Camera, components::Transform,
-        projection::Projection, scene::SceneTarget, scene_state::SceneState,
+        asset_server::MeshResourceID,
+        camera::Camera,
+        components::Transform,
+        hierarchy::{self, Hierarchy},
+        projection::Projection,
+        scene::SceneTarget,
+        scene_state::SceneState,
     },
 };
 
@@ -64,6 +73,7 @@ pub(crate) fn sync_main_scene_dynamic_entities_transform(
     scene_targets: View<SceneTarget>,
     meshes: View<MeshComponent>,
     mut scenes: UniqueViewMut<SceneState>,
+    hierarchy: View<Hierarchy>,
 ) {
     // Main scene.
     sync_scene(
@@ -74,6 +84,7 @@ pub(crate) fn sync_main_scene_dynamic_entities_transform(
         &transforms,
         &meshes,
         &scene_targets,
+        &hierarchy,
     );
     // Sub scenes.
     for (id, scene) in &mut scenes.sub_scenes {
@@ -85,6 +96,7 @@ pub(crate) fn sync_main_scene_dynamic_entities_transform(
             &transforms,
             &meshes,
             &scene_targets,
+            &hierarchy,
         );
     }
 }
@@ -97,6 +109,7 @@ fn sync_scene(
     transforms: &View<Transform>,
     meshes: &View<MeshComponent>,
     scene_targets: &View<SceneTarget>,
+    hierarchy: &View<Hierarchy>,
 ) {
     let mut scene_raw_transforms: AHashMap<MeshResourceID, Vec<u8>> =
         AHashMap::new();
@@ -116,17 +129,40 @@ fn sync_scene(
             });
     }
 
-    for e in entities.iter() {
-        let mesh = match meshes.get(e) {
+    // In order to apply hierarchy transformation the entities must be
+    // ordered by level, so the children can apply their final parent
+    // transformation.
+    let mut sorted_vec = entities.iter().collect::<Vec<EntityId>>();
+    sorted_vec.sort_by(|a, b| {
+        // If `a` does not have hierachy send it to the end of the
+        // vector.
+        let a_level = match hierarchy.get(*a) {
+            Ok(l) => l,
+            _ => return Ordering::Greater,
+        };
+        // Keep it on the left size just to compare it with the next item.
+        let b_level = match hierarchy.get(*b) {
+            Ok(l) => l,
+            _ => return Ordering::Less,
+        };
+
+        a_level.level.cmp(&b_level.level)
+    });
+
+    let mut accum_transforms: AHashMap<&EntityId, Matrix4<f32>> =
+        AHashMap::new();
+
+    for entity_id in sorted_vec.iter() {
+        let mesh = match meshes.get(*entity_id) {
             Ok(m) => m,
             Err(_) => continue,
         };
-        let transform = match transforms.get(e) {
+        let transform = match transforms.get(*entity_id) {
             Ok(t) => t,
             Err(_) => continue,
         };
 
-        match scene_targets.get(e) {
+        match scene_targets.get(*entity_id) {
             // If it does not contain the component it must be added to the
             // main scene.
             Ok(SceneTarget::Main) | Err(_) => {
@@ -134,15 +170,52 @@ fn sync_scene(
                     scene_raw_transforms
                         .entry(**mesh)
                         .and_modify(|e| {
+                            // Get parent transform matrix.
+                            if let Ok(h) = hierarchy.get(*entity_id) {
+                                if let Some(parent_id) = h.parent {
+                                    if let Some(parent_transform) =
+                                        accum_transforms.get(&parent_id)
+                                    {
+                                        let carry_transform = parent_transform
+                                            * transform.as_matrix();
+                                        // If it does not have hierarchy apply normal transform.
+                                        let data: [[f32; 4]; 4] =
+                                            carry_transform.into();
+                                        let a: &[u8] =
+                                            bytemuck::cast_slice(&data);
+                                        e.extend_from_slice(a);
+                                        accum_transforms
+                                            .insert(entity_id, carry_transform);
+                                        return;
+                                    }
+                                    // If the parent is not there something wrong happen
+                                    // as the entities are sorted by level.
+                                }
+                            }
+
+                            // If it does not have hierarchy apply normal transform.
+                            // There is not need to insert the entity in the trasnformation
+                            // accumulation because if the code reach this point it means
+                            // that it is a free entity. As the entities are sorted the
+                            // parent must be in the accum.
                             let data = transform.as_matrix_array();
                             let a: &[u8] = bytemuck::cast_slice(&data);
                             e.extend_from_slice(a);
+
+                            // Insert the entity in the accumulator most likely it has
+                            // children.
+                            accum_transforms
+                                .insert(entity_id, transform.as_matrix());
                         })
                         .or_insert_with(|| {
                             let mut vec = Vec::new();
                             let data = transform.as_matrix_array();
                             let a: &[u8] = bytemuck::cast_slice(&data);
                             vec.extend_from_slice(a);
+
+                            accum_transforms
+                                .insert(entity_id, transform.as_matrix());
+
                             vec
                         });
                 }
@@ -156,6 +229,43 @@ fn sync_scene(
                         scene_raw_transforms
                             .entry(**mesh)
                             .and_modify(|e| {
+                                // Get parent transform matrix.
+                                if let Ok(h) = hierarchy.get(*entity_id) {
+                                    if let Some(parent_id) = h.parent {
+                                        if let Some(parent_transform) =
+                                            accum_transforms.get(&parent_id)
+                                        {
+                                            let carry_transform =
+                                                parent_transform
+                                                    * transform.as_matrix();
+                                            // If it does not have hierarchy apply normal transform.
+                                            let data: [[f32; 4]; 4] =
+                                                carry_transform.into();
+                                            let a: &[u8] =
+                                                bytemuck::cast_slice(&data);
+                                            e.extend_from_slice(a);
+                                            accum_transforms.insert(
+                                                entity_id,
+                                                carry_transform,
+                                            );
+                                            return;
+                                        }
+                                        // If the parent is not there something wrong happen
+                                        // as the entities are sorted by level.
+                                    }
+                                    // Insert the entity in the accumulator most likely it has
+                                    // children.
+                                    accum_transforms.insert(
+                                        entity_id,
+                                        transform.as_matrix(),
+                                    );
+                                }
+
+                                // If it does not have hierarchy apply normal transform.
+                                // There is not need to insert the entity in the trasnformation
+                                // accumulation because if the code reach this point it means
+                                // that it is a free entity. As the entities are sorted the
+                                // parent must be in the accum.
                                 let data = transform.as_matrix_array();
                                 let a: &[u8] = bytemuck::cast_slice(&data);
                                 e.extend_from_slice(a);
@@ -165,6 +275,10 @@ fn sync_scene(
                                 let data = transform.as_matrix_array();
                                 let a: &[u8] = bytemuck::cast_slice(&data);
                                 vec.extend_from_slice(a);
+
+                                accum_transforms
+                                    .insert(entity_id, transform.as_matrix());
+
                                 vec
                             });
                     }
@@ -180,3 +294,27 @@ fn sync_scene(
         });
     }
 }
+
+/*
+// Get parent transform matrix.
+if let Ok(h) = hierarchy.get(*entity_id) {
+    if let Some(parent_id) = h.parent {
+        if let Ok(parent_transform) =
+            transforms.get(parent_id)
+        {
+            // If it does not have hierarchy apply normal transform.
+            let data: [[f32; 4]; 4] =
+                (parent_transform.as_matrix()
+                    * transform.as_matrix())
+                .into();
+            let a: &[u8] =
+                bytemuck::cast_slice(&data);
+            e.extend_from_slice(a);
+            return;
+        }
+    }
+}
+
+let data = transform.as_matrix_array();
+let a: &[u8] = bytemuck::cast_slice(&data);
+e.extend_from_slice(a)*/
