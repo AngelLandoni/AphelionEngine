@@ -164,7 +164,7 @@ impl Pluggable for WorkbenchScenePlugin {
             }*/
 
         app.schedule(engine::schedule::Schedule::Update, |world| {
-            world.run(rotate_landscape_cube);
+            //world.run(rotate_landscape_cube);
         })
     }
 }

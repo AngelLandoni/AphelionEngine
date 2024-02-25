@@ -1,5 +1,3 @@
-
-
 use engine::{
     egui::{
         DragValue, Frame, InnerResponse, Margin, Response, ScrollArea,
@@ -7,14 +5,10 @@ use engine::{
     },
     graphics::components::MeshComponent,
     nalgebra::UnitQuaternion,
-    scene::{
-        components::Transform,
-        hierarchy::{Hierarchy},
-    },
+    scene::{components::Transform, hierarchy::Hierarchy},
 };
 use shipyard::{
-    AllStoragesView, EntitiesView, EntityId, Get, IntoIter,
-    ViewMut,
+    AllStoragesView, EntitiesView, EntityId, Get, IntoIter, ViewMut,
 };
 
 use super::hierarchy_widget::HierarchySelectionFlag;
@@ -24,8 +18,8 @@ pub fn properties_widget(
     ui: &mut Ui,
     entities: &EntitiesView,
     hierarchy: &mut ViewMut<Hierarchy>,
-    all_storages: &AllStoragesView,
     selection_flag: &mut ViewMut<HierarchySelectionFlag>,
+    transforms: &mut ViewMut<Transform>,
 ) -> Response {
     ui.vertical(|ui| {
         ScrollArea::vertical()
@@ -35,7 +29,7 @@ pub fn properties_widget(
                     .iter()
                     .filter(|e| selection_flag.get(*e).is_ok())
                     .for_each(|e| {
-                        render_section(ui, &e, all_storages, hierarchy);
+                        render_section(ui, &e, hierarchy, transforms);
                     });
             })
     })
@@ -45,8 +39,8 @@ pub fn properties_widget(
 fn render_section(
     ui: &mut Ui,
     entity: &EntityId,
-    all_storages: &AllStoragesView,
     hierarchy: &mut ViewMut<Hierarchy>,
+    transforms: &mut ViewMut<Transform>,
 ) {
     Frame::none()
         .inner_margin(Margin::same(10.0))
@@ -95,7 +89,7 @@ fn render_section(
                     ui.add(TextEdit::singleline(&mut h.title));
                 });
 
-                render_transform_component_if_required(ui, entity, all_storages)
+                render_transform_component_if_required(ui, entity, transforms)
             });
         });
 }
@@ -103,14 +97,9 @@ fn render_section(
 fn render_transform_component_if_required(
     ui: &mut Ui,
     entity: &EntityId,
-    all_storages: &AllStoragesView,
+    transforms: &mut ViewMut<Transform>,
 ) {
-    let mut t = match all_storages.borrow::<ViewMut<Transform>>() {
-        Ok(t) => t,
-        _ => return,
-    };
-    let t: &mut ViewMut<Transform> = t.as_mut();
-    let transform: &mut Transform = match t.get(*entity) {
+    let transform: &mut Transform = match transforms.get(*entity) {
         Ok(t) => t,
         _ => return,
     };
