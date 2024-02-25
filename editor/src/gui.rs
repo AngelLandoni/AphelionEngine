@@ -1,29 +1,32 @@
 pub mod colors;
+pub mod gizmo;
 pub mod icons;
 pub mod split_panel_tree;
 pub mod style;
 pub mod widgets;
 
+use egui_gizmo::{Gizmo, GizmoMode};
 use shipyard::{
-    AllStoragesView, AllStoragesViewMut,
-    EntitiesView, SparseSet, Unique, UniqueView,
-    UniqueViewMut, ViewMut, World,
+    AllStoragesView, AllStoragesViewMut, EntitiesView, IntoIter, SparseSet,
+    Unique, UniqueView, UniqueViewMut, View, ViewMut, World,
 };
 use std::{
-    borrow::Borrow,
+    borrow::{Borrow, BorrowMut},
     ops::{Deref, DerefMut},
 };
 
 use engine::{
     app::App,
     egui::{Image, Margin, Rect, Response, Rounding, TextureId, Ui, Widget},
-    graphics::gpu::AbstractGpu,
+    graphics::{gpu::AbstractGpu, scene::Scene},
+    nalgebra::Vector3,
     plugin::{
         graphics::egui::{EguiContext, EguiRenderer},
         Pluggable,
     },
     scene::{
-        hierarchy::Hierarchy, projection::Projection, scene_state::SceneState,
+        components::Transform, hierarchy::Hierarchy, projection::Projection,
+        scene_state::SceneState,
     },
     schedule::Schedule,
     wgpu_graphics::{buffer::WGPUTexture, gpu::Gpu},
@@ -252,6 +255,11 @@ fn render_gui_system(world: &World) {
     let mut hierarchy = world.borrow::<ViewMut<Hierarchy>>().unwrap();
     let gui_resources = world.borrow::<UniqueView<GuiResources>>().unwrap();
 
+    let mut transforms = world.borrow::<ViewMut<Transform>>().unwrap();
+    let scene = world.borrow::<UniqueView<SceneState>>().unwrap();
+    // TODO(Angel): Try to not hardcode this please.
+    let scene = scene.sub_scenes.get("WorkbenchScene").unwrap();
+
     engine::egui::CentralPanel::default()
         .frame(engine::egui::Frame {
             inner_margin: Margin::ZERO,
@@ -276,19 +284,25 @@ fn render_gui_system(world: &World) {
                         ui,
                         gui_resources.workbench_texture_id,
                         &viewport_rect.unwrap_or(Rect::NOTHING),
+                        &scene,
+                        &mut transforms,
+                        &entity_selection_flags,
                     ),
                     "GeneralLogs" => ui.label("Logs"),
                     "Properties" => properties_widget(
                         ui,
                         &entities,
                         &mut hierarchy,
-                        &all_storages,
                         &mut entity_selection_flags,
+                        &mut transforms,
                     ),
                     "LandscapeEditor" => viewport(
                         ui,
                         gui_resources.landscape_texture_id,
                         &landscape_viewport_rect.unwrap_or(Rect::NOTHING),
+                        scene,
+                        &mut transforms,
+                        &entity_selection_flags,
                     ),
                     "EntityHierarchy" => render_hierarchy_widget(
                         ui,
@@ -306,7 +320,14 @@ fn render_gui_system(world: &World) {
         });
 }
 
-fn viewport(ui: &mut Ui, texture_id: TextureId, size: &Rect) -> Response {
+fn viewport(
+    ui: &mut Ui,
+    texture_id: TextureId,
+    size: &Rect,
+    scene: &Scene,
+    transforms: &mut ViewMut<Transform>,
+    selections: &ViewMut<HierarchySelectionFlag>,
+) -> Response {
     let image = Image::new((
         texture_id,
         engine::egui::Vec2::new(size.width(), size.height() - 25.0),
@@ -318,7 +339,114 @@ fn viewport(ui: &mut Ui, texture_id: TextureId, size: &Rect) -> Response {
         se: 4.0,
     });
 
-    ui.add(image)
+    let response = ui.add(image);
+
+    let view_matrix = scene.camera.view_matrix();
+    let view_matrix = egui_gizmo::mint::ColumnMatrix4 {
+        x: egui_gizmo::mint::Vector4 {
+            x: view_matrix.column(0).x,
+            y: view_matrix.column(0).y,
+            z: view_matrix.column(0).z,
+            w: view_matrix.column(0).w,
+        },
+        y: egui_gizmo::mint::Vector4 {
+            x: view_matrix.column(1).x,
+            y: view_matrix.column(1).y,
+            z: view_matrix.column(1).z,
+            w: view_matrix.column(1).w,
+        },
+        z: egui_gizmo::mint::Vector4 {
+            x: view_matrix.column(2).x,
+            y: view_matrix.column(2).y,
+            z: view_matrix.column(2).z,
+            w: view_matrix.column(2).w,
+        },
+        w: egui_gizmo::mint::Vector4 {
+            x: view_matrix.column(3).x,
+            y: view_matrix.column(3).y,
+            z: view_matrix.column(3).z,
+            w: view_matrix.column(3).w,
+        },
+    };
+
+    let proj_matrix = scene.projection.matrix();
+    let proj_matrix = egui_gizmo::mint::ColumnMatrix4 {
+        x: egui_gizmo::mint::Vector4 {
+            x: proj_matrix.column(0).x,
+            y: proj_matrix.column(0).y,
+            z: proj_matrix.column(0).z,
+            w: proj_matrix.column(0).w,
+        },
+        y: egui_gizmo::mint::Vector4 {
+            x: proj_matrix.column(1).x,
+            y: proj_matrix.column(1).y,
+            z: proj_matrix.column(1).z,
+            w: proj_matrix.column(1).w,
+        },
+        z: egui_gizmo::mint::Vector4 {
+            x: proj_matrix.column(2).x,
+            y: proj_matrix.column(2).y,
+            z: proj_matrix.column(2).z,
+            w: proj_matrix.column(2).w,
+        },
+        w: egui_gizmo::mint::Vector4 {
+            x: proj_matrix.column(3).x,
+            y: proj_matrix.column(3).y,
+            z: proj_matrix.column(3).z,
+            w: proj_matrix.column(3).w,
+        },
+    };
+
+    for (t, s) in (transforms, selections).iter() {
+        let model_matrix = t.as_matrix();
+        let model_matrix = egui_gizmo::mint::ColumnMatrix4 {
+            x: egui_gizmo::mint::Vector4 {
+                x: model_matrix.column(0).x,
+                y: model_matrix.column(0).y,
+                z: model_matrix.column(0).z,
+                w: model_matrix.column(0).w,
+            },
+            y: egui_gizmo::mint::Vector4 {
+                x: model_matrix.column(1).x,
+                y: model_matrix.column(1).y,
+                z: model_matrix.column(1).z,
+                w: model_matrix.column(1).w,
+            },
+            z: egui_gizmo::mint::Vector4 {
+                x: model_matrix.column(2).x,
+                y: model_matrix.column(2).y,
+                z: model_matrix.column(2).z,
+                w: model_matrix.column(2).w,
+            },
+            w: egui_gizmo::mint::Vector4 {
+                x: model_matrix.column(3).x,
+                y: model_matrix.column(3).y,
+                z: model_matrix.column(3).z,
+                w: model_matrix.column(3).w,
+            },
+        };
+
+        let gizmo = Gizmo::new("My gizmo")
+            .view_matrix(view_matrix)
+            .projection_matrix(proj_matrix)
+            .model_matrix(model_matrix)
+            .mode(GizmoMode::Translate);
+
+        if let Some(response) = gizmo.interact(ui) {
+            t.position = Vector3::new(
+                response.translation.x,
+                response.translation.y,
+                response.translation.z,
+            );
+            t.scale = Vector3::new(
+                response.scale.x,
+                response.scale.y,
+                response.scale.z,
+            );
+        }
+    }
+
+    response
 }
 
 fn mantain_removed_entities_system(mut all_storages: AllStoragesViewMut) {
