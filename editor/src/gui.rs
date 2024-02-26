@@ -8,10 +8,10 @@ pub mod widgets;
 use egui_gizmo::{Gizmo, GizmoMode};
 use shipyard::{
     AllStoragesView, AllStoragesViewMut, EntitiesView, IntoIter, SparseSet,
-    Unique, UniqueView, UniqueViewMut, View, ViewMut, World,
+    Unique, UniqueView, UniqueViewMut, ViewMut, World,
 };
 use std::{
-    borrow::{Borrow, BorrowMut},
+    borrow::Borrow,
     ops::{Deref, DerefMut},
 };
 
@@ -19,7 +19,7 @@ use engine::{
     app::App,
     egui::{Image, Margin, Rect, Response, Rounding, TextureId, Ui, Widget},
     graphics::{gpu::AbstractGpu, scene::Scene},
-    nalgebra::Vector3,
+    nalgebra::{Matrix4, Vector3},
     plugin::{
         graphics::egui::{EguiContext, EguiRenderer},
         Pluggable,
@@ -238,7 +238,7 @@ fn configure_panels(tree: &mut SplitPanelTree) {
 /// Renders the UI based on the Panel states.
 fn render_gui_system(world: &World) {
     let entities = world.borrow::<EntitiesView>().unwrap();
-    let all_storages = world.borrow::<AllStoragesView>().unwrap();
+    let _all_storages = world.borrow::<AllStoragesView>().unwrap();
     let egui = world.borrow::<UniqueView<EguiContext>>().unwrap();
     let mut panel_state =
         world.borrow::<UniqueViewMut<GuiPanelState>>().unwrap();
@@ -284,7 +284,7 @@ fn render_gui_system(world: &World) {
                         ui,
                         gui_resources.workbench_texture_id,
                         &viewport_rect.unwrap_or(Rect::NOTHING),
-                        &scene,
+                        scene,
                         &mut transforms,
                         &entity_selection_flags,
                     ),
@@ -341,92 +341,13 @@ fn viewport(
 
     let response = ui.add(image);
 
-    let view_matrix = scene.camera.view_matrix();
-    let view_matrix = egui_gizmo::mint::ColumnMatrix4 {
-        x: egui_gizmo::mint::Vector4 {
-            x: view_matrix.column(0).x,
-            y: view_matrix.column(0).y,
-            z: view_matrix.column(0).z,
-            w: view_matrix.column(0).w,
-        },
-        y: egui_gizmo::mint::Vector4 {
-            x: view_matrix.column(1).x,
-            y: view_matrix.column(1).y,
-            z: view_matrix.column(1).z,
-            w: view_matrix.column(1).w,
-        },
-        z: egui_gizmo::mint::Vector4 {
-            x: view_matrix.column(2).x,
-            y: view_matrix.column(2).y,
-            z: view_matrix.column(2).z,
-            w: view_matrix.column(2).w,
-        },
-        w: egui_gizmo::mint::Vector4 {
-            x: view_matrix.column(3).x,
-            y: view_matrix.column(3).y,
-            z: view_matrix.column(3).z,
-            w: view_matrix.column(3).w,
-        },
-    };
+    let view_matrix = convert_nalgebra_matrix4(&scene.camera.view_matrix());
+    let proj_matrix = convert_nalgebra_matrix4(&scene.projection.matrix());
 
-    let proj_matrix = scene.projection.matrix();
-    let proj_matrix = egui_gizmo::mint::ColumnMatrix4 {
-        x: egui_gizmo::mint::Vector4 {
-            x: proj_matrix.column(0).x,
-            y: proj_matrix.column(0).y,
-            z: proj_matrix.column(0).z,
-            w: proj_matrix.column(0).w,
-        },
-        y: egui_gizmo::mint::Vector4 {
-            x: proj_matrix.column(1).x,
-            y: proj_matrix.column(1).y,
-            z: proj_matrix.column(1).z,
-            w: proj_matrix.column(1).w,
-        },
-        z: egui_gizmo::mint::Vector4 {
-            x: proj_matrix.column(2).x,
-            y: proj_matrix.column(2).y,
-            z: proj_matrix.column(2).z,
-            w: proj_matrix.column(2).w,
-        },
-        w: egui_gizmo::mint::Vector4 {
-            x: proj_matrix.column(3).x,
-            y: proj_matrix.column(3).y,
-            z: proj_matrix.column(3).z,
-            w: proj_matrix.column(3).w,
-        },
-    };
+    for (t, _s) in (transforms, selections).iter() {
+        let model_matrix = convert_nalgebra_matrix4(&t.as_matrix());
 
-    for (t, s) in (transforms, selections).iter() {
-        let model_matrix = t.as_matrix();
-        let model_matrix = egui_gizmo::mint::ColumnMatrix4 {
-            x: egui_gizmo::mint::Vector4 {
-                x: model_matrix.column(0).x,
-                y: model_matrix.column(0).y,
-                z: model_matrix.column(0).z,
-                w: model_matrix.column(0).w,
-            },
-            y: egui_gizmo::mint::Vector4 {
-                x: model_matrix.column(1).x,
-                y: model_matrix.column(1).y,
-                z: model_matrix.column(1).z,
-                w: model_matrix.column(1).w,
-            },
-            z: egui_gizmo::mint::Vector4 {
-                x: model_matrix.column(2).x,
-                y: model_matrix.column(2).y,
-                z: model_matrix.column(2).z,
-                w: model_matrix.column(2).w,
-            },
-            w: egui_gizmo::mint::Vector4 {
-                x: model_matrix.column(3).x,
-                y: model_matrix.column(3).y,
-                z: model_matrix.column(3).z,
-                w: model_matrix.column(3).w,
-            },
-        };
-
-        let gizmo = Gizmo::new("My gizmo")
+        let gizmo = Gizmo::new("Editor gizmo")
             .view_matrix(view_matrix)
             .projection_matrix(proj_matrix)
             .model_matrix(model_matrix)
@@ -451,4 +372,35 @@ fn viewport(
 
 fn mantain_removed_entities_system(mut all_storages: AllStoragesViewMut) {
     all_storages.delete_any::<SparseSet<HierarchyDeletionFlag>>();
+}
+
+fn convert_nalgebra_matrix4(
+    matrix: &Matrix4<f32>,
+) -> egui_gizmo::mint::ColumnMatrix4<f32> {
+    egui_gizmo::mint::ColumnMatrix4 {
+        x: egui_gizmo::mint::Vector4 {
+            x: matrix.column(0).x,
+            y: matrix.column(0).y,
+            z: matrix.column(0).z,
+            w: matrix.column(0).w,
+        },
+        y: egui_gizmo::mint::Vector4 {
+            x: matrix.column(1).x,
+            y: matrix.column(1).y,
+            z: matrix.column(1).z,
+            w: matrix.column(1).w,
+        },
+        z: egui_gizmo::mint::Vector4 {
+            x: matrix.column(2).x,
+            y: matrix.column(2).y,
+            z: matrix.column(2).z,
+            w: matrix.column(2).w,
+        },
+        w: egui_gizmo::mint::Vector4 {
+            x: matrix.column(3).x,
+            y: matrix.column(3).y,
+            z: matrix.column(3).z,
+            w: matrix.column(3).w,
+        },
+    }
 }

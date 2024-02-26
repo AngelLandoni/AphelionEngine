@@ -13,7 +13,7 @@ use engine::{
     },
 };
 use shipyard::{
-    EntitiesViewMut, EntityId, IntoIter, Unique, UniqueView, UniqueViewMut,
+    EntitiesViewMut, IntoIter, Unique, UniqueView, UniqueViewMut,
     View, ViewMut,
 };
 
@@ -163,7 +163,7 @@ impl Pluggable for WorkbenchScenePlugin {
             }
             }*/
 
-        app.schedule(engine::schedule::Schedule::Update, |world| {
+        app.schedule(engine::schedule::Schedule::Update, |_world| {
             //world.run(rotate_landscape_cube);
         })
     }
