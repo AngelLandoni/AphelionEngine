@@ -1,4 +1,7 @@
-use shipyard::{Component, EntityId, Get, ViewMut};
+use nalgebra::Matrix4;
+use shipyard::{Component, EntityId, Get, View, ViewMut};
+
+use super::components::Transform;
 
 #[derive(Component)]
 pub struct Hierarchy {
@@ -119,4 +122,60 @@ pub(crate) fn sync_children_level(
             sync_children_level(child, hierarchy);
         }
     }
+}
+
+/// Returns the global transformation, which combines the transformation
+/// of the entity with its parent transformations. If the entity has no
+/// parent, it returns the transformation matrix of the entity itself.
+pub fn get_global_transform_matrix_of_entity(
+    entity_id: EntityId,
+    hierarchy: &View<Hierarchy>,
+    transforms: &View<Transform>,
+) -> Option<Matrix4<f32>> {
+    // Get the transformation of the target entity.
+    let initial_model_matrix = match transforms.get(entity_id) {
+        Ok(m) => m,
+        _ => return None,
+    };
+
+    Some(get_parent_transformation_releation(
+        entity_id,
+        initial_model_matrix.as_matrix(),
+        hierarchy,
+        transforms,
+    ))
+}
+
+/// Walks up the hierachy tree and extract and miltiply all the transformation
+/// matrices.
+// TODO(Angel): Try to avoid recursion, use a queue to walk the tree.
+fn get_parent_transformation_releation(
+    entity_id: EntityId,
+    transformation_matrix: Matrix4<f32>,
+    hierarchy: &View<Hierarchy>,
+    transforms: &View<Transform>,
+) -> Matrix4<f32> {
+    let h = match hierarchy.get(entity_id) {
+        Ok(h) => h,
+        _ => return transformation_matrix,
+    };
+
+    let parent_id = match h.parent {
+        Some(p) => p,
+        _ => return transformation_matrix,
+    };
+
+    let parent_transform = match transforms.get(parent_id) {
+        Ok(pt) => pt,
+        _ => return transformation_matrix,
+    };
+
+    let model_matrix = parent_transform.as_matrix() * transformation_matrix;
+
+    get_parent_transformation_releation(
+        parent_id,
+        model_matrix,
+        hierarchy,
+        transforms,
+    )
 }
