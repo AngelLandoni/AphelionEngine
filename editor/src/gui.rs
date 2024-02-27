@@ -5,10 +5,11 @@ pub mod split_panel_tree;
 pub mod style;
 pub mod widgets;
 
-use egui_gizmo::{Gizmo, GizmoMode};
+use egui_gizmo::{mint::ColumnMatrix4, Gizmo, GizmoMode};
 use shipyard::{
-    AllStoragesView, AllStoragesViewMut, EntitiesView, IntoIter, SparseSet,
-    Unique, UniqueView, UniqueViewMut, ViewMut, World,
+    AllStoragesView, AllStoragesViewMut, EntitiesView, EntityId, Get, IntoIter,
+    IntoWithId, SparseSet, Unique, UniqueView, UniqueViewMut, View, ViewMut,
+    World,
 };
 use std::{
     borrow::Borrow,
@@ -19,13 +20,15 @@ use engine::{
     app::App,
     egui::{Image, Margin, Rect, Response, Rounding, TextureId, Ui, Widget},
     graphics::{gpu::AbstractGpu, scene::Scene},
-    nalgebra::{Matrix4, Vector3},
+    nalgebra::{convert_unchecked, ComplexField, Matrix4, Quaternion, Rotation3, Unit, UnitQuaternion, Vector3, Vector4},
     plugin::{
         graphics::egui::{EguiContext, EguiRenderer},
         Pluggable,
     },
     scene::{
-        components::Transform, hierarchy::Hierarchy, projection::Projection,
+        components::Transform,
+        hierarchy::{get_global_transform_matrix_of_entity, Hierarchy},
+        projection::Projection,
         scene_state::SceneState,
     },
     schedule::Schedule,
@@ -237,8 +240,10 @@ fn configure_panels(tree: &mut SplitPanelTree) {
 
 /// Renders the UI based on the Panel states.
 fn render_gui_system(world: &World) {
+    // Map viewport information.
+    let viewport_information = extract_viewport_information(world);
+
     let entities = world.borrow::<EntitiesView>().unwrap();
-    let _all_storages = world.borrow::<AllStoragesView>().unwrap();
     let egui = world.borrow::<UniqueView<EguiContext>>().unwrap();
     let mut panel_state =
         world.borrow::<UniqueViewMut<GuiPanelState>>().unwrap();
@@ -253,12 +258,9 @@ fn render_gui_system(world: &World) {
     let mut entity_expanded_flags =
         world.borrow::<ViewMut<HierarchyExpandedFlag>>().unwrap();
     let mut hierarchy = world.borrow::<ViewMut<Hierarchy>>().unwrap();
-    let gui_resources = world.borrow::<UniqueView<GuiResources>>().unwrap();
 
     let mut transforms = world.borrow::<ViewMut<Transform>>().unwrap();
     let scene = world.borrow::<UniqueView<SceneState>>().unwrap();
-    // TODO(Angel): Try to not hardcode this please.
-    let scene = scene.sub_scenes.get("WorkbenchScene").unwrap();
 
     engine::egui::CentralPanel::default()
         .frame(engine::egui::Frame {
@@ -269,7 +271,6 @@ fn render_gui_system(world: &World) {
         .show(&egui.0, |ui| {
             let rect = ToolbarWidget.ui(ui).rect;
 
-            let viewport_rect = &panel_state.find_container_rect("Viewport");
             let landscape_viewport_rect =
                 &panel_state.find_container_rect("LandscapeEditor");
 
@@ -280,14 +281,9 @@ fn render_gui_system(world: &World) {
                 &mut start_drag.0,
                 &mut shared_data,
                 &mut |ui, tab: &Tab| match tab.identification.as_str() {
-                    "Viewport" => viewport(
-                        ui,
-                        gui_resources.workbench_texture_id,
-                        &viewport_rect.unwrap_or(Rect::NOTHING),
-                        scene,
-                        &mut transforms,
-                        &entity_selection_flags,
-                    ),
+                    "Viewport" => {
+                        viewport(ui, &viewport_information, &mut transforms)
+                    }
                     "GeneralLogs" => ui.label("Logs"),
                     "Properties" => properties_widget(
                         ui,
@@ -296,14 +292,7 @@ fn render_gui_system(world: &World) {
                         &mut entity_selection_flags,
                         &mut transforms,
                     ),
-                    "LandscapeEditor" => viewport(
-                        ui,
-                        gui_resources.landscape_texture_id,
-                        &landscape_viewport_rect.unwrap_or(Rect::NOTHING),
-                        scene,
-                        &mut transforms,
-                        &entity_selection_flags,
-                    ),
+                    "LandscapeEditor" => ui.label("WIP"),
                     "EntityHierarchy" => render_hierarchy_widget(
                         ui,
                         &entities,
@@ -322,15 +311,12 @@ fn render_gui_system(world: &World) {
 
 fn viewport(
     ui: &mut Ui,
-    texture_id: TextureId,
-    size: &Rect,
-    scene: &Scene,
+    info: &ViewportInformation,
     transforms: &mut ViewMut<Transform>,
-    selections: &ViewMut<HierarchySelectionFlag>,
 ) -> Response {
     let image = Image::new((
-        texture_id,
-        engine::egui::Vec2::new(size.width(), size.height() - 25.0),
+        info.texture_id,
+        engine::egui::Vec2::new(info.size.width(), info.size.height() - 25.0),
     ))
     .rounding(Rounding {
         nw: 0.0,
@@ -341,29 +327,48 @@ fn viewport(
 
     let response = ui.add(image);
 
-    let view_matrix = convert_nalgebra_matrix4(&scene.camera.view_matrix());
-    let proj_matrix = convert_nalgebra_matrix4(&scene.projection.matrix());
-
-    for (t, _s) in (transforms, selections).iter() {
-        let model_matrix = convert_nalgebra_matrix4(&t.as_matrix());
-
+    for (e, m) in &info.gizmos_transformations {
         let gizmo = Gizmo::new("Editor gizmo")
-            .view_matrix(view_matrix)
-            .projection_matrix(proj_matrix)
-            .model_matrix(model_matrix)
-            .mode(GizmoMode::Translate);
+            .view_matrix(info.camera_view)
+            .projection_matrix(info.camera_projection)
+            .model_matrix(*m)
+            .mode(GizmoMode::Rotate);
 
         if let Some(response) = gizmo.interact(ui) {
-            t.position = Vector3::new(
-                response.translation.x,
-                response.translation.y,
-                response.translation.z,
-            );
-            t.scale = Vector3::new(
-                response.scale.x,
-                response.scale.y,
-                response.scale.z,
-            );
+            let t: &mut Transform = match transforms.get(*e) {
+                Ok(t) => t,
+                _ => continue,
+            };
+
+            // The gizmo is receiving the global transform (the entity transform with
+            // respecto to the parents), therefore we need to get the diff
+            // between the global position and the position modified by the
+            // gizmo.
+            let global_m = convert_mint_matrix4(m);
+            let modified_m = convert_mint_matrix4(&response.transform());
+            // Modified - global?
+            let diff = global_m - modified_m;
+
+            /*t.position -= Vector3::new(
+                diff.column(3).x,
+                diff.column(3).y,
+                diff.column(3).z,
+            );*/
+
+            let rot = convert_mint_to_nalgebra(response.rotation);
+            let global_rot: Unit<Quaternion<f32>> = convert_unchecked(global_m);
+
+            t.rotation *= rot / global_rot;
+
+            let scale_x = modified_m.m11 / global_m.m11;
+            let scale_y = modified_m.m22 / global_m.m22;
+            let scale_z = modified_m.m33 / global_m.m33;
+
+            //t.scale.x *= scale_x;
+            //t.scale.y *= scale_y;
+            //t.scale.z *= scale_z;
+
+
         }
     }
 
@@ -402,5 +407,74 @@ fn convert_nalgebra_matrix4(
             z: matrix.column(3).z,
             w: matrix.column(3).w,
         },
+    }
+}
+
+fn convert_mint_matrix4(
+    matrix: &egui_gizmo::mint::ColumnMatrix4<f32>,
+) -> Matrix4<f32> {
+    Matrix4::new(
+        matrix.x.x, matrix.y.x, matrix.z.x, matrix.w.x, matrix.x.y, matrix.y.y,
+        matrix.z.y, matrix.w.y, matrix.x.z, matrix.y.z, matrix.z.z, matrix.w.z,
+        matrix.x.w, matrix.y.w, matrix.z.w, matrix.w.w,
+    )
+}
+
+fn convert_mint_to_nalgebra(mint_quaternion: egui_gizmo::mint::Quaternion<f32>) -> UnitQuaternion<f32> {
+    let vec4 = Vector4::new(mint_quaternion.v.x, mint_quaternion.v.y, mint_quaternion.v.z, mint_quaternion.s);
+    UnitQuaternion::from_quaternion(Quaternion { coords: vec4 })
+}
+
+struct ViewportInformation {
+    /// Contains the texture to be displayed on the viewport area.
+    texture_id: TextureId,
+    /// Contains the size covered by the viewport.
+    size: Rect,
+    /// Conatins all the positions for each gizmo.
+    gizmos_transformations: Vec<(EntityId, ColumnMatrix4<f32>)>,
+    /// Contains the camera view.
+    camera_view: ColumnMatrix4<f32>,
+    /// Contains the camera projection.
+    camera_projection: ColumnMatrix4<f32>,
+}
+
+/// Extracts the required information to render the viewport.
+fn extract_viewport_information(world: &World) -> ViewportInformation {
+    let gui_resources = world.borrow::<UniqueView<GuiResources>>().unwrap();
+    let panel_state = world.borrow::<UniqueView<GuiPanelState>>().unwrap();
+    let viewport_rect = panel_state.find_container_rect("Viewport");
+
+    let transforms = world.borrow::<View<Transform>>().unwrap();
+    let hierarchy = world.borrow::<View<Hierarchy>>().unwrap();
+    let selection_flags =
+        world.borrow::<View<HierarchySelectionFlag>>().unwrap();
+
+    let scene = world.borrow::<UniqueView<SceneState>>().unwrap();
+    let scene = scene.sub_scenes.get("WorkbenchScene").unwrap();
+
+    let gizmos_transformations = (&transforms, &selection_flags)
+        .iter()
+        .with_id()
+        .map(|(id, (t, _))| (id, t))
+        .map(|(id, _)| id)
+        .filter_map(|id| {
+            Some((
+                id,
+                get_global_transform_matrix_of_entity(
+                    id,
+                    &hierarchy,
+                    &transforms,
+                )?,
+            ))
+        })
+        .map(|(id, m)| (id, convert_nalgebra_matrix4(&m)))
+        .collect::<Vec<_>>();
+
+    ViewportInformation {
+        texture_id: gui_resources.workbench_texture_id,
+        size: viewport_rect.unwrap_or(Rect::NOTHING),
+        gizmos_transformations,
+        camera_view: convert_nalgebra_matrix4(&scene.camera.view_matrix()),
+        camera_projection: convert_nalgebra_matrix4(&scene.projection.matrix()),
     }
 }
