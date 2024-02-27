@@ -1,4 +1,3 @@
-
 use shipyard::{Unique, UniqueView, UniqueViewMut};
 
 use wgpu::{

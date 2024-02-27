@@ -1,12 +1,12 @@
 use engine::{
     egui::{
-        vec2, Align2, Color32, FontId, Rect, Response, ScrollArea,
-        Sense, Ui,
+        vec2, Align2, Color32, FontId, Rect, Response, ScrollArea, Sense, Ui,
     },
     scene::hierarchy::Hierarchy,
 };
 use shipyard::{
-    AddComponent, Component, Delete, EntitiesView, EntityId, Get, Remove, ViewMut,
+    AddComponent, Component, Delete, EntitiesView, EntityId, Get, Remove,
+    ViewMut,
 };
 
 use crate::gui::{
