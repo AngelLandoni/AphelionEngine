@@ -9,12 +9,8 @@ use shipyard::{
 use crate::{
     graphics::UniformBuffer,
     scene::{
-        asset_server::MeshResourceID,
-        camera::Camera,
-        components::Transform,
-        hierarchy::{self, Hierarchy},
-        projection::Projection,
-        scene::SceneTarget,
+        asset_server::MeshResourceID, camera::Camera, components::Transform,
+        hierarchy::Hierarchy, projection::Projection, scene::SceneTarget,
         scene_state::SceneState,
     },
 };

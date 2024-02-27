@@ -13,8 +13,7 @@ use engine::{
     },
 };
 use shipyard::{
-    EntitiesViewMut, IntoIter, Unique, UniqueView, UniqueViewMut,
-    View, ViewMut,
+    EntitiesViewMut, IntoIter, Unique, UniqueView, UniqueViewMut, View, ViewMut,
 };
 
 use crate::camera::EditorCamera;

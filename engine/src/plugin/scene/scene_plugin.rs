@@ -1,7 +1,5 @@
 use ahash::AHashMap;
-use shipyard::{
-    Unique, UniqueView, UniqueViewMut, World,
-};
+use shipyard::{Unique, UniqueView, UniqueViewMut, World};
 
 use crate::{
     app::App,
