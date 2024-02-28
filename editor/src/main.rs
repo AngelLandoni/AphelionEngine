@@ -1,6 +1,7 @@
 mod camera;
 mod gui;
 mod workbench_scene;
+mod utils;
 
 use camera::CameraPlugin;
 use engine::{
@@ -22,6 +23,7 @@ use engine::{
 
 //use camera::CameraPlugin;
 use gui::GuiPlugin;
+use utils::log::GuiLoggerPlugin;
 use workbench_scene::WorkbenchScenePlugin;
 
 pub fn main() {
@@ -64,5 +66,6 @@ pub fn main() {
         .add_plugin(CameraPlugin)
         .add_plugin(WorkbenchScenePlugin)
         .add_plugin(GuiPlugin)
+        .add_plugin(GuiLoggerPlugin)
         .run();
 }

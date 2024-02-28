@@ -51,7 +51,7 @@ use crate::gui::{
 };
 
 use self::{
-    sections::viewport_section::render_viewport_section,
+    sections::{log_section::render_log_section, viewport_section::render_viewport_section},
     state::GuiState,
     widgets::{
         leading_toolbar_widget::render_leading_toolbar_widget,
@@ -293,7 +293,7 @@ fn render_gui_system(world: &World) {
                         &gui_state,
                         &mut transforms,
                     ),
-                    "GeneralLogs" => ui.label("Logs"),
+                    "GeneralLogs" => render_log_section(ui),
                     "Properties" => properties_widget(
                         ui,
                         &entities,
