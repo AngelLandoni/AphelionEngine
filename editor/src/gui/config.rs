@@ -20,11 +20,26 @@ impl Default for GizmoState {
     }
 }
 
+#[derive(Clone, Copy)]
+pub struct WindowsState {
+    /// Determines if the Gizmo settings window is open.
+    pub is_gizmo_settings_open: bool,
+}
+
+impl Default for WindowsState {
+    fn default() -> Self {
+        Self {
+            is_gizmo_settings_open: false,
+        }
+    }
+}
+
 /// Contains the entire state of the GUI, which things are open,
 /// what is the state of selection etc.
 #[derive(Unique, Default)]
 pub struct GuiState {
     pub gizmo: GizmoState,
+    pub windows: WindowsState,
 }
 
 #[derive(Copy, Clone)]
