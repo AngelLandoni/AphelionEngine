@@ -1,5 +1,5 @@
 use engine::egui::{
-    Align, Color32, Frame, Layout, Margin, Rounding, Stroke, Style, Vec2,
+    vec2, Align, Color32, Frame, Layout, Margin, Rounding, Stroke, Style, Vec2,
     Widget,
 };
 
@@ -41,6 +41,8 @@ impl<'a> Widget for TabWidget<'a> {
 pub struct ToolbarWidget;
 impl Widget for ToolbarWidget {
     fn ui(self, ui: &mut engine::egui::Ui) -> engine::egui::Response {
+        ui.allocate_space(vec2(ui.available_width(), 50.0));
+
         ui.vertical(|ui| {
             // Remove space among items.
             ui.spacing_mut().item_spacing = Vec2::ZERO;

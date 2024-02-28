@@ -15,7 +15,7 @@ use std::ops::{Deref, DerefMut};
 
 use engine::{
     app::App,
-    egui::{Margin, TextureId, Widget},
+    egui::{Frame, Margin, Rect, TextureId, Widget},
     graphics::gpu::AbstractGpu,
     plugin::{
         graphics::egui::{EguiContext, EguiRenderer},
@@ -51,7 +51,13 @@ use crate::gui::{
 };
 
 use self::{
-    sections::viewport_section::render_viewport_section, state::GuiState,
+    sections::viewport_section::render_viewport_section,
+    state::GuiState,
+    widgets::{
+        leading_toolbar_widget::render_leading_toolbar_widget,
+        menu_toolbar_widget::render_menu_toolbar_widget,
+        top_toolbar_widget::render_top_toolbar_widget,
+    },
 };
 
 #[derive(Unique)]
@@ -259,28 +265,32 @@ fn render_gui_system(world: &World) {
     let mut transforms = world.borrow::<ViewMut<Transform>>().unwrap();
     let _scene = world.borrow::<UniqueView<SceneState>>().unwrap();
 
+    // render menu toolbar.
+    render_menu_toolbar_widget(&egui.0);
+    // render the top toolbar.
+    render_top_toolbar_widget(&egui.0);
+    // render the leading toolbar.
+    render_leading_toolbar_widget(&egui.0, &world);
+
+    let gui_state = world.borrow::<UniqueView<GuiState>>().unwrap();
+
     engine::egui::CentralPanel::default()
-        .frame(engine::egui::Frame {
-            inner_margin: Margin::ZERO,
+        .frame(Frame {
+            inner_margin: Margin::same(5.0),
             outer_margin: Margin::ZERO,
             ..Default::default()
         })
         .show(&egui.0, |ui| {
-            let rect = ToolbarWidget.ui(ui).rect;
-
-            let _landscape_viewport_rect =
-                &panel_state.find_container_rect("LandscapeEditor");
-
             render_dynamic_panel_widget(
                 ui,
                 &mut panel_state.0,
-                rect.height(),
                 &mut start_drag.0,
                 &mut shared_data,
                 &mut |ui, tab: &Tab| match tab.identification.as_str() {
                     "Viewport" => render_viewport_section(
                         ui,
                         &viewport_information,
+                        &gui_state,
                         &mut transforms,
                     ),
                     "GeneralLogs" => ui.label("Logs"),

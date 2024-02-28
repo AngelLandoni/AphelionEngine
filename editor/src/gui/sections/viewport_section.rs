@@ -1,8 +1,9 @@
-use egui_gizmo::{mint::ColumnMatrix4, Gizmo, GizmoMode};
+use egui_gizmo::{mint::ColumnMatrix4, Gizmo, GizmoMode, GizmoOrientation};
 use engine::{
     egui::{Image, Rect, Response, Rounding, TextureId, Ui},
     nalgebra::{
-        convert_unchecked, Matrix4, Quaternion, Unit, UnitQuaternion, Vector4,
+        convert_unchecked, Matrix4, Quaternion, Unit, UnitQuaternion, Vector3,
+        Vector4,
     },
     scene::{
         components::Transform,
@@ -15,13 +16,14 @@ use shipyard::{
 };
 
 use crate::gui::{
-    widgets::hierarchy_widget::HierarchySelectionFlag, GuiPanelState,
-    GuiResources,
+    state::GuiState, widgets::hierarchy_widget::HierarchySelectionFlag,
+    GuiPanelState, GuiResources,
 };
 
 pub fn render_viewport_section(
     ui: &mut Ui,
     info: &ViewportInformation,
+    gui_state: &UniqueView<GuiState>,
     transforms: &mut ViewMut<Transform>,
 ) -> Response {
     let image = Image::new((
@@ -35,14 +37,21 @@ pub fn render_viewport_section(
         se: 4.0,
     });
 
+    // Render the scene.
     let response = ui.add(image);
+
+    let gizmo_type = match gui_state.gizmo_type {
+        Some(g) => g,
+        _ => return response,
+    };
 
     for (e, m) in &info.gizmos_transformations {
         let gizmo = Gizmo::new("Editor gizmo")
             .view_matrix(info.camera_view)
             .projection_matrix(info.camera_projection)
+            .orientation(gui_state.gizmo_orientation)
             .model_matrix(*m)
-            .mode(GizmoMode::Translate);
+            .mode(gizmo_type);
 
         if let Some(response) = gizmo.interact(ui) {
             let t: &mut Transform = match transforms.get(*e) {
@@ -56,31 +65,67 @@ pub fn render_viewport_section(
             // gizmo.
             let global_m = convert_mint_matrix4(m);
             let modified_m = convert_mint_matrix4(&response.transform());
-            // Modified - global?
-            let _diff = global_m - modified_m;
 
-            /*t.position -= Vector3::new(
-                diff.column(3).x,
-                diff.column(3).y,
-                diff.column(3).z,
-            );*/
+            match gizmo_type {
+                GizmoMode::Translate => {
+                    let diff = modified_m - global_m;
 
-            let rot = convert_mint_to_nalgebra(response.rotation);
-            let global_rot: Unit<Quaternion<f32>> = convert_unchecked(global_m);
+                    let offset = Vector3::new(
+                        diff.column(3).x,
+                        diff.column(3).y,
+                        diff.column(3).z,
+                    );
 
-            t.rotation *= rot / global_rot;
+                    // Once the offset or delta is calculated, it's essential to determine the direction 
+                    // of the entity to compute the corrected offset. The adjustment in position must 
+                    // consider the orientation or direction of the entity to ensure accurate displacement.
+                    let rot = t.rotation / convert_mint_to_nalgebra(response.rotation);
+                    let corrected_offset = rotate_vector_by_quaternion(offset, &rot);
 
-            let _scale_x = modified_m.m11 / global_m.m11;
-            let _scale_y = modified_m.m22 / global_m.m22;
-            let _scale_z = modified_m.m33 / global_m.m33;
+                    t.position += Vector3::new(
+                        corrected_offset.x,
+                        corrected_offset.y,
+                        corrected_offset.z,
+                    );
+                }
 
-            //t.scale.x *= scale_x;
-            //t.scale.y *= scale_y;
-            //t.scale.z *= scale_z;
+                GizmoMode::Rotate => {
+                    let rot = convert_mint_to_nalgebra(response.rotation);
+                    let global_rot: Unit<Quaternion<f32>> =
+                        convert_unchecked(global_m);
+                    t.rotation *= rot / global_rot
+                }
+
+                GizmoMode::Scale => {
+                    t.scale.x *= modified_m.m11 / global_m.m11;
+                    t.scale.y *= modified_m.m22 / global_m.m22;
+                    t.scale.z *= modified_m.m33 / global_m.m33;
+                }
+            };
         }
     }
 
     response
+}
+
+fn rotate_vector_by_quaternion(
+    v: Vector3<f32>,
+    q: &Quaternion<f32>,
+) -> Vector3<f32> {
+    // Convert the vector to a pure quaternion (zero real part)
+    let v_quaternion = Quaternion::new(0.0, v.x, v.y, v.z);
+
+    // Rotate the vector using quaternion multiplication: q * v * q_conjugate
+    let rotated_v_quaternion = q * v_quaternion * q.conjugate();
+
+    // Extract the vector part of the resulting quaternion
+    let rotated_v = Vector3::new(
+        rotated_v_quaternion.i,
+        rotated_v_quaternion.j,
+        rotated_v_quaternion.k,
+    );
+
+    rotated_v
 }
 
 pub struct ViewportInformation {
