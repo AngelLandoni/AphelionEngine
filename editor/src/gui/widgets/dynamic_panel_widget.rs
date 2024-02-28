@@ -112,34 +112,14 @@ pub struct SharedData {
 pub fn render_dynamic_panel_widget(
     ui: &mut Ui,
     panel_tree: &mut SplitPanelTree,
-    header_height: f32,
     drag_start_position: &mut Option<Pos2>,
     shared_data: &mut SharedData,
     mut builder: &mut impl FnMut(&mut Ui, &Tab) -> Response,
 ) {
-    let full_size = ui.available_size();
+    let available_rect = ui.available_rect_before_wrap();
+    panel_tree.update_root_rect(available_rect);
 
-    let full_rect = Rect {
-        min: Pos2::new(PANEL_SPACE, header_height + PANEL_SPACE),
-        max: Pos2::new(
-            full_size.x - PANEL_SPACE,
-            full_size.y + header_height - PANEL_SPACE,
-        ),
-    };
-
-    panel_tree.update_root_rect(full_rect);
-
-    ui.allocate_space(full_size);
-
-    // Paint the background.
-    ui.painter().rect_filled(
-        Rect {
-            min: Pos2::new(0.0, header_height),
-            max: Pos2::new(full_size.x, full_size.y + header_height),
-        },
-        0.0,
-        Color32::from_hex("#151515").unwrap_or(Color32::default()),
-    );
+    ui.allocate_space(available_rect.size());
 
     shared_data.drag = None;
     shared_data.hover = None;
