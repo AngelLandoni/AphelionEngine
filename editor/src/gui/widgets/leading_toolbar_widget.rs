@@ -1,8 +1,8 @@
 use egui_gizmo::{GizmoMode, GizmoOrientation};
-use engine::egui::{Context, Response, SidePanel};
+use engine::{egui::{Context, Response, SidePanel}, log::{error, info, warn}};
 use shipyard::{UniqueViewMut, World};
 
-use crate::gui::{icons::MOUSE_LMB, state::GuiState};
+use crate::gui::GuiState;
 
 /// Renders the leading toolbar widget.
 pub fn render_leading_toolbar_widget(ctx: &Context, world: &World) -> Response {
@@ -41,6 +41,13 @@ pub fn render_leading_toolbar_widget(ctx: &Context, world: &World) -> Response {
             // Set the scale gizmo.
             if ui.button("Global").clicked() {
                 gui_state.gizmo_orientation = GizmoOrientation::Global;
+            }
+
+            // Set the scale gizmo.
+            if ui.button("Log test").clicked() {
+                warn!("This is a warning");
+                error!("This is an error");
+                info!("This is info");
             }
         })
         .response

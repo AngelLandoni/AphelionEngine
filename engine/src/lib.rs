@@ -12,3 +12,4 @@ pub use egui;
 pub use nalgebra;
 pub use shipyard;
 pub use wgpu;
+pub use log;
