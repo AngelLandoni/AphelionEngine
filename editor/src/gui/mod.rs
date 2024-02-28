@@ -6,6 +6,7 @@ pub mod sections;
 pub mod split_panel_tree;
 pub mod style;
 pub mod widgets;
+pub mod windows;
 
 use shipyard::{
     AllStoragesViewMut, EntitiesView, Get, SparseSet, Unique, UniqueView,
@@ -59,7 +60,7 @@ use crate::gui::{
     },
 };
 
-use self::config::GuiState;
+use self::{config::GuiState, windows::gizmo_settings::render_gizmo_settings};
 
 #[derive(Unique)]
 pub struct GuiPanelState(SplitPanelTree);
@@ -267,12 +268,14 @@ fn render_gui_system(world: &World) {
     let mut transforms = world.borrow::<ViewMut<Transform>>().unwrap();
     let _scene = world.borrow::<UniqueView<SceneState>>().unwrap();
 
-    // render menu toolbar.
-    render_menu_toolbar_widget(&egui.0);
-    // render the top toolbar.
+    // Render menu toolbar.
+    render_menu_toolbar_widget(&egui.0, &world);
+    // Render the top toolbar.
     render_top_toolbar_widget(&egui.0);
-    // render the leading toolbar.
+    // Render the leading toolbar.
     render_leading_toolbar_widget(&egui.0, &world);
+    // Render gizmo settings if needed.
+    render_gizmo_settings(&egui.0, &world);
 
     engine::egui::CentralPanel::default()
         .frame(Frame {
