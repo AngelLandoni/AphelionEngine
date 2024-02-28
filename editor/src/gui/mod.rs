@@ -1,9 +1,9 @@
 pub mod colors;
+pub mod config;
 pub mod gizmo;
 pub mod icons;
 pub mod sections;
 pub mod split_panel_tree;
-pub mod state;
 pub mod style;
 pub mod widgets;
 
@@ -30,13 +30,17 @@ use engine::{
 };
 
 use crate::gui::{
+    config::GuiConfig,
     sections::viewport_section::extract_viewport_information,
+    sections::{
+        log_section::render_log_section,
+        viewport_section::render_viewport_section,
+    },
     split_panel_tree::{
         HFraction, HSplitDir, SplitPanelTree, Tab, VFraction, VSplitDir,
         ROOT_NODE,
     },
     style::{configure_fonts, configure_icon_font},
-    widgets::toolbar_widget::ToolbarWidget,
     widgets::{
         dynamic_panel_widget::{
             calculate_tag_dragging_system, render_dynamic_panel_widget,
@@ -48,17 +52,14 @@ use crate::gui::{
         },
         properties_widget::properties_widget,
     },
-};
-
-use self::{
-    sections::{log_section::render_log_section, viewport_section::render_viewport_section},
-    state::GuiState,
     widgets::{
         leading_toolbar_widget::render_leading_toolbar_widget,
         menu_toolbar_widget::render_menu_toolbar_widget,
         top_toolbar_widget::render_top_toolbar_widget,
     },
 };
+
+use self::config::GuiState;
 
 #[derive(Unique)]
 pub struct GuiPanelState(SplitPanelTree);
@@ -92,6 +93,7 @@ impl Pluggable for GuiPlugin {
         app.world.add_unique(TabDragStartPosition(None));
         app.world.add_unique(SharedData::default());
         app.world.add_unique(GuiState::default());
+        app.world.add_unique(GuiConfig::default());
 
         app.world.run(configure_gui_system);
 
@@ -272,8 +274,6 @@ fn render_gui_system(world: &World) {
     // render the leading toolbar.
     render_leading_toolbar_widget(&egui.0, &world);
 
-    let gui_state = world.borrow::<UniqueView<GuiState>>().unwrap();
-
     engine::egui::CentralPanel::default()
         .frame(Frame {
             inner_margin: Margin::same(5.0),
@@ -290,7 +290,6 @@ fn render_gui_system(world: &World) {
                     "Viewport" => render_viewport_section(
                         ui,
                         &viewport_information,
-                        &gui_state,
                         &mut transforms,
                     ),
                     "GeneralLogs" => render_log_section(ui),

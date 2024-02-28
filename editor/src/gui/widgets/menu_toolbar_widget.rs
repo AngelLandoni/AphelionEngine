@@ -14,13 +14,19 @@ pub fn render_menu_toolbar_widget(ctx: &Context) -> Response {
                 // Move the menu due to trafict lights.
                 ui.add_space(80.0);
 
-                ui.menu_button("file", |ui| {
+                ui.menu_button("File", |ui| {
+                    ui.menu_button("Settings", |ui| {
+                        if ui.button("Gizmos").clicked() {
+                            
+                        }
+                    });
+
                     if ui.button("exit").clicked() {
                         exit(0);
                     }
                 });
 
-                ui.menu_button("about", |ui| {
+                ui.menu_button("About", |ui| {
                     if ui.button("angel's editor for cool games").clicked() {
                         ui.close_menu();
                     }
