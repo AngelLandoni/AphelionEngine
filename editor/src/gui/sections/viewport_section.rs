@@ -1,4 +1,6 @@
-use egui_gizmo::{mint::ColumnMatrix4, Gizmo, GizmoMode, GizmoOrientation};
+use egui_gizmo::{
+    mint::ColumnMatrix4, Gizmo, GizmoMode, GizmoOrientation, GizmoVisuals,
+};
 use engine::{
     egui::{Image, Rect, Response, Rounding, TextureId, Ui},
     nalgebra::{
@@ -16,14 +18,77 @@ use shipyard::{
 };
 
 use crate::gui::{
-    state::GuiState, widgets::hierarchy_widget::HierarchySelectionFlag,
+    config::{GizmoConfig, GizmoState, GuiConfig, GuiState},
+    widgets::hierarchy_widget::HierarchySelectionFlag,
     GuiPanelState, GuiResources,
 };
+
+pub struct ViewportInformation {
+    /// Contains the texture to be displayed on the viewport area.
+    texture_id: TextureId,
+    /// Contains the size covered by the viewport.
+    size: Rect,
+    /// Conatins all the positions for each gizmo.
+    gizmos_transformations: Vec<(EntityId, ColumnMatrix4<f32>)>,
+    /// Contains the camera view.
+    camera_view: ColumnMatrix4<f32>,
+    /// Contains the camera projection.
+    camera_projection: ColumnMatrix4<f32>,
+    /// Conatins the state of the gizmo.
+    gizmo_state: GizmoState,
+    /// Contains the config of the gizmo.
+    gizmo_config: GizmoConfig,
+}
+
+/// Extracts the required information to render the viewport.
+pub fn extract_viewport_information(world: &World) -> ViewportInformation {
+    let gui_resources = world.borrow::<UniqueView<GuiResources>>().unwrap();
+    let panel_state = world.borrow::<UniqueView<GuiPanelState>>().unwrap();
+    let viewport_rect = panel_state.find_container_rect("Viewport");
+
+    let transforms = world.borrow::<View<Transform>>().unwrap();
+    let hierarchy = world.borrow::<View<Hierarchy>>().unwrap();
+    let selection_flags =
+        world.borrow::<View<HierarchySelectionFlag>>().unwrap();
+
+    let scene = world.borrow::<UniqueView<SceneState>>().unwrap();
+    let scene = scene.sub_scenes.get("WorkbenchScene").unwrap();
+
+    let gui_state = world.borrow::<UniqueView<GuiState>>().unwrap();
+    let gui_config = world.borrow::<UniqueView<GuiConfig>>().unwrap();
+
+    let gizmos_transformations = (&transforms, &selection_flags)
+        .iter()
+        .with_id()
+        .map(|(id, (t, _))| (id, t))
+        .map(|(id, _)| id)
+        .filter_map(|id| {
+            Some((
+                id,
+                get_global_transform_matrix_of_entity(
+                    id,
+                    &hierarchy,
+                    &transforms,
+                )?,
+            ))
+        })
+        .map(|(id, m)| (id, convert_nalgebra_matrix4(&m)))
+        .collect::<Vec<_>>();
+
+    ViewportInformation {
+        texture_id: gui_resources.workbench_texture_id,
+        size: viewport_rect.unwrap_or(Rect::NOTHING),
+        gizmos_transformations,
+        camera_view: convert_nalgebra_matrix4(&scene.camera.view_matrix()),
+        camera_projection: convert_nalgebra_matrix4(&scene.projection.matrix()),
+        gizmo_state: gui_state.gizmo,
+        gizmo_config: gui_config.gizmo,
+    }
+}
 
 pub fn render_viewport_section(
     ui: &mut Ui,
     info: &ViewportInformation,
-    gui_state: &UniqueView<GuiState>,
     transforms: &mut ViewMut<Transform>,
 ) -> Response {
     let image = Image::new((
@@ -40,7 +105,7 @@ pub fn render_viewport_section(
     // Render the scene.
     let response = ui.add(image);
 
-    let gizmo_type = match gui_state.gizmo_type {
+    let gizmo_type = match info.gizmo_state.kind {
         Some(g) => g,
         _ => return response,
     };
@@ -49,7 +114,18 @@ pub fn render_viewport_section(
         let gizmo = Gizmo::new("Editor gizmo")
             .view_matrix(info.camera_view)
             .projection_matrix(info.camera_projection)
-            .orientation(gui_state.gizmo_orientation)
+            .orientation(info.gizmo_state.orientation)
+            .visuals(GizmoVisuals {
+                x_color: info.gizmo_config.x_color,
+                z_color: info.gizmo_config.y_color,
+                y_color: info.gizmo_config.z_color,
+                s_color: info.gizmo_config.s_color,
+                inactive_alpha: info.gizmo_config.inactive_alpha,
+                highlight_alpha: info.gizmo_config.highlighted_alpha,
+                stroke_width: info.gizmo_config.width,
+                gizmo_size: info.gizmo_config.size,
+                ..Default::default()
+            })
             .model_matrix(*m)
             .mode(gizmo_type);
 
@@ -76,11 +152,13 @@ pub fn render_viewport_section(
                         diff.column(3).z,
                     );
 
-                    // Once the offset or delta is calculated, it's essential to determine the direction 
-                    // of the entity to compute the corrected offset. The adjustment in position must 
+                    // Once the offset or delta is calculated, it's essential to determine the direction
+                    // of the entity to compute the corrected offset. The adjustment in position must
                     // consider the orientation or direction of the entity to ensure accurate displacement.
-                    let rot = t.rotation / convert_mint_to_nalgebra(response.rotation);
-                    let corrected_offset = rotate_vector_by_quaternion(offset, &rot);
+                    let rot = t.rotation
+                        / convert_mint_to_nalgebra(response.rotation);
+                    let corrected_offset =
+                        rotate_vector_by_quaternion(offset, &rot);
 
                     t.position += Vector3::new(
                         corrected_offset.x,
@@ -126,60 +204,6 @@ fn rotate_vector_by_quaternion(
     );
 
     rotated_v
-}
-
-pub struct ViewportInformation {
-    /// Contains the texture to be displayed on the viewport area.
-    texture_id: TextureId,
-    /// Contains the size covered by the viewport.
-    size: Rect,
-    /// Conatins all the positions for each gizmo.
-    gizmos_transformations: Vec<(EntityId, ColumnMatrix4<f32>)>,
-    /// Contains the camera view.
-    camera_view: ColumnMatrix4<f32>,
-    /// Contains the camera projection.
-    camera_projection: ColumnMatrix4<f32>,
-}
-
-/// Extracts the required information to render the viewport.
-pub fn extract_viewport_information(world: &World) -> ViewportInformation {
-    let gui_resources = world.borrow::<UniqueView<GuiResources>>().unwrap();
-    let panel_state = world.borrow::<UniqueView<GuiPanelState>>().unwrap();
-    let viewport_rect = panel_state.find_container_rect("Viewport");
-
-    let transforms = world.borrow::<View<Transform>>().unwrap();
-    let hierarchy = world.borrow::<View<Hierarchy>>().unwrap();
-    let selection_flags =
-        world.borrow::<View<HierarchySelectionFlag>>().unwrap();
-
-    let scene = world.borrow::<UniqueView<SceneState>>().unwrap();
-    let scene = scene.sub_scenes.get("WorkbenchScene").unwrap();
-
-    let gizmos_transformations = (&transforms, &selection_flags)
-        .iter()
-        .with_id()
-        .map(|(id, (t, _))| (id, t))
-        .map(|(id, _)| id)
-        .filter_map(|id| {
-            Some((
-                id,
-                get_global_transform_matrix_of_entity(
-                    id,
-                    &hierarchy,
-                    &transforms,
-                )?,
-            ))
-        })
-        .map(|(id, m)| (id, convert_nalgebra_matrix4(&m)))
-        .collect::<Vec<_>>();
-
-    ViewportInformation {
-        texture_id: gui_resources.workbench_texture_id,
-        size: viewport_rect.unwrap_or(Rect::NOTHING),
-        gizmos_transformations,
-        camera_view: convert_nalgebra_matrix4(&scene.camera.view_matrix()),
-        camera_projection: convert_nalgebra_matrix4(&scene.projection.matrix()),
-    }
 }
 
 fn convert_nalgebra_matrix4(

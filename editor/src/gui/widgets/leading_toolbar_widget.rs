@@ -1,8 +1,11 @@
 use egui_gizmo::{GizmoMode, GizmoOrientation};
-use engine::{egui::{Context, Response, SidePanel}, log::{error, info, warn}};
+use engine::{
+    egui::{Context, Response, SidePanel},
+    log::{error, info, warn},
+};
 use shipyard::{UniqueViewMut, World};
 
-use crate::gui::GuiState;
+use crate::gui::config::GuiState;
 
 /// Renders the leading toolbar widget.
 pub fn render_leading_toolbar_widget(ctx: &Context, world: &World) -> Response {
@@ -15,32 +18,32 @@ pub fn render_leading_toolbar_widget(ctx: &Context, world: &World) -> Response {
         .show(ctx, |ui| {
             // Disable the gizmo (enter selection mode).
             if ui.button("Pointer").clicked() {
-                gui_state.gizmo_type = None;
+                gui_state.gizmo.kind = None;
             }
 
             // Set the translation gizmo.
             if ui.button("Move").clicked() {
-                gui_state.gizmo_type = Some(GizmoMode::Translate);
+                gui_state.gizmo.kind = Some(GizmoMode::Translate);
             }
 
             // Set the rotate gizmo.
             if ui.button("Rotate").clicked() {
-                gui_state.gizmo_type = Some(GizmoMode::Rotate);
+                gui_state.gizmo.kind = Some(GizmoMode::Rotate);
             }
 
             // Set the scale gizmo.
             if ui.button("Scale").clicked() {
-                gui_state.gizmo_type = Some(GizmoMode::Scale);
+                gui_state.gizmo.kind = Some(GizmoMode::Scale);
             }
 
             // Set the scale gizmo.
             if ui.button("Local").clicked() {
-                gui_state.gizmo_orientation = GizmoOrientation::Local;
+                gui_state.gizmo.orientation = GizmoOrientation::Local;
             }
 
             // Set the scale gizmo.
             if ui.button("Global").clicked() {
-                gui_state.gizmo_orientation = GizmoOrientation::Global;
+                gui_state.gizmo.orientation = GizmoOrientation::Global;
             }
 
             // Set the scale gizmo.

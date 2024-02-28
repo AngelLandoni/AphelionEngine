@@ -22,8 +22,6 @@ impl engine::log::Log for GuiLogger {
     }
 }
 
-static LOG_FILE: Mutex<String> = Mutex::new(String::new());
-
 /// Contains a global pool which contains all the logs.
 static LOG: Mutex<Vec<(engine::log::Level, String)>> = Mutex::new(Vec::new());
 
