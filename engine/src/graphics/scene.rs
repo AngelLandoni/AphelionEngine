@@ -9,8 +9,12 @@ use shipyard::{
 use crate::{
     graphics::UniformBuffer,
     scene::{
-        asset_server::MeshResourceID, camera::Camera, components::Transform,
-        hierarchy::Hierarchy, projection::Projection, scene::SceneTarget,
+        asset_server::MeshResourceID,
+        camera::Camera,
+        components::Transform,
+        hierarchy::Hierarchy,
+        projection::{self, Projection},
+        scene::SceneTarget,
         scene_state::SceneState,
     },
 };
@@ -46,20 +50,6 @@ pub struct Scene {
 
     pub(crate) should_sync_resolution_to_window: bool,
     pub(crate) should_render_grid: bool,
-}
-
-impl Scene {
-    /// Calculates and returns the camera projection matrix.
-    pub fn calculate_camera_projection(
-        &self,
-    ) -> Matrix<
-        f32,
-        nalgebra::Const<4>,
-        nalgebra::Const<4>,
-        nalgebra::ArrayStorage<f32, 4, 4>,
-    > {
-        self.projection.matrix() * self.camera.view_matrix()
-    }
 }
 
 pub(crate) fn sync_main_scene_dynamic_entities_transform(
@@ -291,26 +281,19 @@ fn sync_scene(
     }
 }
 
-/*
-// Get parent transform matrix.
-if let Ok(h) = hierarchy.get(*entity_id) {
-    if let Some(parent_id) = h.parent {
-        if let Ok(parent_transform) =
-            transforms.get(parent_id)
-        {
-            // If it does not have hierarchy apply normal transform.
-            let data: [[f32; 4]; 4] =
-                (parent_transform.as_matrix()
-                    * transform.as_matrix())
-                .into();
-            let a: &[u8] =
-                bytemuck::cast_slice(&data);
-            e.extend_from_slice(a);
-            return;
+#[repr(C)]
+#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
+pub(crate) struct CameraUniform {
+    view_position: [f32; 4],
+    view_proj: [[f32; 4]; 4],
+}
+
+impl CameraUniform {
+    pub(crate) fn view_proj(camera: &Camera, projection: &Projection) -> Self {
+        // We're using Vector4 because ofthe camera_uniform 16 byte spacing requirement
+        Self {
+            view_position: camera.position.to_homogeneous().into(),
+            view_proj: (projection.matrix() * camera.view_matrix()).into(),
         }
     }
 }
-
-let data = transform.as_matrix_array();
-let a: &[u8] = bytemuck::cast_slice(&data);
-e.extend_from_slice(a)*/
