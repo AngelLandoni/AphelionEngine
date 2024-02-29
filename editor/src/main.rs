@@ -1,7 +1,7 @@
 mod camera;
 mod gui;
-mod workbench_scene;
 mod utils;
+mod workbench_scene;
 
 use camera::CameraPlugin;
 use engine::{
@@ -28,7 +28,7 @@ use workbench_scene::WorkbenchScenePlugin;
 
 pub fn main() {
     App::new()
-        .add_plugin(WinitWindowPlugin::new("My game", 1024, 800))
+        .add_plugin(WinitWindowPlugin::new("My game", 2048, 1200))
         .add_plugin(WgpuRendererPlugin)
         .add_plugin(ScenePlugin {
             main: SceneDescriptor {
