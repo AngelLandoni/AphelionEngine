@@ -280,20 +280,3 @@ fn sync_scene(
         });
     }
 }
-
-#[repr(C)]
-#[derive(Copy, Clone, bytemuck::Pod, bytemuck::Zeroable)]
-pub(crate) struct CameraUniform {
-    view_position: [f32; 4],
-    view_proj: [[f32; 4]; 4],
-}
-
-impl CameraUniform {
-    pub(crate) fn view_proj(camera: &Camera, projection: &Projection) -> Self {
-        // We're using Vector4 because ofthe camera_uniform 16 byte spacing requirement
-        Self {
-            view_position: camera.position.to_homogeneous().into(),
-            view_proj: (projection.matrix() * camera.view_matrix()).into(),
-        }
-    }
-}
