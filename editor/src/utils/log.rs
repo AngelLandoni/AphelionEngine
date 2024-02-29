@@ -1,6 +1,6 @@
 use std::sync::Mutex;
 
-use engine::{egui::mutex::RwLock, plugin::Pluggable};
+use engine::plugin::Pluggable;
 
 pub struct GuiLogger;
 

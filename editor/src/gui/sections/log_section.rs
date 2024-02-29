@@ -4,7 +4,7 @@ use crate::utils::log::{clean_logs, read_logs};
 
 pub fn render_log_section(ui: &mut Ui) -> Response {
     ui.vertical(|ui| {
-        let (id, toolbar_rect) =
+        let (_id, toolbar_rect) =
             ui.allocate_space(vec2(ui.available_width(), 30.0));
 
         let height = ui.available_height();

@@ -16,7 +16,7 @@ use std::ops::{Deref, DerefMut};
 
 use engine::{
     app::App,
-    egui::{Frame, Margin, Rect, TextureId, Widget},
+    egui::{Frame, Margin, TextureId},
     graphics::gpu::AbstractGpu,
     plugin::{
         graphics::egui::{EguiContext, EguiRenderer},
@@ -269,13 +269,13 @@ fn render_gui_system(world: &World) {
     let _scene = world.borrow::<UniqueView<SceneState>>().unwrap();
 
     // Render menu toolbar.
-    render_menu_toolbar_widget(&egui.0, &world);
+    render_menu_toolbar_widget(&egui.0, world);
     // Render the top toolbar.
     render_top_toolbar_widget(&egui.0);
     // Render the leading toolbar.
-    render_leading_toolbar_widget(&egui.0, &world);
+    render_leading_toolbar_widget(&egui.0, world);
     // Render gizmo settings if needed.
-    render_gizmo_settings(&egui.0, &world);
+    render_gizmo_settings(&egui.0, world);
 
     engine::egui::CentralPanel::default()
         .frame(Frame {
