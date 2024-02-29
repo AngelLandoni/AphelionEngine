@@ -4,10 +4,9 @@ use shipyard::{Unique, UniqueView, UniqueViewMut, World};
 use crate::{
     app::App,
     graphics::{
+        camera::CameraUniform,
         gpu::AbstractGpu,
-        scene::{
-            sync_main_scene_dynamic_entities_transform, CameraUniform, Scene,
-        },
+        scene::{sync_main_scene_dynamic_entities_transform, Scene},
     },
     host::window::Window,
     plugin::Pluggable,

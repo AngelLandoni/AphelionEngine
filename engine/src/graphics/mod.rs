@@ -7,6 +7,7 @@ pub mod gpu;
 pub mod mesh;
 pub mod scene;
 pub mod vertex;
+pub mod camera;
 
 pub trait VertexBuffer: Downcast + Send + Sync {}
 impl_downcast!(VertexBuffer);
