@@ -15,15 +15,14 @@ use crate::{
             infinite_grid_pass::infinite_grid_pass_system,
         },
         pipelines::{
-            dynamic_mesh_pipeline::{
-                setup_dynamic_mesh_pipelines_uniforms_system,
-                DynamicMeshPipeline,
-            },
+            create_camera_bind_group_layout,
+            dynamic_mesh_pipeline::DynamicMeshPipeline,
             frame_composition_pipeline::{
                 setup_frame_composition_pipelines_uniforms_system,
                 FrameCompositionPipeline,
             },
             infinite_grid_pipeline::InfiniteGridPipeline,
+            setup_scenes_uniforms_system, GlobalBindGroupLayouts,
         },
         rendering::{
             acquire_screen_texture, present_screen_texture,
@@ -68,7 +67,7 @@ impl Pluggable for WgpuRendererPlugin {
 
             app.schedule(Schedule::PipelineUniformsSetup, |world| {
                 world.run(setup_frame_composition_pipelines_uniforms_system);
-                world.run(setup_dynamic_mesh_pipelines_uniforms_system);
+                world.run(setup_scenes_uniforms_system);
             });
 
             app.schedule(Schedule::Start, |world| {
@@ -134,11 +133,19 @@ fn setup_pipelines(world: &World) {
         .downcast_ref::<Gpu>()
         .expect("Unable to acquire Wgpu GPU");
 
-    let dynamic_mesh = DynamicMeshPipeline::new(gpu);
+    // Creates the commond camera bindgroup layout used in all the
+    // pipelines.
+    let camera_bind_group_layout = create_camera_bind_group_layout(gpu);
+
+    let dynamic_mesh = DynamicMeshPipeline::new(gpu, &camera_bind_group_layout);
     let frame_composition = FrameCompositionPipeline::new(gpu);
     let infinite_grid = InfiniteGridPipeline::new(gpu);
 
     world.add_unique(dynamic_mesh);
     world.add_unique(frame_composition);
     world.add_unique(infinite_grid);
+
+    world.add_unique(GlobalBindGroupLayouts {
+        camera: camera_bind_group_layout,
+    });
 }

@@ -9,7 +9,7 @@ pub mod wgpu_graphics;
 mod workload;
 
 pub use egui;
+pub use log;
 pub use nalgebra;
 pub use shipyard;
 pub use wgpu;
-pub use log;

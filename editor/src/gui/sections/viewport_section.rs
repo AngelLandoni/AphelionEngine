@@ -1,6 +1,4 @@
-use egui_gizmo::{
-    mint::ColumnMatrix4, Gizmo, GizmoMode, GizmoOrientation, GizmoVisuals,
-};
+use egui_gizmo::{mint::ColumnMatrix4, Gizmo, GizmoMode, GizmoVisuals};
 use engine::{
     egui::{Image, Rect, Response, Rounding, TextureId, Ui},
     nalgebra::{
@@ -197,13 +195,12 @@ fn rotate_vector_by_quaternion(
     let rotated_v_quaternion = q * v_quaternion * q.conjugate();
 
     // Extract the vector part of the resulting quaternion
-    let rotated_v = Vector3::new(
+
+    Vector3::new(
         rotated_v_quaternion.i,
         rotated_v_quaternion.j,
         rotated_v_quaternion.k,
-    );
-
-    rotated_v
+    )
 }
 
 fn convert_nalgebra_matrix4(
