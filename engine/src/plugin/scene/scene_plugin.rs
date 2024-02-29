@@ -5,7 +5,9 @@ use crate::{
     app::App,
     graphics::{
         gpu::AbstractGpu,
-        scene::{sync_main_scene_dynamic_entities_transform, Scene},
+        scene::{
+            sync_main_scene_dynamic_entities_transform, CameraUniform, Scene,
+        },
     },
     host::window::Window,
     plugin::Pluggable,
@@ -81,10 +83,12 @@ fn allocate_scenes(world: &World) {
     let sub_scenes = &descriptors.sub_scenes;
 
     for s_scene in sub_scenes {
-        let camera: [[f32; 4]; 4] = s_scene.camera.view_matrix().into();
+        let uniform =
+            CameraUniform::view_proj(&s_scene.camera, &s_scene.projection);
+
         let camera_buffer = gpu.allocate_uniform_buffer(
             format!("{} Camera Buffer", s_scene.label).as_str(),
-            bytemuck::cast_slice(&[camera]),
+            bytemuck::cast_slice(&[uniform]),
         );
 
         // TODO(Angel): Determine how we are going to handle resoluton for sub
@@ -129,10 +133,11 @@ fn allocate_scenes(world: &World) {
         sub_scenes_finished.insert(s_scene.id.clone(), scene);
     }
 
-    let main_camera: [[f32; 4]; 4] = main.camera.view_matrix().into();
+    let uniform = CameraUniform::view_proj(&main.camera, &main.projection);
+
     let main_camera_buffer = gpu.allocate_uniform_buffer(
         format!("{} Camera Buffer", main.label).as_str(),
-        bytemuck::cast_slice(&[main_camera]),
+        bytemuck::cast_slice(&[uniform]),
     );
 
     let target_texture = gpu.allocate_target_texture(
@@ -180,21 +185,23 @@ fn sync_scene_cameras_with_their_uniforms_system(
     gpu: UniqueView<AbstractGpu>,
     s_state: UniqueView<SceneState>,
 ) {
-    let c_matrix: [[f32; 4]; 4] =
-        s_state.main.calculate_camera_projection().into();
+    let uniform = CameraUniform::view_proj(
+        &s_state.main.camera,
+        &s_state.main.projection,
+    );
 
     gpu.write_uniform_buffer(
         &s_state.main.camera_buffer,
         0,
-        bytemuck::cast_slice(&[c_matrix]),
+        bytemuck::cast_slice(&[uniform]),
     );
 
     for s in s_state.sub_scenes.values() {
-        let c_matrix: [[f32; 4]; 4] = s.calculate_camera_projection().into();
+        let uniform = CameraUniform::view_proj(&s.camera, &s.projection);
         gpu.write_uniform_buffer(
             &s.camera_buffer,
             0,
-            bytemuck::cast_slice(&[c_matrix]),
+            bytemuck::cast_slice(&[uniform]),
         );
     }
 }
