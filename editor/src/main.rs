@@ -45,7 +45,7 @@ pub fn main() {
                     id: "WorkbenchScene".to_owned(),
                     camera: Camera::default(),
                     projection: Projection::default(),
-                    resolution: Some(Size::new(2048, 1600)),
+                    resolution: Some(Size::new(640, 480)),
                     should_render_grid: true,
                 },
                 SceneDescriptor {

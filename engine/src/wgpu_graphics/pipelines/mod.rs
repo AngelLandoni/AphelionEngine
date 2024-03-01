@@ -28,7 +28,7 @@ pub(crate) fn create_camera_bind_group_layout(gpu: &Gpu) -> BindGroupLayout {
             label: Some("Camera bind group"),
             entries: &[BindGroupLayoutEntry {
                 binding: 0,
-                visibility: ShaderStages::VERTEX,
+                visibility: ShaderStages::VERTEX | ShaderStages::FRAGMENT,
                 ty: wgpu::BindingType::Buffer {
                     ty: wgpu::BufferBindingType::Uniform,
                     has_dynamic_offset: false,

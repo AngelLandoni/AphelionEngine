@@ -4,14 +4,18 @@ use std::{
     sync::{Arc, RwLock},
 };
 
+use ahash::AHashMap;
 use shipyard::Unique;
 
-use crate::graphics::mesh::Mesh;
+use crate::graphics::{mesh::Mesh, Texture};
 
 type AssetResourceID = &'static str;
 
 #[derive(Copy, Clone, Hash, PartialEq, Eq, Debug)]
 pub struct MeshResourceID(pub(crate) AssetResourceID);
+
+#[derive(Copy, Clone, Hash, PartialEq, Eq, Debug)]
+pub struct TextureResourceID(pub(crate) AssetResourceID);
 
 impl Deref for MeshResourceID {
     type Target = AssetResourceID;
@@ -56,6 +60,7 @@ unsafe impl Sync for AssetServer {}
 #[derive(Default)]
 struct AssetServerData {
     meshes: HashMap<AssetResourceID, Arc<Mesh>>,
+    textures: AHashMap<AssetResourceID, Box<dyn Texture>>,
 }
 
 impl AssetServer {

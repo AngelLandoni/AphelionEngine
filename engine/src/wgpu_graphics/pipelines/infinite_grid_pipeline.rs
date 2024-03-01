@@ -1,9 +1,7 @@
 use shipyard::Unique;
 
 use wgpu::{
-    BindGroupLayoutDescriptor, BindGroupLayoutEntry, BlendComponent,
-    ColorTargetState, ColorWrites, FragmentState, PipelineLayoutDescriptor,
-    RenderPipeline, RenderPipelineDescriptor, ShaderStages, VertexState,
+    BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BlendComponent, ColorTargetState, ColorWrites, FragmentState, PipelineLayoutDescriptor, RenderPipeline, RenderPipelineDescriptor, ShaderStages, VertexState
 };
 
 use crate::wgpu_graphics::gpu::Gpu;
@@ -16,27 +14,14 @@ pub struct InfiniteGridPipeline {
 
 impl InfiniteGridPipeline {
     /// Creates and returns a new `InfiniteGridPipeline`.
-    pub(crate) fn new(gpu: &Gpu) -> Self {
+    pub(crate) fn new(
+        gpu: &Gpu,
+        camera_bind_group_layout: &BindGroupLayout,
+    ) -> Self {
         let program = gpu.compile_program(
             "infinite_grid_composition",
             include_str!("../shaders/infinite_grid.wgsl"),
         );
-
-        let camera_bind_group_layout =
-            gpu.device
-                .create_bind_group_layout(&BindGroupLayoutDescriptor {
-                    label: Some("Camera bind group"),
-                    entries: &[BindGroupLayoutEntry {
-                        binding: 0,
-                        visibility: ShaderStages::VERTEX,
-                        ty: wgpu::BindingType::Buffer {
-                            ty: wgpu::BufferBindingType::Uniform,
-                            has_dynamic_offset: false,
-                            min_binding_size: None,
-                        },
-                        count: None,
-                    }],
-                });
 
         let layout =
             gpu.device

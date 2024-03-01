@@ -22,7 +22,11 @@ use crate::{
                 FrameCompositionPipeline,
             },
             infinite_grid_pipeline::InfiniteGridPipeline,
-            setup_scenes_uniforms_system, GlobalBindGroupLayouts,
+            setup_scenes_uniforms_system,
+            sky_pipeline::{
+                configure_sky_pipeline_uniforms_system, SkyPipeline,
+            },
+            GlobalBindGroupLayouts,
         },
         rendering::{
             acquire_screen_texture, present_screen_texture,
@@ -68,6 +72,7 @@ impl Pluggable for WgpuRendererPlugin {
             app.schedule(Schedule::PipelineUniformsSetup, |world| {
                 world.run(setup_frame_composition_pipelines_uniforms_system);
                 world.run(setup_scenes_uniforms_system);
+                world.run(configure_sky_pipeline_uniforms_system);
             });
 
             app.schedule(Schedule::Start, |world| {
@@ -139,11 +144,14 @@ fn setup_pipelines(world: &World) {
 
     let dynamic_mesh = DynamicMeshPipeline::new(gpu, &camera_bind_group_layout);
     let frame_composition = FrameCompositionPipeline::new(gpu);
-    let infinite_grid = InfiniteGridPipeline::new(gpu);
+    let infinite_grid =
+        InfiniteGridPipeline::new(gpu, &camera_bind_group_layout);
+    let sky = SkyPipeline::new(gpu, &camera_bind_group_layout);
 
     world.add_unique(dynamic_mesh);
     world.add_unique(frame_composition);
     world.add_unique(infinite_grid);
+    world.add_unique(sky);
 
     world.add_unique(GlobalBindGroupLayouts {
         camera: camera_bind_group_layout,

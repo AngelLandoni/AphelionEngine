@@ -125,8 +125,8 @@ fn allocate_scenes(world: &World) {
             target_texture,
             depth_texture,
             should_sync_resolution_to_window: s_scene.resolution.is_none(),
-            should_render_grid: s_scene.should_render_grid,
             camera_bind_group: None,
+            sky_texture: None,
         };
 
         sub_scenes_finished.insert(s_scene.id.clone(), scene);
@@ -168,8 +168,8 @@ fn allocate_scenes(world: &World) {
         target_texture,
         depth_texture,
         should_sync_resolution_to_window: main.resolution.is_none(),
-        should_render_grid: main.should_render_grid,
         camera_bind_group: None,
+        sky_texture: None,
     };
 
     world.add_unique(SceneState {
