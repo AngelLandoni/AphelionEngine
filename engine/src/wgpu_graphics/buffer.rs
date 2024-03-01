@@ -35,6 +35,7 @@ impl Texture for WGPUTexture {
     }
 }
 
+// TODO(Angel): Impl `into` instead.
 pub(crate) fn map_usages(usage: BufferUsage) -> BufferUsages {
     match usage {
         BufferUsage::COPY_DST => BufferUsages::COPY_DST,

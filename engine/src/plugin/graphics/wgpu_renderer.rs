@@ -24,7 +24,7 @@ use crate::{
             infinite_grid_pipeline::InfiniteGridPipeline,
             setup_scenes_uniforms_system,
             sky_pipeline::{
-                configure_sky_pipeline_uniforms_system, SkyPipeline,
+                clear_sky_updater, configure_sky_pipeline_uniforms, SkyPipeline,
             },
             GlobalBindGroupLayouts,
         },
@@ -72,7 +72,6 @@ impl Pluggable for WgpuRendererPlugin {
             app.schedule(Schedule::PipelineUniformsSetup, |world| {
                 world.run(setup_frame_composition_pipelines_uniforms_system);
                 world.run(setup_scenes_uniforms_system);
-                world.run(configure_sky_pipeline_uniforms_system);
             });
 
             app.schedule(Schedule::Start, |world| {
@@ -81,6 +80,11 @@ impl Pluggable for WgpuRendererPlugin {
 
             app.schedule(Schedule::InitFrame, |world| {
                 world.run(acquire_screen_texture);
+            });
+
+            app.schedule(Schedule::Update, |world| {
+                configure_sky_pipeline_uniforms(world);
+                clear_sky_updater(world);
             });
 
             app.schedule(Schedule::RequestRedraw, |world| {
