@@ -1,11 +1,20 @@
-use shipyard::{Unique, UniqueView, UniqueViewMut};
+use shipyard::{Unique, UniqueView, UniqueViewMut, World};
 use wgpu::{
     BindGroup, BindGroupLayout, BlendComponent, ColorTargetState, ColorWrites,
     ComputePipeline, FragmentState, PipelineLayoutDescriptor, RenderPipeline,
     RenderPipelineDescriptor, TextureFormat, TextureUsages, VertexState,
 };
 
-use crate::{graphics::gpu::AbstractGpu, wgpu_graphics::gpu::Gpu};
+use crate::{
+    graphics::gpu::AbstractGpu,
+    wgpu_graphics::{buffer::WGPUTexture, gpu::Gpu},
+};
+
+// TODO(Angel): Move this out wgpu graphics.
+#[derive(Unique)]
+pub struct SkyUpdater {
+    texture_id: String,
+}
 
 #[derive(Unique)]
 pub(crate) struct SkyPipeline {
@@ -19,6 +28,10 @@ pub(crate) struct SkyPipeline {
     /// Represents the bind group, which is optional because it requires
     /// initializing the scene before creating the bind group.
     pub(crate) environment_bind_group: Option<BindGroup>,
+
+    /// Contains a reference to the cube texture which holds the unwraped
+    /// equirectangular texure.
+    pub(crate) cube_map_texture: WGPUTexture,
 }
 
 impl SkyPipeline {
@@ -147,6 +160,42 @@ impl SkyPipeline {
             },
         );
 
+        // Allocate a new cube map of the size of the
+        let texture = gpu.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("Sky cubemap texture"),
+            size: wgpu::Extent3d {
+                width: 1080,
+                height: 1080,
+                // A cube has 6 sides, so we need 6 layers
+                depth_or_array_layers: 6,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba32Float,
+            usage: wgpu::TextureUsages::STORAGE_BINDING
+                | wgpu::TextureUsages::TEXTURE_BINDING,
+            view_formats: &[],
+        });
+
+        let view = texture.create_view(&wgpu::TextureViewDescriptor {
+            label: Some("Sky texture view"),
+            dimension: Some(wgpu::TextureViewDimension::Cube),
+            array_layer_count: Some(6),
+            ..Default::default()
+        });
+
+        let sampler = gpu.device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some("Sky sampler"),
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Nearest,
+            min_filter: wgpu::FilterMode::Nearest,
+            mipmap_filter: wgpu::FilterMode::Nearest,
+            ..Default::default()
+        });
+
         SkyPipeline {
             pipeline,
             texture_format,
@@ -154,14 +203,24 @@ impl SkyPipeline {
             equirectangular_conversion_pipeline: equirect_to_cubemap,
             environment_layout,
             environment_bind_group: None,
+            cube_map_texture: WGPUTexture {
+                texture,
+                view,
+                sampler: Some(sampler),
+            },
         }
     }
 }
 
-pub(crate) fn configure_sky_pipeline_uniforms_system(
-    gpu: UniqueView<AbstractGpu>,
-    mut sky_pipeline: UniqueViewMut<SkyPipeline>,
-) {
+pub(crate) fn configure_sky_pipeline_uniforms(world: &World) {
+    let gpu = world.borrow::<UniqueView<AbstractGpu>>().unwrap();
+    let mut sky_pipeline =
+        world.borrow::<UniqueViewMut<SkyPipeline>>().unwrap();
+    let sky_updater = match world.borrow::<UniqueView<SkyUpdater>>() {
+        Ok(s_u) => s_u,
+        _ => return,
+    };
+
     let gpu = gpu
         .downcast_ref::<Gpu>()
         .expect("Incorrect GPU type expecting WGPU gpu");
@@ -183,4 +242,10 @@ pub(crate) fn configure_sky_pipeline_uniforms_system(
         texture_size,
     );
      */
+}
+
+/// A free function which removes the `SkyUpdater` component. This is done to
+/// avoid texture reallocations every frame, and only when it is just needed.
+pub(crate) fn clear_sky_updater(world: &World) {
+    world.remove_unique::<SkyUpdater>();
 }
