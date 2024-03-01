@@ -9,11 +9,11 @@ use shipyard::{
 use crate::{
     graphics::UniformBuffer,
     scene::{
-        asset_server::MeshResourceID,
+        asset_server::{MeshResourceID, TextureResourceID},
         camera::Camera,
         components::Transform,
         hierarchy::Hierarchy,
-        projection::{self, Projection},
+        projection::Projection,
         scene::SceneTarget,
         scene_state::SceneState,
     },
@@ -49,7 +49,16 @@ pub struct Scene {
     pub(crate) camera_bind_group: Option<Box<dyn BindGroup>>,
 
     pub(crate) should_sync_resolution_to_window: bool,
-    pub(crate) should_render_grid: bool,
+
+    /// Contains the image used to render the sky.
+    pub(crate) sky_texture: Option<TextureResourceID>,
+}
+
+impl Scene {
+    /// Configures the sky texture
+    pub fn set_sky_texture(&mut self, resource_id: TextureResourceID) {
+        self.sky_texture = Some(resource_id);
+    }
 }
 
 pub(crate) fn sync_main_scene_dynamic_entities_transform(
