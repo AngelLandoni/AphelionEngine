@@ -28,7 +28,7 @@ impl Deref for MeshResourceID {
 /// Conatins all the assets which a `Scene` can use.
 #[derive(Unique)]
 pub struct AssetServer {
-    data: Arc<RwLock<AssetServerData>>,
+    pub data: Arc<RwLock<AssetServerData>>,
 }
 
 impl Default for AssetServer {
@@ -58,9 +58,9 @@ unsafe impl Send for AssetServer {}
 unsafe impl Sync for AssetServer {}
 
 #[derive(Default)]
-struct AssetServerData {
-    meshes: HashMap<AssetResourceID, Arc<Mesh>>,
-    textures: AHashMap<AssetResourceID, Box<dyn Texture>>,
+pub struct AssetServerData {
+    pub meshes: HashMap<AssetResourceID, Arc<Mesh>>,
+    pub textures: AHashMap<AssetResourceID, Box<dyn Texture>>,
 }
 
 impl AssetServer {

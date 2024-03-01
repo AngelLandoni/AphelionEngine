@@ -7,6 +7,7 @@ use wgpu::{
 
 use crate::{
     graphics::gpu::AbstractGpu,
+    scene::asset_server::AssetServer,
     wgpu_graphics::{buffer::WGPUTexture, gpu::Gpu},
 };
 
@@ -27,7 +28,7 @@ pub(crate) struct SkyPipeline {
     pub(crate) environment_layout: BindGroupLayout,
     /// Represents the bind group, which is optional because it requires
     /// initializing the scene before creating the bind group.
-    pub(crate) environment_bind_group: Option<BindGroup>,
+    pub(crate) environment_bind_group: BindGroup,
 
     /// Contains a reference to the cube texture which holds the unwraped
     /// equirectangular texure.
@@ -196,13 +197,29 @@ impl SkyPipeline {
             ..Default::default()
         });
 
+        let environment_bind_group =
+            gpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
+                label: Some("environment_bind_group"),
+                layout: &environment_layout,
+                entries: &[
+                    wgpu::BindGroupEntry {
+                        binding: 0,
+                        resource: wgpu::BindingResource::TextureView(&view),
+                    },
+                    wgpu::BindGroupEntry {
+                        binding: 1,
+                        resource: wgpu::BindingResource::Sampler(&sampler),
+                    },
+                ],
+            });
+
         SkyPipeline {
             pipeline,
             texture_format,
             equirect_layout,
             equirectangular_conversion_pipeline: equirect_to_cubemap,
             environment_layout,
-            environment_bind_group: None,
+            environment_bind_group,
             cube_map_texture: WGPUTexture {
                 texture,
                 view,
@@ -212,8 +229,10 @@ impl SkyPipeline {
     }
 }
 
+/// Takes from the `AssetStorage` the indicated texture
 pub(crate) fn configure_sky_pipeline_uniforms(world: &World) {
     let gpu = world.borrow::<UniqueView<AbstractGpu>>().unwrap();
+    let asset_server = world.borrow::<UniqueView<AssetServer>>().unwrap();
     let mut sky_pipeline =
         world.borrow::<UniqueViewMut<SkyPipeline>>().unwrap();
     let sky_updater = match world.borrow::<UniqueView<SkyUpdater>>() {
@@ -221,27 +240,66 @@ pub(crate) fn configure_sky_pipeline_uniforms(world: &World) {
         _ => return,
     };
 
+    // TODO(Angel): When the texture is already processed remove it?.
     let gpu = gpu
         .downcast_ref::<Gpu>()
         .expect("Incorrect GPU type expecting WGPU gpu");
 
-    /*
-    queue.write_texture(
-        wgpu::ImageCopyTexture {
-            texture: &texture,
-            mip_level: 0,
-            origin: wgpu::Origin3d::ZERO,
-            aspect: wgpu::TextureAspect::All,
+    let asset_lock = &asset_server
+        .data
+        .read()
+        .expect("Unable to take asset store lock on updating sky");
+
+    let texture = match asset_lock.textures.get(sky_updater.texture_id.as_str())
+    {
+        Some(t) => t,
+        _ => return,
+    };
+
+    let wgpu_texture = &texture
+        .downcast_ref::<WGPUTexture>()
+        .expect("Incorrect texture type, expecting WGPUTexture");
+
+    let dst_view = sky_pipeline.cube_map_texture.texture.create_view(
+        &wgpu::TextureViewDescriptor {
+            label: Some("Sky cubemap copy view"),
+            dimension: Some(wgpu::TextureViewDimension::D2Array),
+            // array_layer_count: Some(6),
+            ..Default::default()
         },
-        &texture_data,
-        wgpu::ImageDataLayout {
-            offset: 0,
-            bytes_per_row: std::num::NonZeroU32::new(4 * texture_data.width()),
-            rows_per_image: std::num::NonZeroU32::new(texture_data.height()),
-        },
-        texture_size,
     );
-     */
+
+    let bind_group = gpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
+        label: Some("Sky cube map projection bind group"),
+        layout: &sky_pipeline.equirect_layout,
+        entries: &[
+            wgpu::BindGroupEntry {
+                binding: 0,
+                resource: wgpu::BindingResource::TextureView(
+                    &wgpu_texture.view,
+                ),
+            },
+            wgpu::BindGroupEntry {
+                binding: 1,
+                resource: wgpu::BindingResource::TextureView(&dst_view),
+            },
+        ],
+    });
+
+    let mut encoder = gpu.device.create_command_encoder(&Default::default());
+    let mut pass = encoder.begin_compute_pass(&wgpu::ComputePassDescriptor {
+        label: Some("Cube map texture projection"),
+        timestamp_writes: None,
+    });
+
+    let num_workgroups = (1080 + 15) / 16;
+    pass.set_pipeline(&sky_pipeline.equirectangular_conversion_pipeline);
+    pass.set_bind_group(0, &bind_group, &[]);
+    pass.dispatch_workgroups(num_workgroups, num_workgroups, 6);
+
+    drop(pass);
+
+    gpu.queue.submit([encoder.finish()]);
 }
 
 /// A free function which removes the `SkyUpdater` component. This is done to
