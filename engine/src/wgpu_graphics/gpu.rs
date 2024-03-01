@@ -60,7 +60,7 @@ impl Gpu {
             .request_device(
                 &DeviceDescriptor {
                     label: None,
-                    features: Features::empty(),
+                    features: Features::all_webgpu_mask(),
                     limits: Limits::default()
                         .using_resolution(adapter.limits()),
                 },
