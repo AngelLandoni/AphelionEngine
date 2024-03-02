@@ -6,8 +6,8 @@ use wgpu::{
 };
 
 use crate::{
-    graphics::gpu::AbstractGpu,
-    scene::asset_server::AssetServer,
+    graphics::{gpu::AbstractGpu, scene::Scene},
+    scene::{asset_server::AssetServer, scene_state::SceneState},
     wgpu_graphics::{buffer::WGPUTexture, gpu::Gpu},
 };
 
@@ -15,6 +15,7 @@ use crate::{
 #[derive(Unique)]
 pub struct SkyUpdater {
     texture_id: String,
+    scene_id: String,
 }
 
 #[derive(Unique)]
@@ -26,13 +27,6 @@ pub(crate) struct SkyPipeline {
     pub(crate) equirectangular_conversion_pipeline: ComputePipeline,
 
     pub(crate) environment_layout: BindGroupLayout,
-    /// Represents the bind group, which is optional because it requires
-    /// initializing the scene before creating the bind group.
-    pub(crate) environment_bind_group: BindGroup,
-
-    /// Contains a reference to the cube texture which holds the unwraped
-    /// equirectangular texure.
-    pub(crate) cube_map_texture: WGPUTexture,
 }
 
 impl SkyPipeline {
@@ -161,83 +155,38 @@ impl SkyPipeline {
             },
         );
 
-        // Allocate a new cube map of the size of the
-        let texture = gpu.device.create_texture(&wgpu::TextureDescriptor {
-            label: Some("Sky cubemap texture"),
-            size: wgpu::Extent3d {
-                width: 1080,
-                height: 1080,
-                // A cube has 6 sides, so we need 6 layers
-                depth_or_array_layers: 6,
-            },
-            mip_level_count: 1,
-            sample_count: 1,
-            dimension: wgpu::TextureDimension::D2,
-            format: wgpu::TextureFormat::Rgba32Float,
-            usage: wgpu::TextureUsages::STORAGE_BINDING
-                | wgpu::TextureUsages::TEXTURE_BINDING,
-            view_formats: &[],
-        });
-
-        let view = texture.create_view(&wgpu::TextureViewDescriptor {
-            label: Some("Sky texture view"),
-            dimension: Some(wgpu::TextureViewDimension::Cube),
-            array_layer_count: Some(6),
-            ..Default::default()
-        });
-
-        let sampler = gpu.device.create_sampler(&wgpu::SamplerDescriptor {
-            label: Some("Sky sampler"),
-            address_mode_u: wgpu::AddressMode::ClampToEdge,
-            address_mode_v: wgpu::AddressMode::ClampToEdge,
-            address_mode_w: wgpu::AddressMode::ClampToEdge,
-            mag_filter: wgpu::FilterMode::Nearest,
-            min_filter: wgpu::FilterMode::Nearest,
-            mipmap_filter: wgpu::FilterMode::Nearest,
-            ..Default::default()
-        });
-
-        let environment_bind_group =
-            gpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
-                label: Some("environment_bind_group"),
-                layout: &environment_layout,
-                entries: &[
-                    wgpu::BindGroupEntry {
-                        binding: 0,
-                        resource: wgpu::BindingResource::TextureView(&view),
-                    },
-                    wgpu::BindGroupEntry {
-                        binding: 1,
-                        resource: wgpu::BindingResource::Sampler(&sampler),
-                    },
-                ],
-            });
-
         SkyPipeline {
             pipeline,
             texture_format,
             equirect_layout,
             equirectangular_conversion_pipeline: equirect_to_cubemap,
             environment_layout,
-            environment_bind_group,
-            cube_map_texture: WGPUTexture {
-                texture,
-                view,
-                sampler: Some(sampler),
-            },
         }
     }
 }
 
-/// Takes from the `AssetStorage` the indicated texture
-pub(crate) fn configure_sky_pipeline_uniforms(world: &World) {
+/// Takes from the `AssetStorage` the indicated texture, generates the cubemap
+/// based on it and stores it in the correct scene. Equirectangular texture -> cubemap.
+pub(crate) fn sync_sky_pipeline_uniforms(world: &World) {
     let gpu = world.borrow::<UniqueView<AbstractGpu>>().unwrap();
     let asset_server = world.borrow::<UniqueView<AssetServer>>().unwrap();
-    let mut sky_pipeline =
-        world.borrow::<UniqueViewMut<SkyPipeline>>().unwrap();
+    let sky_pipeline = world.borrow::<UniqueView<SkyPipeline>>().unwrap();
+
+    // If there is a `SkyUpdater` component it means that the sky of some
+    // scene must be updated.
     let sky_updater = match world.borrow::<UniqueView<SkyUpdater>>() {
         Ok(s_u) => s_u,
         _ => return,
+    };
+
+    // Extract the scene where the sky is updated.
+    let scenes_states = world.borrow::<UniqueView<SceneState>>().unwrap();
+    let scene = if let Some(scene) =
+        scenes_states.sub_scenes.get(&sky_updater.scene_id)
+    {
+        scene
+    } else {
+        &scenes_states.main
     };
 
     // TODO(Angel): When the texture is already processed remove it?.
@@ -260,14 +209,20 @@ pub(crate) fn configure_sky_pipeline_uniforms(world: &World) {
         .downcast_ref::<WGPUTexture>()
         .expect("Incorrect texture type, expecting WGPUTexture");
 
-    let dst_view = sky_pipeline.cube_map_texture.texture.create_view(
-        &wgpu::TextureViewDescriptor {
-            label: Some("Sky cubemap copy view"),
-            dimension: Some(wgpu::TextureViewDimension::D2Array),
-            // array_layer_count: Some(6),
-            ..Default::default()
-        },
-    );
+    let scene_sky_texture = scene
+        .sky_texture
+        .downcast_ref::<WGPUTexture>()
+        .expect("Incorrect texture type, expecting WGPUTexture");
+
+    let dst_view =
+        scene_sky_texture
+            .texture
+            .create_view(&wgpu::TextureViewDescriptor {
+                label: Some("Sky cubemap copy view"),
+                dimension: Some(wgpu::TextureViewDimension::D2Array),
+                // array_layer_count: Some(6),
+                ..Default::default()
+            });
 
     let bind_group = gpu.device.create_bind_group(&wgpu::BindGroupDescriptor {
         label: Some("Sky cube map projection bind group"),
@@ -292,6 +247,7 @@ pub(crate) fn configure_sky_pipeline_uniforms(world: &World) {
         timestamp_writes: None,
     });
 
+    // TODO(Angel): 1080 is hardcoded we need to get that info from the scene descriptor.
     let num_workgroups = (1080 + 15) / 16;
     pass.set_pipeline(&sky_pipeline.equirectangular_conversion_pipeline);
     pass.set_bind_group(0, &bind_group, &[]);

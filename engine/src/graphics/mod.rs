@@ -61,6 +61,12 @@ pub trait BufferCreator {
         height: u32,
     ) -> Box<dyn Texture>;
 
+    fn allocate_cubemap_texture(
+        &self,
+        label: &str,
+        size: u32,
+    ) -> Box<dyn Texture>;
+
     fn allocate_uniform_buffer(
         &self,
         label: &str,

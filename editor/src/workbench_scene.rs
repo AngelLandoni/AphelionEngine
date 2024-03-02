@@ -37,19 +37,19 @@ impl Pluggable for WorkbenchScenePlugin {
         let axis = Unit::new_normalize(Vector3::new(1.0, 2.0, 3.0));
         let rot = UnitQuaternion::from_axis_angle(&axis, 0.0);
 
-        /*let root_cube = app.world.add_entity((
-        MeshComponent(CUBE_MESH_RESOURCE_ID),
-        Transform {
-            position: Vector3::new(0.0, 0.0, -10.0),
-            rotation: rot,
-            scale: Vector3::new(1.0, 1.0, 1.0),
-        },
-        SceneTarget::SubScene("LandscapeScene".to_string()),
-        Hierarchy::new(
-            crate::gui::icons::MESH_CUBE,
-            "Root cube".to_owned(),
-        ),
-        ));*/
+        let root_cube = app.world.add_entity((
+            MeshComponent(CUBE_MESH_RESOURCE_ID),
+            Transform {
+                position: Vector3::new(0.0, 0.0, -10.0),
+                rotation: rot,
+                scale: Vector3::new(1.0, 1.0, 1.0),
+            },
+            SceneTarget::SubScene("LandscapeScene".to_string()),
+            Hierarchy::new(
+                crate::gui::icons::MESH_CUBE,
+                "Root cube".to_owned(),
+            ),
+        ));
 
         let c_1 = app.world.add_entity((
             MeshComponent(CUBE_MESH_RESOURCE_ID),

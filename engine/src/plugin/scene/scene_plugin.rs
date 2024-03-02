@@ -7,6 +7,7 @@ use crate::{
         camera::CameraUniform,
         gpu::AbstractGpu,
         scene::{sync_main_scene_dynamic_entities_transform, Scene},
+        BindGroup, Texture, UniformBuffer,
     },
     host::window::Window,
     plugin::Pluggable,
@@ -76,105 +77,39 @@ fn allocate_scenes(world: &World) {
         "Unable to acquire AbstractGpu, the scenes cannot be allocated",
     );
 
-    let mut sub_scenes_finished = AHashMap::new();
+    let mut scenes_finished = AHashMap::new();
 
     let main = &descriptors.main;
     let sub_scenes = &descriptors.sub_scenes;
 
-    for s_scene in sub_scenes {
-        let uniform =
-            CameraUniform::view_proj(&s_scene.camera, &s_scene.projection);
-
-        let camera_buffer = gpu.allocate_uniform_buffer(
-            format!("{} Camera Buffer", s_scene.label).as_str(),
-            bytemuck::cast_slice(&[uniform]),
-        );
-
-        // TODO(Angel): Determine how we are going to handle resoluton for sub
-        // scenes.
-        let target_texture = gpu.allocate_target_texture(
-            format!("{} scene target texture", s_scene.label).as_ref(),
-            s_scene
-                .resolution
-                .map(|s| s.width)
-                .unwrap_or(gpu.surface_size().width),
-            s_scene
-                .resolution
-                .map(|s| s.height)
-                .unwrap_or(gpu.surface_size().height),
-        );
-
-        let depth_texture = gpu.allocate_depth_texture(
-            "Main scene depth texture",
-            s_scene
-                .resolution
-                .map(|s| s.width)
-                .unwrap_or(gpu.surface_size().width),
-            s_scene
-                .resolution
-                .map(|s| s.height)
-                .unwrap_or(gpu.surface_size().height),
-        );
+    for scene_d in sub_scenes.iter().chain(std::iter::once(main)) {
+        let (camera_buffer, target_texture, depth_texture) =
+            allocate_scene_main_resources(&gpu, &scene_d);
+        let sky_texture = allocate_sky_resources(&gpu);
 
         let scene = Scene {
-            label: s_scene.label.clone(),
-            camera: s_scene.camera,
-            projection: s_scene.projection,
+            label: scene_d.label.clone(),
+            camera: scene_d.camera,
+            projection: scene_d.projection,
             camera_buffer,
             mesh_transform_buffers: AHashMap::new(),
             target_texture,
             depth_texture,
-            should_sync_resolution_to_window: s_scene.resolution.is_none(),
+            should_sync_resolution_to_window: scene_d.resolution.is_none(),
             camera_bind_group: None,
-            sky_texture: None,
+            sky_texture,
+            sky_env_bind_group: None,
         };
 
-        sub_scenes_finished.insert(s_scene.id.clone(), scene);
+        scenes_finished.insert(scene_d.id.clone(), scene);
     }
 
-    let uniform = CameraUniform::view_proj(&main.camera, &main.projection);
-
-    let main_camera_buffer = gpu.allocate_uniform_buffer(
-        format!("{} Camera Buffer", main.label).as_str(),
-        bytemuck::cast_slice(&[uniform]),
-    );
-
-    let target_texture = gpu.allocate_target_texture(
-        "Main scene target texture",
-        main.resolution
-            .map(|s| s.width)
-            .unwrap_or(gpu.surface_size().width),
-        main.resolution
-            .map(|s| s.height)
-            .unwrap_or(gpu.surface_size().height),
-    );
-
-    let depth_texture = gpu.allocate_depth_texture(
-        "Main scene depth texture",
-        main.resolution
-            .map(|s| s.width)
-            .unwrap_or(gpu.surface_size().width),
-        main.resolution
-            .map(|s| s.height)
-            .unwrap_or(gpu.surface_size().height),
-    );
-
-    let main_scene = Scene {
-        label: main.label.clone(),
-        camera: main.camera,
-        projection: main.projection,
-        camera_buffer: main_camera_buffer,
-        mesh_transform_buffers: AHashMap::new(),
-        target_texture,
-        depth_texture,
-        should_sync_resolution_to_window: main.resolution.is_none(),
-        camera_bind_group: None,
-        sky_texture: None,
-    };
+    // The main scene must be in the list of scenes so we can just unwrap.
+    let main_scene = scenes_finished.remove(&main.id).unwrap();
 
     world.add_unique(SceneState {
         main: main_scene,
-        sub_scenes: sub_scenes_finished,
+        sub_scenes: scenes_finished,
     });
 }
 
@@ -203,4 +138,51 @@ fn sync_scene_cameras_with_their_uniforms_system(
             bytemuck::cast_slice(&[uniform]),
         );
     }
+}
+
+/// Allocates all the resoures needed to correctly setup the main resources (
+/// camera and scene targets).
+fn allocate_scene_main_resources(
+    gpu: &AbstractGpu,
+    scene: &SceneDescriptor,
+) -> (Box<dyn UniformBuffer>, Box<dyn Texture>, Box<dyn Texture>) {
+    let uniform = CameraUniform::view_proj(&scene.camera, &scene.projection);
+
+    let camera_buffer = gpu.allocate_uniform_buffer(
+        format!("{} Camera Buffer", scene.label).as_str(),
+        bytemuck::cast_slice(&[uniform]),
+    );
+
+    // TODO(Angel): Determine how we are going to handle resolution for sub
+    // scenes.
+    let target_texture = gpu.allocate_target_texture(
+        format!("{} scene target texture", scene.label).as_ref(),
+        scene
+            .resolution
+            .map(|s| s.width)
+            .unwrap_or(gpu.surface_size().width),
+        scene
+            .resolution
+            .map(|s| s.height)
+            .unwrap_or(gpu.surface_size().height),
+    );
+
+    let depth_texture = gpu.allocate_depth_texture(
+        format!("{} scene depth texture", scene.id).as_ref(),
+        scene
+            .resolution
+            .map(|s| s.width)
+            .unwrap_or(gpu.surface_size().width),
+        scene
+            .resolution
+            .map(|s| s.height)
+            .unwrap_or(gpu.surface_size().height),
+    );
+
+    (camera_buffer, target_texture, depth_texture)
+}
+
+/// Allocate the required resources to render the sky.
+fn allocate_sky_resources(gpu: &AbstractGpu) -> Box<dyn Texture> {
+    gpu.allocate_cubemap_texture("Sky cubemap", 1080)
 }

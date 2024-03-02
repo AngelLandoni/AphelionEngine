@@ -299,6 +299,54 @@ impl BufferCreator for Gpu {
         })
     }
 
+    fn allocate_cubemap_texture(
+        &self,
+        label: &str,
+        size: u32,
+    ) -> Box<dyn Texture> {
+        // Allocate a new cube map of the size of the
+        let texture = self.device.create_texture(&wgpu::TextureDescriptor {
+            label: Some(format!("{} texture", label).as_ref()),
+            size: wgpu::Extent3d {
+                width: size,
+                height: size,
+                // A cube has 6 sides, so we need 6 layers
+                depth_or_array_layers: 6,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format: wgpu::TextureFormat::Rgba32Float,
+            usage: wgpu::TextureUsages::STORAGE_BINDING
+                | wgpu::TextureUsages::TEXTURE_BINDING,
+            view_formats: &[],
+        });
+
+        let view = texture.create_view(&wgpu::TextureViewDescriptor {
+            label: Some(format!("{} view", label).as_str()),
+            dimension: Some(wgpu::TextureViewDimension::Cube),
+            array_layer_count: Some(6),
+            ..Default::default()
+        });
+
+        let sampler = self.device.create_sampler(&wgpu::SamplerDescriptor {
+            label: Some(format!("{} sampler", label).as_str()),
+            address_mode_u: wgpu::AddressMode::ClampToEdge,
+            address_mode_v: wgpu::AddressMode::ClampToEdge,
+            address_mode_w: wgpu::AddressMode::ClampToEdge,
+            mag_filter: wgpu::FilterMode::Nearest,
+            min_filter: wgpu::FilterMode::Nearest,
+            mipmap_filter: wgpu::FilterMode::Nearest,
+            ..Default::default()
+        });
+
+        Box::new(WGPUTexture {
+            texture,
+            view,
+            sampler: Some(sampler),
+        })
+    }
+
     fn allocate_uniform_buffer(
         &self,
         label: &str,
