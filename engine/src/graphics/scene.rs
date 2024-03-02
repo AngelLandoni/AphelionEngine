@@ -50,15 +50,12 @@ pub struct Scene {
 
     pub(crate) should_sync_resolution_to_window: bool,
 
-    /// Contains the image used to render the sky.
-    pub(crate) sky_texture: Option<TextureResourceID>,
-}
-
-impl Scene {
-    /// Configures the sky texture
-    pub fn set_sky_texture(&mut self, resource_id: TextureResourceID) {
-        self.sky_texture = Some(resource_id);
-    }
+    /// Containst the cube texture used to draw the sky.
+    // TODO(Angel): Add to the `SceneDescriptor` a property to disable
+    // sky, and make this optional.
+    pub(crate) sky_texture: Box<dyn Texture>,
+    /// Contains the sky env bind group.
+    pub(crate) sky_env_bind_group: Option<Box<dyn BindGroup>>,
 }
 
 pub(crate) fn sync_main_scene_dynamic_entities_transform(

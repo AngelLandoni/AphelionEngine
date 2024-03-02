@@ -24,7 +24,7 @@ use crate::{
             infinite_grid_pipeline::InfiniteGridPipeline,
             setup_scenes_uniforms_system,
             sky_pipeline::{
-                clear_sky_updater, configure_sky_pipeline_uniforms, SkyPipeline,
+                clear_sky_updater, sync_sky_pipeline_uniforms, SkyPipeline,
             },
             GlobalBindGroupLayouts,
         },
@@ -83,7 +83,7 @@ impl Pluggable for WgpuRendererPlugin {
             });
 
             app.schedule(Schedule::Update, |world| {
-                configure_sky_pipeline_uniforms(world);
+                sync_sky_pipeline_uniforms(world);
                 clear_sky_updater(world);
             });
 
