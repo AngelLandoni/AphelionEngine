@@ -104,9 +104,10 @@ impl SkyPipeline {
                     multiview: None,
                 });
 
-        let module = gpu.device.create_shader_module(wgpu::include_wgsl!(
-            "../shaders/equirectangular.wgsl"
-        ));
+        let module = gpu.compile_program(
+            "Equirectangular sky converter",
+            include_str!("../shaders/equirectangular.wgsl"),
+        );
         let texture_format = wgpu::TextureFormat::Rgba32Float;
         let equirect_layout = gpu.device.create_bind_group_layout(
             &wgpu::BindGroupLayoutDescriptor {

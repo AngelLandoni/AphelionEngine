@@ -21,7 +21,6 @@ use engine::{
     types::Size,
 };
 
-//use camera::CameraPlugin;
 use gui::GuiPlugin;
 use utils::log::GuiLoggerPlugin;
 use workbench_scene::WorkbenchScenePlugin;

@@ -1,3 +1,4 @@
+pub mod asset_loader;
 pub mod asset_server;
 pub mod camera;
 pub mod components;

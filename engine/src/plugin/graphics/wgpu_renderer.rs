@@ -5,6 +5,7 @@ use crate::{
     graphics::{components::DepthTexture, gpu::AbstractGpu, BufferCreator},
     host::window::Window,
     plugin::Pluggable,
+    scene::asset_server::AssetServer,
     schedule::Schedule,
     wgpu_graphics::{
         components::{ScreenFrame, ScreenTexture},
@@ -83,6 +84,7 @@ impl Pluggable for WgpuRendererPlugin {
             });
 
             app.schedule(Schedule::Update, |world| {
+                load_textures(world);
                 sync_sky_pipeline_uniforms(world);
                 clear_sky_updater(world);
             });
@@ -108,6 +110,36 @@ impl Pluggable for WgpuRendererPlugin {
                 )
             });
         }
+    }
+}
+
+fn load_textures(world: &World) {
+    let mut asset_loader =
+        world.borrow::<UniqueViewMut<AssetServer>>().unwrap();
+
+    let textures_to_load = {
+        let textures_lock = &asset_loader.loader.lock().unwrap();
+        textures_lock.texture_to_load.clone()
+    };
+
+    let a_gpu = world
+        .borrow::<UniqueView<AbstractGpu>>()
+        .expect("Unable to acquire AbtractGpu");
+
+    let gpu = a_gpu
+        .downcast_ref::<Gpu>()
+        .expect("Unable to acquire Wgpu GPU");
+
+    for (id, buffer, size) in textures_to_load {
+        let texture = gpu.allocate_texture(
+            format!("Texture {}", id).as_ref(),
+            size.width,
+            size.height,
+            &buffer,
+        );
+
+        // TODO(Angle): Change this!.
+        asset_loader.register_texture("TEMP_ID", Box::new(texture));
     }
 }
 

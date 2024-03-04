@@ -9,6 +9,7 @@ pub mod wgpu_graphics;
 mod workload;
 
 pub use egui;
+pub use futures_lite;
 pub use log;
 pub use nalgebra;
 pub use shipyard;

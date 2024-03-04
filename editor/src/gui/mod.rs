@@ -60,7 +60,13 @@ use crate::gui::{
     },
 };
 
-use self::{config::GuiState, windows::gizmo_settings::render_gizmo_settings};
+use self::{
+    config::GuiState,
+    sections::asset_server_section::{
+        render_asset_server, sync_egui_asset_server, EguiAssetServer,
+    },
+    windows::gizmo_settings::render_gizmo_settings,
+};
 
 #[derive(Unique)]
 pub struct GuiPanelState(SplitPanelTree);
@@ -95,6 +101,7 @@ impl Pluggable for GuiPlugin {
         app.world.add_unique(SharedData::default());
         app.world.add_unique(GuiState::default());
         app.world.add_unique(GuiConfig::default());
+        app.world.add_unique(EguiAssetServer::default());
 
         app.world.run(configure_gui_system);
 
@@ -103,6 +110,7 @@ impl Pluggable for GuiPlugin {
         });
 
         app.schedule(Schedule::Update, |world| {
+            sync_egui_asset_server(world);
             world.run(sync_aspect_ratio_when_viewport_changes);
         });
 
@@ -228,14 +236,15 @@ fn configure_panels(tree: &mut SplitPanelTree) {
         HFraction::Right(0.8),
     );
 
-    let (viewport, logs) =
+    let (viewport, bottom_viewport) =
         tree.vertical_split(central, VSplitDir::Top, VFraction::Top(0.8));
 
     let (hierarchy, entities) =
         tree.vertical_split(left_zone, VSplitDir::Top, VFraction::Bottom(0.3));
 
     tree.insert_tab(viewport, "Viewport", "Viewport");
-    tree.insert_tab(logs, "General logs", "GeneralLogs");
+    tree.insert_tab(bottom_viewport, "Asset server", "AssetServer");
+    tree.insert_tab(bottom_viewport, "General logs", "GeneralLogs");
 
     tree.insert_tab(right_zone, "Properties", "Properties");
     tree.insert_tab(right_zone, "Landscape", "LandscapeEditor");
@@ -313,6 +322,7 @@ fn render_gui_system(world: &World) {
                         &mut entity_expanded_flags,
                     ),
                     "Entities" => ui.label("Entities list"),
+                    "AssetServer" => render_asset_server(ui, world),
 
                     _ => ui.label("Error unkown zone"),
                 },
