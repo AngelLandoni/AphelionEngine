@@ -1,13 +1,15 @@
 use std::{
     collections::HashMap,
     ops::Deref,
-    sync::{Arc, RwLock},
+    sync::{Arc, Mutex, RwLock},
 };
 
 use ahash::AHashMap;
 use shipyard::Unique;
 
 use crate::graphics::{mesh::Mesh, Texture};
+
+use super::asset_loader::AssetLoader;
 
 type AssetResourceID = &'static str;
 
@@ -29,12 +31,15 @@ impl Deref for MeshResourceID {
 #[derive(Unique)]
 pub struct AssetServer {
     pub data: Arc<RwLock<AssetServerData>>,
+
+    pub loader: Arc<Mutex<AssetLoader>>,
 }
 
 impl Default for AssetServer {
     fn default() -> Self {
         Self {
             data: Arc::new(RwLock::new(AssetServerData::default())),
+            loader: Arc::new(Mutex::new(AssetLoader::default())),
         }
     }
 }
@@ -71,5 +76,17 @@ impl AssetServer {
             .expect("Unable to acquire write lock")
             .meshes
             .insert(id, Arc::new(mesh));
+    }
+
+    pub fn register_texture(
+        &mut self,
+        id: AssetResourceID,
+        texture: Box<dyn Texture>,
+    ) {
+        self.data
+            .write()
+            .expect("Unable to acquire write lock")
+            .textures
+            .insert(id, texture);
     }
 }

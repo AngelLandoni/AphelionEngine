@@ -26,12 +26,25 @@ pub struct WindowsState {
     pub is_gizmo_settings_open: bool,
 }
 
+#[derive(Clone, Copy, PartialEq)]
+pub enum AssetServerSection {
+    Texture,
+    Cubemap,
+    Mesh,
+}
+
+#[derive(Clone, Copy, Default)]
+pub struct AssetServerState {
+    pub active_asset_server_section: Option<AssetServerSection>,
+}
+
 /// Contains the entire state of the GUI, which things are open,
 /// what is the state of selection etc.
 #[derive(Unique, Default)]
 pub struct GuiState {
     pub gizmo: GizmoState,
     pub windows: WindowsState,
+    pub asset_server: AssetServerState,
 }
 
 #[derive(Copy, Clone)]
