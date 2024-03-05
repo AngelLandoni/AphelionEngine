@@ -2,14 +2,18 @@ use log::{debug, info};
 use shipyard::{Unique, UniqueView, UniqueViewMut, World};
 use wgpu::{
     BindGroup, BindGroupLayout, BlendComponent, ColorTargetState, ColorWrites,
-    ComputePipeline, FragmentState, PipelineLayoutDescriptor, RenderPipeline,
-    RenderPipelineDescriptor, TextureFormat, TextureUsages, VertexState,
+    ComputePipeline, DepthBiasState, DepthStencilState, FragmentState,
+    PipelineLayoutDescriptor, RenderPipeline, RenderPipelineDescriptor,
+    StencilState, TextureFormat, TextureUsages, VertexState,
 };
 
 use crate::{
     graphics::{gpu::AbstractGpu, scene::Scene},
     scene::{asset_server::AssetServer, scene_state::SceneState},
-    wgpu_graphics::{buffer::WGPUTexture, gpu::Gpu},
+    wgpu_graphics::{
+        buffer::WGPUTexture,
+        gpu::{Gpu, DEPTH_TEXTURE_FORMAT},
+    },
 };
 
 // TODO(Angel): Move this out wgpu graphics.
@@ -35,7 +39,6 @@ pub(crate) struct SkyPipeline {
     pub(crate) texture_format: TextureFormat,
     pub(crate) equirect_layout: BindGroupLayout,
     pub(crate) equirectangular_conversion_pipeline: ComputePipeline,
-
     pub(crate) environment_layout: BindGroupLayout,
 }
 
@@ -97,7 +100,13 @@ impl SkyPipeline {
                         buffers: &[],
                     },
                     primitive: wgpu::PrimitiveState::default(),
-                    depth_stencil: None,
+                    depth_stencil: Some(DepthStencilState {
+                        format: DEPTH_TEXTURE_FORMAT,
+                        depth_write_enabled: true,
+                        depth_compare: wgpu::CompareFunction::LessEqual,
+                        stencil: StencilState::default(),
+                        bias: DepthBiasState::default(),
+                    }),
                     multisample: wgpu::MultisampleState::default(),
                     fragment: Some(FragmentState {
                         module: &program,

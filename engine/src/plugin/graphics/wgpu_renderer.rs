@@ -14,6 +14,7 @@ use crate::{
             dynamic_mesh_pass::dynamic_mesh_pass_system,
             frame_composition_pass_system::frame_composition_pass_system,
             infinite_grid_pass::infinite_grid_pass_system,
+            sky_pass::sky_pass_system,
         },
         pipelines::{
             create_camera_bind_group_layout,
@@ -93,6 +94,7 @@ impl Pluggable for WgpuRendererPlugin {
                 world.run(dynamic_mesh_pass_system);
                 world.run(frame_composition_pass_system);
                 world.run(infinite_grid_pass_system);
+                world.run(sky_pass_system);
             });
 
             app.schedule(Schedule::QueueSubmit, |world| {
