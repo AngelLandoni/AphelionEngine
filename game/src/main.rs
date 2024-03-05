@@ -4,9 +4,7 @@ use engine::graphics::components::MeshComponent;
 use engine::nalgebra::{Point3, Unit, UnitQuaternion, Vector3};
 
 use engine::plugin::graphics::egui::EguiSceneSelector;
-use engine::plugin::scene::primitives_plugin::{
-    PrimitivesPlugin, CUBE_MESH_RESOURCE_ID,
-};
+use engine::plugin::scene::primitives_plugin::PrimitivesPlugin;
 
 use engine::scene::components::Transform;
 use engine::scene::mouse::CursorDelta;

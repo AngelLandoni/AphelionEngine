@@ -1,3 +1,4 @@
+use log::{debug, info};
 use shipyard::{Unique, UniqueView, UniqueViewMut, World};
 use wgpu::{
     BindGroup, BindGroupLayout, BlendComponent, ColorTargetState, ColorWrites,
@@ -16,6 +17,15 @@ use crate::{
 pub struct SkyUpdater {
     texture_id: String,
     scene_id: String,
+}
+
+impl SkyUpdater {
+    pub fn new(texture_id: String, scene_id: String) -> SkyUpdater {
+        SkyUpdater {
+            texture_id,
+            scene_id,
+        }
+    }
 }
 
 #[derive(Unique)]

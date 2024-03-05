@@ -16,7 +16,7 @@ use std::ops::{Deref, DerefMut};
 
 use engine::{
     app::App,
-    egui::{Frame, Margin, TextureId},
+    egui::{Frame, Margin, Rect, TextureId},
     graphics::gpu::AbstractGpu,
     plugin::{
         graphics::egui::{EguiContext, EguiRenderer},
@@ -62,8 +62,11 @@ use crate::gui::{
 
 use self::{
     config::GuiState,
-    sections::asset_server_section::{
-        render_asset_server, sync_egui_asset_server, EguiAssetServer,
+    sections::{
+        asset_server_section::{
+            render_asset_server, sync_egui_asset_server, EguiAssetServer,
+        },
+        scene_config_section::render_scene_config_section,
     },
     windows::gizmo_settings::render_gizmo_settings,
 };
@@ -199,8 +202,8 @@ fn sync_aspect_ratio_when_viewport_changes(
             if let Projection::Perspective { aspect_ratio, .. } =
                 &mut s.projection
             {
-                *aspect_ratio = viewport_rect.unwrap().width()
-                    / viewport_rect.unwrap().height();
+                *aspect_ratio = viewport_rect.unwrap_or(Rect::NOTHING).width()
+                    / viewport_rect.unwrap_or(Rect::NOTHING).height();
             }
         });
 
@@ -216,8 +219,10 @@ fn sync_aspect_ratio_when_viewport_changes(
             if let Projection::Perspective { aspect_ratio, .. } =
                 &mut s.projection
             {
-                *aspect_ratio = landscape_viewport_rect.unwrap().width()
-                    / landscape_viewport_rect.unwrap().height();
+                *aspect_ratio = landscape_viewport_rect
+                    .unwrap_or(Rect::NOTHING)
+                    .width()
+                    / landscape_viewport_rect.unwrap_or(Rect::NOTHING).height();
             }
         });
 }
@@ -247,7 +252,7 @@ fn configure_panels(tree: &mut SplitPanelTree) {
     tree.insert_tab(bottom_viewport, "General logs", "GeneralLogs");
 
     tree.insert_tab(right_zone, "Properties", "Properties");
-    tree.insert_tab(right_zone, "Landscape", "LandscapeEditor");
+    tree.insert_tab(right_zone, "Scenes", "ScenesConfig");
 
     tree.insert_tab(hierarchy, "Hierarchy", "EntityHierarchy");
     tree.insert_tab(entities, "Entities", "Entities");
@@ -275,7 +280,6 @@ fn render_gui_system(world: &World) {
     let mut hierarchy = world.borrow::<ViewMut<Hierarchy>>().unwrap();
 
     let mut transforms = world.borrow::<ViewMut<Transform>>().unwrap();
-    let _scene = world.borrow::<UniqueView<SceneState>>().unwrap();
 
     // Render menu toolbar.
     render_menu_toolbar_widget(&egui.0, world);
@@ -312,7 +316,7 @@ fn render_gui_system(world: &World) {
                         &mut entity_selection_flags,
                         &mut transforms,
                     ),
-                    "LandscapeEditor" => ui.label("WIP"),
+                    "ScenesConfig" => render_scene_config_section(ui, world),
                     "EntityHierarchy" => render_hierarchy_widget(
                         ui,
                         &entities,

@@ -3,7 +3,8 @@ use engine::{
     graphics::components::MeshComponent,
     nalgebra::{Unit, UnitQuaternion, Vector3},
     plugin::{
-        core::clock::Clock, scene::primitives_plugin::CUBE_MESH_RESOURCE_ID,
+        core::clock::Clock,
+        scene::primitives_plugin::{cube_mesh_component, CUBE_PRIMITIVE_ID},
         Pluggable,
     },
     scene::{
@@ -38,7 +39,7 @@ impl Pluggable for WorkbenchScenePlugin {
         let rot = UnitQuaternion::from_axis_angle(&axis, 0.0);
 
         let root_cube = app.world.add_entity((
-            MeshComponent(CUBE_MESH_RESOURCE_ID),
+            cube_mesh_component(),
             Transform {
                 position: Vector3::new(0.0, 0.0, -10.0),
                 rotation: rot,
@@ -52,7 +53,7 @@ impl Pluggable for WorkbenchScenePlugin {
         ));
 
         let c_1 = app.world.add_entity((
-            MeshComponent(CUBE_MESH_RESOURCE_ID),
+            cube_mesh_component(),
             Transform {
                 position: Vector3::new(0.0, 0.0, 0.0),
                 rotation: rot,
@@ -66,7 +67,7 @@ impl Pluggable for WorkbenchScenePlugin {
         ));
 
         let c_2 = app.world.add_entity((
-            MeshComponent(CUBE_MESH_RESOURCE_ID),
+            cube_mesh_component(),
             Transform {
                 position: Vector3::new(5.0, 0.0, 0.0),
                 rotation: rot,
@@ -80,7 +81,7 @@ impl Pluggable for WorkbenchScenePlugin {
         ));
 
         let c_3 = app.world.add_entity((
-            MeshComponent(CUBE_MESH_RESOURCE_ID),
+            cube_mesh_component(),
             Transform {
                 position: Vector3::new(10.0, 0.0, 0.0),
                 rotation: rot,
@@ -94,7 +95,7 @@ impl Pluggable for WorkbenchScenePlugin {
         ));
 
         let c_4 = app.world.add_entity((
-            MeshComponent(CUBE_MESH_RESOURCE_ID),
+            cube_mesh_component(),
             Transform {
                 position: Vector3::new(15.0, 0.0, 0.0),
                 rotation: rot,
@@ -108,7 +109,7 @@ impl Pluggable for WorkbenchScenePlugin {
         ));
 
         let c_5 = app.world.add_entity((
-            MeshComponent(CUBE_MESH_RESOURCE_ID),
+            cube_mesh_component(),
             Transform {
                 position: Vector3::new(20.0, 0.0, 0.0),
                 rotation: rot,

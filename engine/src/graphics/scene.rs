@@ -107,18 +107,17 @@ fn sync_scene(
         AHashMap::new();
 
     for ent in meshes.iter() {
-        scene
-            .mesh_transform_buffers
-            .entry(**ent)
-            .or_insert_with(|| {
-                let buffer = gpu.allocate_aligned_zero_vertex_buffer(
-                    &format!("Mesh({}) transform", ent.0 .0),
-                    // TODO(Angel): The size must be configured using the pipeline props.
-                    200000 * std::mem::size_of::<[[f32; 4]; 4]>() as u64,
-                    BufferUsage::COPY_DST,
-                );
-                (buffer, 0)
-            });
+        let id = ent.0.clone();
+
+        scene.mesh_transform_buffers.entry(id).or_insert_with(|| {
+            let buffer = gpu.allocate_aligned_zero_vertex_buffer(
+                &format!("Mesh({}) transform", ent.0 .0),
+                // TODO(Angel): The size must be configured using the pipeline props.
+                200000 * std::mem::size_of::<[[f32; 4]; 4]>() as u64,
+                BufferUsage::COPY_DST,
+            );
+            (buffer, 0)
+        });
     }
 
     // In order to apply hierarchy transformation the entities must be
@@ -159,8 +158,10 @@ fn sync_scene(
             // main scene.
             Ok(SceneTarget::Main) | Err(_) => {
                 if scene_id.is_none() {
+                    let id = mesh.0.clone();
+
                     scene_raw_transforms
-                        .entry(**mesh)
+                        .entry(id)
                         .and_modify(|e| {
                             // Get parent transform matrix.
                             if let Ok(h) = hierarchy.get(*entity_id) {
@@ -218,8 +219,10 @@ fn sync_scene(
                     // If we found an entity which is assiged to the current
                     // scene add the transformation.
                     if *scene_id == *s {
+                        let id = mesh.0.clone();
+
                         scene_raw_transforms
-                            .entry(**mesh)
+                            .entry(id)
                             .and_modify(|e| {
                                 // Get parent transform matrix.
                                 if let Ok(h) = hierarchy.get(*entity_id) {
@@ -280,9 +283,12 @@ fn sync_scene(
     }
 
     for (m, b) in scene_raw_transforms.iter() {
-        scene.mesh_transform_buffers.entry(*m).and_modify(|e| {
-            gpu.write_vertex_buffer(&e.0, 0, b);
-            e.1 = b.len() as u64 / Transform::raw_size();
-        });
+        scene
+            .mesh_transform_buffers
+            .entry(m.clone())
+            .and_modify(|e| {
+                gpu.write_vertex_buffer(&e.0, 0, b);
+                e.1 = b.len() as u64 / Transform::raw_size();
+            });
     }
 }

@@ -2,7 +2,9 @@ use shipyard::{UniqueView, UniqueViewMut};
 
 use crate::{
     app::App,
-    graphics::{gpu::AbstractGpu, mesh::Mesh, vertex::Vertex},
+    graphics::{
+        components::MeshComponent, gpu::AbstractGpu, mesh::Mesh, vertex::Vertex,
+    },
     plugin::Pluggable,
     scene::asset_server::{AssetServer, MeshResourceID},
 };
@@ -42,7 +44,7 @@ impl Pluggable for PrimitivesPlugin {
 }
 
 /// Conatins the id used to retrieve the information from the `AssetServer`.
-const PENTAGON_PRIMITIVE_ID: &str = "PENTAGON_PRIMITIVE_MESH";
+pub const PENTAGON_PRIMITIVE_ID: &str = "PENTAGON_PRIMITIVE_MESH";
 
 const PENTAGON_VERTICES: &[Vertex] = &[
     Vertex {
@@ -69,9 +71,6 @@ const PENTAGON_VERTICES: &[Vertex] = &[
 
 const PENTAGON_INDICES: &[u16] = &[0, 1, 4, 1, 2, 4, 2, 3, 4];
 
-pub const PENTAGON_MESH_RESOURCE_ID: MeshResourceID =
-    MeshResourceID(PENTAGON_PRIMITIVE_ID);
-
 fn configure_pentagon_primitive(gpu: &AbstractGpu, a_server: &mut AssetServer) {
     let v_buffer = gpu.allocate_vertex_buffer(
         "Pentagon primitive vertices",
@@ -85,10 +84,10 @@ fn configure_pentagon_primitive(gpu: &AbstractGpu, a_server: &mut AssetServer) {
 
     let mesh = Mesh::new(v_buffer, i_buffer, PENTAGON_INDICES.len() as u32);
 
-    a_server.register_mesh(PENTAGON_PRIMITIVE_ID, mesh);
+    a_server.register_mesh(PENTAGON_PRIMITIVE_ID.to_owned(), mesh);
 }
 
-const CUBE_PRIMITIVE_ID: &str = "CUBE_PRIMITIVE_MESH";
+pub const CUBE_PRIMITIVE_ID: &str = "CUBE_PRIMITIVE_MESH";
 
 const CUBE_VERTICES: &[Vertex] = &[
     Vertex {
@@ -203,9 +202,6 @@ const CUBE_INDICES: &[u16] = &[
     20, 21, 22, 22, 23, 20, // back
 ];
 
-pub const CUBE_MESH_RESOURCE_ID: MeshResourceID =
-    MeshResourceID(CUBE_PRIMITIVE_ID);
-
 fn configure_cube_primitive(gpu: &AbstractGpu, a_server: &mut AssetServer) {
     let v_buffer = gpu.allocate_vertex_buffer(
         "Cube primitive vertices",
@@ -219,5 +215,13 @@ fn configure_cube_primitive(gpu: &AbstractGpu, a_server: &mut AssetServer) {
 
     let mesh = Mesh::new(v_buffer, i_buffer, CUBE_INDICES.len() as u32);
 
-    a_server.register_mesh(CUBE_PRIMITIVE_ID, mesh);
+    a_server.register_mesh(CUBE_PRIMITIVE_ID.to_owned(), mesh);
+}
+
+pub fn cube_mesh_resource() -> MeshResourceID {
+    MeshResourceID(CUBE_PRIMITIVE_ID.to_owned())
+}
+
+pub fn cube_mesh_component() -> MeshComponent {
+    MeshComponent(cube_mesh_resource())
 }

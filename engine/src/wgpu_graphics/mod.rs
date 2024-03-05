@@ -2,7 +2,7 @@ pub mod buffer;
 pub(crate) mod components;
 pub mod gpu;
 pub(crate) mod passes;
-pub(crate) mod pipelines;
+pub mod pipelines;
 pub(crate) mod rendering;
 
 use crossbeam_queue::ArrayQueue;
