@@ -113,13 +113,18 @@ impl Pluggable for WgpuRendererPlugin {
     }
 }
 
+/// Moves all the textures from RAM to GPU RAM.
 fn load_textures(world: &World) {
     let mut asset_loader =
         world.borrow::<UniqueViewMut<AssetServer>>().unwrap();
 
     let textures_to_load = {
-        let textures_lock = &asset_loader.loader.lock().unwrap();
-        textures_lock.texture_to_load.clone()
+        let textures_lock = &mut asset_loader.loader.lock().unwrap();
+        let data = textures_lock.texture_to_load.clone();
+
+        textures_lock.texture_to_load.clear();
+
+        data
     };
 
     let a_gpu = world
@@ -138,8 +143,7 @@ fn load_textures(world: &World) {
             &buffer,
         );
 
-        // TODO(Angle): Change this!.
-        asset_loader.register_texture("TEMP_ID", Box::new(texture));
+        asset_loader.register_texture(id, Box::new(texture));
     }
 }
 

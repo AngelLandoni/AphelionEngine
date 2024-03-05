@@ -184,5 +184,6 @@ fn allocate_scene_main_resources(
 
 /// Allocate the required resources to render the sky.
 fn allocate_sky_resources(gpu: &AbstractGpu) -> Box<dyn Texture> {
+    // TODO(Angel): Change the 1080 resolution.
     gpu.allocate_cubemap_texture("Sky cubemap", 1080)
 }

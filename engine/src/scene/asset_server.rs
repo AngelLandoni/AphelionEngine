@@ -11,12 +11,12 @@ use crate::graphics::{mesh::Mesh, Texture};
 
 use super::asset_loader::AssetLoader;
 
-type AssetResourceID = &'static str;
+type AssetResourceID = String;
 
-#[derive(Copy, Clone, Hash, PartialEq, Eq, Debug)]
+#[derive(Clone, Hash, PartialEq, Eq, Debug)]
 pub struct MeshResourceID(pub(crate) AssetResourceID);
 
-#[derive(Copy, Clone, Hash, PartialEq, Eq, Debug)]
+#[derive(Clone, Hash, PartialEq, Eq, Debug)]
 pub struct TextureResourceID(pub(crate) AssetResourceID);
 
 impl Deref for MeshResourceID {
@@ -51,7 +51,7 @@ impl AssetServer {
             .read()
             .expect("Unable to acquire read lock")
             .meshes
-            .get(mesh.0)
+            .get(&mesh.0)
             .expect("Mesh not found")
             .clone()
     }
