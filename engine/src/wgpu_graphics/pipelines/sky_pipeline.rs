@@ -1,17 +1,19 @@
-use log::{debug, info};
+use std::iter;
+
+use log::{debug, info, warn};
 use shipyard::{Unique, UniqueView, UniqueViewMut, World};
 use wgpu::{
-    BindGroup, BindGroupLayout, BlendComponent, ColorTargetState, ColorWrites,
+    BindGroupLayout, BlendComponent, ColorTargetState, ColorWrites,
     ComputePipeline, DepthBiasState, DepthStencilState, FragmentState,
     PipelineLayoutDescriptor, RenderPipeline, RenderPipelineDescriptor,
     StencilState, TextureFormat, TextureUsages, VertexState,
 };
 
 use crate::{
-    graphics::{gpu::AbstractGpu, scene::Scene},
+    graphics::{gpu::AbstractGpu, scene::Scene, BindGroup},
     scene::{asset_server::AssetServer, scene_state::SceneState},
     wgpu_graphics::{
-        buffer::WGPUTexture,
+        buffer::{WGPUBindGroup, WGPUTexture},
         gpu::{Gpu, DEPTH_TEXTURE_FORMAT},
     },
 };
@@ -229,8 +231,13 @@ pub(crate) fn sync_sky_pipeline_uniforms(world: &World) {
         .downcast_ref::<WGPUTexture>()
         .expect("Incorrect texture type, expecting WGPUTexture");
 
-    let scene_sky_texture = scene
-        .sky_texture
+    // If there is not sky texture avoid the conversion.
+    let sky_texture = match &scene.sky_texture {
+        Some(st) => st,
+        None => return,
+    };
+
+    let scene_sky_texture = sky_texture
         .downcast_ref::<WGPUTexture>()
         .expect("Incorrect texture type, expecting WGPUTexture");
 
@@ -282,4 +289,68 @@ pub(crate) fn sync_sky_pipeline_uniforms(world: &World) {
 /// avoid texture reallocations every frame, and only when it is just needed.
 pub(crate) fn clear_sky_updater(world: &World) {
     world.remove_unique::<SkyUpdater>();
+}
+
+pub(crate) fn setup_sky_pipelines_uniforms_system(
+    gpu: UniqueView<AbstractGpu>,
+    sky_pipeline: UniqueView<SkyPipeline>,
+    mut s_state: UniqueViewMut<SceneState>,
+) {
+    let gpu = gpu
+        .downcast_ref::<Gpu>()
+        .expect("Incorrect GPU type expecting WGPU gpu");
+
+    if let Some(bg) =
+        generate_sky_bind_group(gpu, &mut s_state.main, &sky_pipeline)
+    {
+        s_state.main.sky_env_bind_group = Some(bg);
+    }
+
+    for (_, scene) in &mut s_state.sub_scenes.iter_mut() {
+        if let Some(bg) = generate_sky_bind_group(gpu, scene, &sky_pipeline) {
+            scene.sky_env_bind_group = Some(bg);
+        }
+    }
+}
+
+fn generate_sky_bind_group(
+    gpu: &Gpu,
+    scene: &mut Scene,
+    sky_pipeline: &SkyPipeline,
+) -> Option<Box<dyn BindGroup>> {
+    let sky_texture = match &scene.sky_texture {
+        Some(st) => st,
+        None => return None,
+    };
+
+    let sky_cubemap_texture = sky_texture
+        .downcast_ref::<WGPUTexture>()
+        .expect("Incorrect texture type, expecting WGPU Texture");
+
+    let sampler = match &sky_cubemap_texture.sampler {
+        Some(s) => s,
+        None => {
+            warn!("Scene sky texture does not contain sampler");
+            return None;
+        }
+    };
+
+    Some(Box::new(WGPUBindGroup(gpu.device.create_bind_group(
+        &wgpu::BindGroupDescriptor {
+            label: Some("environment_bind_group"),
+            layout: &sky_pipeline.environment_layout,
+            entries: &[
+                wgpu::BindGroupEntry {
+                    binding: 0,
+                    resource: wgpu::BindingResource::TextureView(
+                        &sky_cubemap_texture.view,
+                    ),
+                },
+                wgpu::BindGroupEntry {
+                    binding: 1,
+                    resource: wgpu::BindingResource::Sampler(sampler),
+                },
+            ],
+        },
+    ))))
 }

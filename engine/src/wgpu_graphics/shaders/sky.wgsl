@@ -43,6 +43,5 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
     let sample = textureSample(env_map, env_sampler, ray_direction);
 
-    return vec4(1.0, 0.0, 0.0, 1.0);
-    //return sample;
+    return sample;
 }

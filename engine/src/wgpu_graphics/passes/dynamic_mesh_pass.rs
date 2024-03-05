@@ -73,12 +73,7 @@ pub(crate) fn dynamic_mesh_pass_system(
                     view: &main_texture.view,
                     resolve_target: None,
                     ops: Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color {
-                            r: 0.0,
-                            g: 0.0,
-                            b: 0.0,
-                            a: 1.0,
-                        }),
+                        load: wgpu::LoadOp::Load,
                         store: wgpu::StoreOp::Store,
                     },
                 }),
@@ -86,7 +81,7 @@ pub(crate) fn dynamic_mesh_pass_system(
             depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
                 view: &depth_texture.view,
                 depth_ops: Some(Operations {
-                    load: wgpu::LoadOp::Clear(1.0),
+                    load: wgpu::LoadOp::Load,
                     store: wgpu::StoreOp::Store,
                 }),
                 stencil_ops: None,
@@ -165,12 +160,7 @@ pub(crate) fn dynamic_mesh_pass_system(
                             view: &main_texture.view,
                             resolve_target: None,
                             ops: Operations {
-                                load: wgpu::LoadOp::Clear(wgpu::Color {
-                                    r: 0.0,
-                                    g: 0.0,
-                                    b: 0.0,
-                                    a: 1.0,
-                                }),
+                                load: wgpu::LoadOp::Load,
                                 store: wgpu::StoreOp::Store,
                             },
                         }),
@@ -179,7 +169,7 @@ pub(crate) fn dynamic_mesh_pass_system(
                         RenderPassDepthStencilAttachment {
                             view: &depth_texture.view,
                             depth_ops: Some(Operations {
-                                load: wgpu::LoadOp::Clear(1.0),
+                                load: wgpu::LoadOp::Load,
                                 store: wgpu::StoreOp::Store,
                             }),
                             stencil_ops: None,

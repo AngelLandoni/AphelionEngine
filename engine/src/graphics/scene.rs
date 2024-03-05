@@ -53,7 +53,7 @@ pub struct Scene {
     /// Containst the cube texture used to draw the sky.
     // TODO(Angel): Add to the `SceneDescriptor` a property to disable
     // sky, and make this optional.
-    pub(crate) sky_texture: Box<dyn Texture>,
+    pub(crate) sky_texture: Option<Box<dyn Texture>>,
     /// Contains the sky env bind group.
     pub(crate) sky_env_bind_group: Option<Box<dyn BindGroup>>,
 }
