@@ -1,7 +1,9 @@
 use shipyard::Unique;
 
 use wgpu::{
-    BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry, BlendComponent, ColorTargetState, ColorWrites, FragmentState, PipelineLayoutDescriptor, RenderPipeline, RenderPipelineDescriptor, ShaderStages, VertexState
+    BindGroupLayout,
+    BlendComponent, ColorTargetState, ColorWrites, FragmentState,
+    PipelineLayoutDescriptor, RenderPipeline, RenderPipelineDescriptor, VertexState,
 };
 
 use crate::wgpu_graphics::gpu::Gpu;
@@ -27,7 +29,7 @@ impl InfiniteGridPipeline {
             gpu.device
                 .create_pipeline_layout(&PipelineLayoutDescriptor {
                     label: Some("Infinite grid pipeline layout"),
-                    bind_group_layouts: &[&camera_bind_group_layout],
+                    bind_group_layouts: &[camera_bind_group_layout],
                     push_constant_ranges: &[],
                 });
 

@@ -1,4 +1,4 @@
-use image::{io::Reader as ImageReader, math::Rect, GenericImageView};
+use image::{io::Reader as ImageReader, GenericImageView};
 
 use std::{future::Future, io::Cursor};
 
@@ -6,8 +6,8 @@ use shipyard::{Unique, UniqueView, UniqueViewMut, World};
 
 use engine::{
     egui::{
-        ahash::AHashMap, vec2, Align, CentralPanel, CollapsingHeader, Color32,
-        Grid, Image, Layout, Response, Rounding, ScrollArea, TextureId, Ui,
+        ahash::AHashMap, vec2,
+        Grid, Image, Response, Rounding, ScrollArea, TextureId, Ui,
     },
     graphics::gpu::AbstractGpu,
     plugin::graphics::egui::EguiRenderer,

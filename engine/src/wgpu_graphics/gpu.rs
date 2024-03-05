@@ -2,7 +2,7 @@ use bytemuck::{AnyBitPattern, Pod};
 use wgpu::{
     util::{BufferInitDescriptor, DeviceExt},
     Adapter, Buffer, BufferAddress, BufferUsages, Device, DeviceDescriptor,
-    Extent3d, Features, Limits, Queue, RequestAdapterOptions, Sampler,
+    Extent3d, Features, Limits, Queue, RequestAdapterOptions,
     SamplerDescriptor, ShaderModule, Surface, SurfaceConfiguration,
     TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
     TextureViewDescriptor, COPY_BUFFER_ALIGNMENT,
