@@ -37,6 +37,7 @@ pub fn main() {
                 projection: Projection::default(),
                 resolution: None,
                 should_render_grid: true,
+                should_render_sky: true,
             },
             sub_scenes: vec![
                 SceneDescriptor {
@@ -46,6 +47,7 @@ pub fn main() {
                     projection: Projection::default(),
                     resolution: Some(Size::new(640, 480)),
                     should_render_grid: true,
+                    should_render_sky: true,
                 },
                 SceneDescriptor {
                     label: "Landscape Scene".to_owned(),
@@ -54,6 +56,7 @@ pub fn main() {
                     projection: Projection::default(),
                     resolution: Some(Size::new(1024, 768)),
                     should_render_grid: true,
+                    should_render_sky: true,
                 },
             ],
         })

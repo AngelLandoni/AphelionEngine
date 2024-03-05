@@ -20,6 +20,7 @@ pub(crate) enum CommandSubmitOrder {
     DebugGui,
     DebugGrid,
     DynamicMeshes,
+    Sky,
 }
 
 impl CommandSubmitOrder {

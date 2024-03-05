@@ -25,6 +25,8 @@ pub struct SceneDescriptor {
     pub resolution: Option<Size<u32>>,
     /// Contains an state determining if the debug grid must be rendered or not.
     pub should_render_grid: bool,
+    /// Determins if the scene should render a sky or not.
+    pub should_render_sky: bool,
 }
 
 impl SceneDescriptor {
@@ -38,6 +40,7 @@ impl SceneDescriptor {
             projection: Projection::default(),
             resolution: Some(Size::new(2048, 1600)),
             should_render_grid: false,
+            should_render_sky: false,
         }
     }
 }

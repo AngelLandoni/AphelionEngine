@@ -1,4 +1,5 @@
 use ahash::AHashMap;
+use log::trace;
 use shipyard::{Unique, UniqueView, UniqueViewMut, World};
 
 use crate::{
@@ -85,7 +86,13 @@ fn allocate_scenes(world: &World) {
     for scene_d in sub_scenes.iter().chain(std::iter::once(main)) {
         let (camera_buffer, target_texture, depth_texture) =
             allocate_scene_main_resources(&gpu, &scene_d);
-        let sky_texture = allocate_sky_resources(&gpu);
+
+        let sky_texture = if scene_d.should_render_sky {
+            trace!("Creating texture");
+            Some(allocate_sky_resources(&gpu))
+        } else {
+            None
+        };
 
         let scene = Scene {
             label: scene_d.label.clone(),
