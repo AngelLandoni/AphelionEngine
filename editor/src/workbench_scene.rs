@@ -1,10 +1,9 @@
 use engine::{
     app::App,
-    graphics::components::MeshComponent,
     nalgebra::{Unit, UnitQuaternion, Vector3},
     plugin::{
         core::clock::Clock,
-        scene::primitives_plugin::{cube_mesh_component, CUBE_PRIMITIVE_ID},
+        scene::primitives_plugin::{cube_mesh_component},
         Pluggable,
     },
     scene::{
@@ -38,7 +37,7 @@ impl Pluggable for WorkbenchScenePlugin {
         let axis = Unit::new_normalize(Vector3::new(1.0, 2.0, 3.0));
         let rot = UnitQuaternion::from_axis_angle(&axis, 0.0);
 
-        let root_cube = app.world.add_entity((
+        let _root_cube = app.world.add_entity((
             cube_mesh_component(),
             Transform {
                 position: Vector3::new(0.0, 0.0, -10.0),

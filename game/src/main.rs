@@ -305,7 +305,7 @@ impl Pluggable for PlayerPlugin {
             for j in 0..10 {
                 for k in 0..10 {
                     app.world.add_entity((
-                        MeshComponent(CUBE_MESH_RESOURCE_ID),
+                        //MeshComponent(CUBE_MESH_RESOURCE_ID),
                         Transform {
                             position: Vector3::new(
                                 10.0 + i as f32 * 5.0,
@@ -355,6 +355,7 @@ pub fn main() {
                 projection: Projection::default(),
                 resolution: None,
                 should_render_grid: false,
+                should_render_sky: false,
             },
             sub_scenes: Vec::new(),
         })

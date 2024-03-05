@@ -1,12 +1,12 @@
-use std::iter;
 
-use log::{debug, info, warn};
+
+use log::{warn};
 use shipyard::{Unique, UniqueView, UniqueViewMut, World};
 use wgpu::{
     BindGroupLayout, BlendComponent, ColorTargetState, ColorWrites,
     ComputePipeline, DepthBiasState, DepthStencilState, FragmentState,
     PipelineLayoutDescriptor, RenderPipeline, RenderPipelineDescriptor,
-    StencilState, TextureFormat, TextureUsages, VertexState,
+    StencilState, TextureFormat, VertexState,
 };
 
 use crate::{

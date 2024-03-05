@@ -1,14 +1,14 @@
 use engine::{
     egui::{
-        Color32, Grid, Id, Image, InnerResponse, Response, Rounding,
-        ScrollArea, Sense, Ui,
+        Grid, Id, Image, InnerResponse, Response, Rounding, ScrollArea, Sense,
+        Ui,
     },
     graphics::scene::Scene,
-    log::{debug, info},
+    log::info,
     scene::scene_state::SceneState,
     wgpu_graphics::pipelines::sky_pipeline::SkyUpdater,
 };
-use shipyard::{AllStoragesViewMut, UniqueView, UniqueViewMut, World};
+use shipyard::{UniqueView, UniqueViewMut, World};
 
 use super::asset_server_section::EguiAssetServer;
 
@@ -20,12 +20,19 @@ pub fn render_scene_config_section(ui: &mut Ui, world: &World) -> Response {
     ScrollArea::vertical().show(ui, |ui| {
         render_scene_component(
             ui,
+            None,
             &mut scene_state.main,
             &egui_assets_server,
             world,
         );
-        for (_, scene) in &mut scene_state.sub_scenes {
-            render_scene_component(ui, scene, &egui_assets_server, world);
+        for (id, scene) in &mut scene_state.sub_scenes {
+            render_scene_component(
+                ui,
+                Some(id),
+                scene,
+                &egui_assets_server,
+                world,
+            );
         }
     });
 
@@ -34,11 +41,12 @@ pub fn render_scene_config_section(ui: &mut Ui, world: &World) -> Response {
 
 fn render_scene_component(
     ui: &mut Ui,
+    scene_id: Option<&String>,
     scene: &mut Scene,
     egui_asset_server: &EguiAssetServer,
     world: &World,
 ) {
-    ui.label(format!("{}", scene.label));
+    ui.label(scene.label.to_string());
 
     let InnerResponse { inner, response } = ui.menu_button("Skybox", |ui| {
         ScrollArea::vertical()
@@ -96,9 +104,8 @@ fn render_scene_component(
 
     if let Some(id) = inner.and_then(|i| i.inner.inner) {
         info!("Adding sky updater!");
-        world.add_unique(SkyUpdater::new(
-            id.to_owned(),
-            "WorkbenchScene".to_owned(),
-        ));
+        if let Some(s_id) = scene_id {
+            world.add_unique(SkyUpdater::new(id.to_owned(), s_id.clone()));
+        }
     }
 }

@@ -1,6 +1,6 @@
 use std::iter;
 
-use log::warn;
+
 use shipyard::UniqueView;
 use wgpu::{
     CommandEncoderDescriptor, Operations, RenderPassDepthStencilAttachment,
@@ -11,10 +11,8 @@ use crate::{
     scene::scene_state::SceneState,
     wgpu_graphics::{
         buffer::{WGPUBindGroup, WGPUTexture},
-        components::{ScreenFrame, ScreenTexture},
         gpu::Gpu,
         pipelines::{
-            frame_composition_pipeline::FrameCompositionPipeline,
             sky_pipeline::SkyPipeline,
         },
         CommandQueue, CommandSubmitOrder, OrderCommandBuffer,
@@ -37,7 +35,7 @@ pub(crate) fn sky_pass_system(
                 label: Some("Sky encoder"),
             });
 
-    for (id, scene) in s_state
+    for (_id, scene) in s_state
         .sub_scenes
         .iter()
         .chain(iter::once((&"!internal_main".to_owned(), &s_state.main)))
@@ -54,7 +52,7 @@ pub(crate) fn sky_pass_system(
 
         let camera_bind_group = match &scene.camera_bind_group {
             Some(bg) => bg,
-            None => return,
+            None => continue,
         };
 
         let camera_bind_group = camera_bind_group
@@ -64,8 +62,7 @@ pub(crate) fn sky_pass_system(
         let sky_texture_bind_group = match &scene.sky_env_bind_group {
             Some(bg) => bg,
             None => {
-                warn!("Missing sky texture_bind_group! {}", id);
-                return;
+                continue;
             }
         };
 
