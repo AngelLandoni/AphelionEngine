@@ -1,9 +1,9 @@
 use shipyard::Unique;
 
 use wgpu::{
-    BindGroupLayout,
-    BlendComponent, ColorTargetState, ColorWrites, FragmentState,
-    PipelineLayoutDescriptor, RenderPipeline, RenderPipelineDescriptor, VertexState,
+    BindGroupLayout, BlendComponent, ColorTargetState, ColorWrites,
+    FragmentState, PipelineLayoutDescriptor, RenderPipeline,
+    RenderPipelineDescriptor, VertexState,
 };
 
 use crate::wgpu_graphics::gpu::Gpu;
@@ -44,18 +44,23 @@ impl InfiniteGridPipeline {
                         buffers: &[],
                     },
                     primitive: wgpu::PrimitiveState::default(),
-                    depth_stencil: None,
+                    depth_stencil: Some(wgpu::DepthStencilState {
+                        format: wgpu::TextureFormat::Depth32Float,
+                        depth_write_enabled: true,
+                        depth_compare: wgpu::CompareFunction::Less,
+                        stencil: wgpu::StencilState::default(),
+                        bias: wgpu::DepthBiasState::default(),
+                    }),
                     multisample: wgpu::MultisampleState::default(),
                     fragment: Some(FragmentState {
                         module: &program,
                         entry_point: "fs_main",
                         targets: &[Some(ColorTargetState {
                             format: gpu.surface_config.format,
-                            blend: Some(wgpu::BlendState {
-                                color: BlendComponent::REPLACE,
-                                alpha: BlendComponent::REPLACE,
-                            }),
-                            write_mask: ColorWrites::ALL,
+                            blend: Some(
+                                wgpu::BlendState::PREMULTIPLIED_ALPHA_BLENDING,
+                            ),
+                            write_mask: wgpu::ColorWrites::ALL,
                         })],
                     }),
                     multiview: None,

@@ -1,7 +1,7 @@
 use std::cmp::Ordering;
 
 use ahash::AHashMap;
-use nalgebra::{Matrix4};
+use nalgebra::Matrix4;
 use shipyard::{
     EntitiesView, EntityId, Get, IntoIter, UniqueView, UniqueViewMut, View,
 };
@@ -9,12 +9,8 @@ use shipyard::{
 use crate::{
     graphics::UniformBuffer,
     scene::{
-        asset_server::{MeshResourceID},
-        camera::Camera,
-        components::Transform,
-        hierarchy::Hierarchy,
-        projection::Projection,
-        scene::SceneTarget,
+        asset_server::MeshResourceID, camera::Camera, components::Transform,
+        hierarchy::Hierarchy, projection::Projection, scene::SceneTarget,
         scene_state::SceneState,
     },
 };
