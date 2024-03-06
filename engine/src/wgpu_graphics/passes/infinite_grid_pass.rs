@@ -1,5 +1,7 @@
 use shipyard::UniqueView;
-use wgpu::{CommandEncoderDescriptor, Operations};
+use wgpu::{
+    CommandEncoderDescriptor, Operations, RenderPassDepthStencilAttachment,
+};
 
 use crate::{
     graphics::gpu::AbstractGpu,
@@ -44,6 +46,11 @@ pub(crate) fn infinite_grid_pass_system(
             .downcast_ref::<WGPUTexture>()
             .expect("The provided scene texture is not a WGPU texture");
 
+        let depth_texture = scene
+            .depth_texture
+            .downcast_ref::<WGPUTexture>()
+            .expect("The provided scene texture is not a WGPU texture");
+
         {
             let mut pass =
                 encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
@@ -62,7 +69,16 @@ pub(crate) fn infinite_grid_pass_system(
                             },
                         }),
                     ],
-                    depth_stencil_attachment: None,
+                    depth_stencil_attachment: Some(
+                        RenderPassDepthStencilAttachment {
+                            view: &depth_texture.view,
+                            depth_ops: Some(Operations {
+                                load: wgpu::LoadOp::Load,
+                                store: wgpu::StoreOp::Store,
+                            }),
+                            stencil_ops: None,
+                        },
+                    ),
                     timestamp_writes: None,
                     occlusion_query_set: None,
                 });
