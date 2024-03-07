@@ -260,11 +260,20 @@ fn configure_panels(tree: &mut SplitPanelTree) {
 
 /// Renders the UI based on the Panel states.
 fn render_gui_system(world: &World) {
+    // Render menu toolbar.
+    render_menu_toolbar_widget(world);
+    // Render the top toolbar.
+    render_top_toolbar_widget(world);
+    // Render the leading toolbar.
+    render_leading_toolbar_widget(world);
+    // Render gizmo settings if needed.
+    render_gizmo_settings(world);
+
+    let egui = world.borrow::<UniqueView<EguiContext>>().unwrap();
     // Map viewport information.
     let viewport_information = extract_viewport_information(world);
 
     let entities = world.borrow::<EntitiesView>().unwrap();
-    let egui = world.borrow::<UniqueView<EguiContext>>().unwrap();
     let mut panel_state =
         world.borrow::<UniqueViewMut<GuiPanelState>>().unwrap();
     let mut start_drag = world
@@ -280,15 +289,6 @@ fn render_gui_system(world: &World) {
     let mut hierarchy = world.borrow::<ViewMut<Hierarchy>>().unwrap();
 
     let mut transforms = world.borrow::<ViewMut<Transform>>().unwrap();
-
-    // Render menu toolbar.
-    render_menu_toolbar_widget(&egui.0, world);
-    // Render the top toolbar.
-    render_top_toolbar_widget(&egui.0);
-    // Render the leading toolbar.
-    render_leading_toolbar_widget(&egui.0, world);
-    // Render gizmo settings if needed.
-    render_gizmo_settings(&egui.0, world);
 
     engine::egui::CentralPanel::default()
         .frame(Frame {

@@ -1,19 +1,23 @@
-use engine::egui::{
-    color_picker::{self, Alpha},
-    Context, Label, Slider, Widget, Window,
+use engine::{
+    egui::{
+        color_picker::{self, Alpha},
+        Context, Label, Slider, Widget, Window,
+    },
+    plugin::graphics::egui::EguiContext,
 };
-use shipyard::{UniqueViewMut, World};
+use shipyard::{UniqueView, UniqueViewMut, World};
 
 use crate::gui::config::{GuiConfig, GuiState};
 
-pub fn render_gizmo_settings(ctx: &Context, world: &World) {
+pub fn render_gizmo_settings(world: &World) {
+    let egui = world.borrow::<UniqueView<EguiContext>>().unwrap();
     let mut gui_state = world.borrow::<UniqueViewMut<GuiState>>().unwrap();
     let mut gui_config = world.borrow::<UniqueViewMut<GuiConfig>>().unwrap();
 
     Window::new("Gizmo settings")
         .resizable(false)
         .open(&mut gui_state.windows.is_gizmo_settings_open)
-        .show(ctx, |ui| {
+        .show(&egui.0, |ui| {
             Slider::new(&mut gui_config.gizmo.size, 10.0..=500.0)
                 .text("Gizmo size")
                 .ui(ui);

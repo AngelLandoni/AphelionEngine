@@ -1,3 +1,6 @@
+use std::f32::consts::PI;
+
+use nalgebra::{Vector2, Vector3};
 use shipyard::{UniqueView, UniqueViewMut};
 
 use crate::{
@@ -40,6 +43,7 @@ impl Pluggable for PrimitivesPlugin {
 
         configure_pentagon_primitive(&gpu, &mut a_server);
         configure_cube_primitive(&gpu, &mut a_server);
+        configure_sphere_primitive(&gpu, &mut a_server);
     }
 }
 
@@ -224,4 +228,110 @@ pub fn cube_mesh_resource() -> MeshResourceID {
 
 pub fn cube_mesh_component() -> MeshComponent {
     MeshComponent(cube_mesh_resource())
+}
+
+pub const SPHERE_PRIMITIVE_ID: &str = "SPHERE_PRIMITIVE_MESH";
+
+pub fn sphere_mesh_resource() -> MeshResourceID {
+    MeshResourceID(SPHERE_PRIMITIVE_ID.to_owned())
+}
+
+pub fn sphere_mesh_component() -> MeshComponent {
+    MeshComponent(sphere_mesh_resource())
+}
+
+fn configure_sphere_primitive(gpu: &AbstractGpu, a_server: &mut AssetServer) {
+    let (vertices, indices): (Vec<Vec<Vertex>>, Vec<Vec<u16>>) = [
+        Vector3::y(),        // Top
+        Vector3::y() * -1.0, // Bottom
+        Vector3::x() * -1.0, // Left
+        Vector3::x(),        // Right
+        Vector3::z() * -1.0, // Front
+        Vector3::z(),        // Back
+    ]
+    .iter()
+    .map(|d| face(d, 10))
+    .unzip();
+
+    println!("{:?}", vertices);
+
+    let vertices = vertices.into_iter().flatten().collect::<Vec<_>>();
+    //let indices = indices.into_iter().flatten().collect::<Vec<_>>();
+    let indices = indices
+        .iter()
+        .enumerate()
+        .flat_map(|(location, data)| {
+            data.iter()
+                .map(move |index| index + location as u16 * 10 * 10)
+        })
+        .collect::<Vec<_>>();
+
+    let v_buffer = gpu.allocate_vertex_buffer(
+        "Sphere primitive vertices",
+        bytemuck::cast_slice(&vertices),
+    );
+
+    let i_buffer = gpu.allocate_index_buffer(
+        "Sphere primitive indices",
+        bytemuck::cast_slice(&indices),
+    );
+
+    let mesh = Mesh::new(v_buffer, i_buffer, indices.len() as u32);
+
+    a_server.register_mesh(SPHERE_PRIMITIVE_ID.to_owned(), mesh);
+}
+
+fn face(dir: &Vector3<f32>, resolution: usize) -> (Vec<Vertex>, Vec<u16>) {
+    // Square grid.
+    let mut vertices = vec![
+        Vertex {
+            pos: [0.0, 0.0, 0.0],
+            col: [0.0, 0.0, 0.0]
+        };
+        resolution.pow(2)
+    ]; //Vec::with_capacity(resolution.pow(2));
+       // Number of small faces, times 2 trianges per face, times 3 vertices.
+    let mut indices = vec![0; (resolution - 1).pow(2) * 2 * 3]; //Vec::with_capacity((resolution - 1).pow(2) * 2 * 3);
+
+    let a_axis = dir.yzx();
+    let b_axis = dir.cross(&a_axis);
+
+    let mut i = 0;
+    let mut j = 0;
+
+    for y in 0..resolution {
+        for x in 0..resolution {
+            let position = Vector2::new(
+                x as f32 / (resolution - 1) as f32,
+                y as f32 / (resolution - 1) as f32,
+            );
+            let position3 = dir
+                + (position.x - 0.5) * 2.0 * a_axis
+                + (position.y - 0.5) * 2.0 * b_axis;
+
+            let position3 = position3.normalize();
+
+            vertices[i] = Vertex {
+                pos: [position3.x, position3.y, position3.z],
+                col: [position3.x, position3.y, position3.z],
+            };
+
+            if x < resolution - 1 && y < resolution - 1 {
+                // Triangles
+                indices[j] = i as u16;
+                indices[j + 1] = i as u16 + 1 + resolution as u16;
+                indices[j + 2] = i as u16 + resolution as u16;
+
+                indices[j + 3] = i as u16;
+                indices[j + 4] = i as u16 + 1;
+                indices[j + 5] = i as u16 + 1 + resolution as u16;
+
+                j += 6;
+            }
+
+            i += 1;
+        }
+    }
+
+    (vertices, indices)
 }

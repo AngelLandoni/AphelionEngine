@@ -1,17 +1,21 @@
 use std::process::exit;
 
-use engine::egui::{vec2, Context, Response, TopBottomPanel};
-use shipyard::{UniqueViewMut, World};
+use engine::{
+    egui::{vec2, Context, Response, TopBottomPanel},
+    plugin::graphics::egui::EguiContext,
+};
+use shipyard::{UniqueView, UniqueViewMut, World};
 
 use crate::gui::config::GuiState;
 
-pub fn render_menu_toolbar_widget(ctx: &Context, world: &World) -> Response {
+pub fn render_menu_toolbar_widget(world: &World) -> Response {
+    let egui = world.borrow::<UniqueView<EguiContext>>().unwrap();
     let mut gui_sate = world.borrow::<UniqueViewMut<GuiState>>().unwrap();
 
     TopBottomPanel::top("menu_toolbar")
         .resizable(false)
         .show_separator_line(false)
-        .show(ctx, |ui| {
+        .show(&egui.0, |ui| {
             ui.horizontal(|ui| {
                 // take full width and fixed height:
                 let height = ui.spacing().interact_size.y;
