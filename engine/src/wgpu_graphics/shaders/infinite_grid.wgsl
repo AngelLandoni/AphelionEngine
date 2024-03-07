@@ -96,7 +96,7 @@ fn grid(pos: vec3<f32>, scale: f32, axis: bool) -> vec4<f32> {
     let minimumz = min(derivative.y, 1.0);
     let minimumx = min(derivative.x, 1.0);
     let alpha = 1.0 - min(grid_line, 1.0);
-    var color = vec4<f32>(0.01) * alpha;
+    var color = vec4<f32>(0.05) * alpha;
     if (axis) {
         let extra = 1.0 / scale;
         // z axis
@@ -104,14 +104,14 @@ fn grid(pos: vec3<f32>, scale: f32, axis: bool) -> vec4<f32> {
             color.x = 0.0;
             color.y = 0.0;
             color.z = 0.1 * alpha;
-            //color.w = 1.0;
+            color.w = 0.5;
         }
         // x axis
         if (pos.z > -extra * minimumz && pos.z < extra * minimumz) {
             color.x = 0.1 * alpha;
             color.y = 0.0;
             color.z = 0.0;
-            //color.w = 1.0;
+            color.w = 0.5;
         }
     }
 
@@ -134,5 +134,9 @@ fn fs_main(in: GridOutput) -> FragOut {
     let fading = 1.0 - near / depth;
 
     let color = (grid(pos, 1.0, false) + grid(pos, 0.1, true)) * f32(t > 0.0);
+
     return FragOut(depth, color * fading);
 }
+
+// https://github.com/martin-pr/possumwood/wiki/Infinite-ground-plane-using-GLSL-shaders
+// http://asliceofrendering.com/scene%20helper/2020/01/05/InfiniteGrid/
