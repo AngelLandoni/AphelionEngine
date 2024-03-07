@@ -2,20 +2,22 @@ use egui_gizmo::{GizmoMode, GizmoOrientation};
 use engine::{
     egui::{Context, Response, SidePanel},
     log::{error, info, warn},
+    plugin::graphics::egui::EguiContext,
 };
-use shipyard::{UniqueViewMut, World};
+use shipyard::{UniqueView, UniqueViewMut, World};
 
 use crate::gui::config::GuiState;
 
 /// Renders the leading toolbar widget.
-pub fn render_leading_toolbar_widget(ctx: &Context, world: &World) -> Response {
+pub fn render_leading_toolbar_widget(world: &World) -> Response {
+    let egui = world.borrow::<UniqueView<EguiContext>>().unwrap();
     // Get the gui state in order to modify the active gizmo if it is required.
     let mut gui_state = world.borrow::<UniqueViewMut<GuiState>>().unwrap();
 
     SidePanel::left("leading_toolbar")
         .resizable(false)
         .max_width(35.0)
-        .show(ctx, |ui| {
+        .show(&egui.0, |ui| {
             // Disable the gizmo (enter selection mode).
             if ui.button("Pointer").clicked() {
                 gui_state.gizmo.kind = None;
