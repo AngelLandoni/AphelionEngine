@@ -5,7 +5,8 @@ use engine::{
     plugin::{
         graphics::egui::EguiContext,
         scene::primitives_plugin::{
-            cube_mesh_component, sphere_mesh_component,
+            cone_mesh_component, cube_mesh_component, plane_mesh_component,
+            sphere_mesh_component,
         },
     },
     scene::{components::Transform, hierarchy::Hierarchy, scene::SceneTarget},
@@ -75,11 +76,21 @@ pub fn render_top_toolbar_widget(world: &World) -> Response {
                     }
 
                     if ui.button(format!("{} Cone", MESH_CONE)).clicked() {
-                        println!("Add cone");
+                        mesh = Some(cone_mesh_component());
+                        hierarchy = Some(Hierarchy::new(
+                            crate::gui::icons::MESH_CONE,
+                            "Plane".to_owned(),
+                        ));
+                        ui.close_menu();
                     }
 
                     if ui.button(format!("{} Plane", MESH_PLANE)).clicked() {
-                        println!("Add palen");
+                        mesh = Some(plane_mesh_component());
+                        hierarchy = Some(Hierarchy::new(
+                            crate::gui::icons::MESH_PLANE,
+                            "Plane".to_owned(),
+                        ));
+                        ui.close_menu()
                     }
                 });
 
