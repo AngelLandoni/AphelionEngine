@@ -66,7 +66,7 @@ pub fn render_top_toolbar_widget(world: &World) -> Response {
                             crate::gui::icons::MESH_UVSPHERE,
                             "Sphere".to_owned(),
                         ));
-                        ui.close_menu();
+                        //ui.close_menu();
                     }
 
                     if ui

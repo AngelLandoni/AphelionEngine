@@ -229,27 +229,33 @@ fn sync_aspect_ratio_when_viewport_changes(
 
 /// Configures the default layout and distribution of panels within the editor.
 fn configure_panels(tree: &mut SplitPanelTree) {
-    let (workbench, right_zone) = tree.horizontal_split(
+    let (left_zone, right_zone) = tree.horizontal_split(
         ROOT_NODE,
         HSplitDir::Left,
         HFraction::Left(0.85),
     );
 
-    let (left_zone, central) = tree.horizontal_split(
-        workbench,
-        HSplitDir::Right,
-        HFraction::Right(0.8),
+    let (work_zone, action_zone) =
+        tree.vertical_split(left_zone, VSplitDir::Top, VFraction::Top(0.80));
+
+    let (viewport, viewport_descriptor) =
+        tree.horizontal_split(work_zone, HSplitDir::Left, HFraction::Left(0.8));
+
+    let (hierarchy, entities) = tree.vertical_split(
+        viewport_descriptor,
+        VSplitDir::Bottom,
+        VFraction::Top(0.70),
     );
 
-    let (viewport, bottom_viewport) =
-        tree.vertical_split(central, VSplitDir::Top, VFraction::Top(0.8));
-
-    let (hierarchy, entities) =
-        tree.vertical_split(left_zone, VSplitDir::Top, VFraction::Bottom(0.3));
+    let (asset_zone, log_zone) = tree.horizontal_split(
+        action_zone,
+        HSplitDir::Left,
+        HFraction::Left(0.70),
+    );
 
     tree.insert_tab(viewport, "Viewport", "Viewport");
-    tree.insert_tab(bottom_viewport, "Asset server", "AssetServer");
-    tree.insert_tab(bottom_viewport, "General logs", "GeneralLogs");
+    tree.insert_tab(asset_zone, "Asset server", "AssetServer");
+    tree.insert_tab(log_zone, "General logs", "GeneralLogs");
 
     tree.insert_tab(right_zone, "Properties", "Properties");
     tree.insert_tab(right_zone, "Scenes", "ScenesConfig");
