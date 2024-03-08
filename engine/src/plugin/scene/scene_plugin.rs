@@ -7,7 +7,8 @@ use crate::{
     graphics::{
         camera::CameraUniform,
         gpu::AbstractGpu,
-        scene::{sync_main_scene_dynamic_entities_transform, Scene}, Texture, UniformBuffer,
+        scene::{sync_main_scene_dynamic_entities_transform, Scene},
+        Texture, UniformBuffer,
     },
     host::window::Window,
     plugin::Pluggable,

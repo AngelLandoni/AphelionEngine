@@ -2,8 +2,7 @@ use engine::{
     app::App,
     nalgebra::{Unit, UnitQuaternion, Vector3},
     plugin::{
-        core::clock::Clock,
-        scene::primitives_plugin::{cube_mesh_component},
+        core::clock::Clock, scene::primitives_plugin::cube_mesh_component,
         Pluggable,
     },
     scene::{

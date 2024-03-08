@@ -1,7 +1,7 @@
 use engine::{
     egui::{
         color_picker::{self, Alpha},
-        Context, Label, Slider, Widget, Window,
+        Label, Slider, Widget, Window,
     },
     plugin::graphics::egui::EguiContext,
 };
