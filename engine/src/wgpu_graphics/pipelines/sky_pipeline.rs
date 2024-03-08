@@ -1,6 +1,4 @@
-
-
-use log::{warn};
+use log::warn;
 use shipyard::{Unique, UniqueView, UniqueViewMut, World};
 use wgpu::{
     BindGroupLayout, BlendComponent, ColorTargetState, ColorWrites,

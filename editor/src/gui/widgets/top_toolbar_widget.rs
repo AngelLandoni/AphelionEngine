@@ -1,29 +1,30 @@
 use engine::{
-    egui::{Context, Response, TopBottomPanel},
+    egui::{Response, TopBottomPanel},
     graphics::components::MeshComponent,
     nalgebra::{UnitQuaternion, Vector3},
     plugin::{
         graphics::egui::EguiContext,
         scene::primitives_plugin::{
-            cone_mesh_component, cube_mesh_component, plane_mesh_component,
-            sphere_mesh_component,
+            cone_mesh_component, cube_mesh_component, cylinder_mesh_component,
+            plane_mesh_component, sphere_mesh_component,
         },
     },
     scene::{components::Transform, hierarchy::Hierarchy, scene::SceneTarget},
 };
-use shipyard::{
-    AllStoragesView, AllStoragesViewMut, EntitiesViewMut, UniqueView, ViewMut,
-    World,
-};
+use shipyard::{AddComponent, EntitiesViewMut, UniqueView, ViewMut, World};
 
 use crate::gui::icons::{
     CUBE, DOWNARROW_HLT, FILE_3D, MESH_CONE, MESH_CUBE, MESH_CYLINDER,
     MESH_PLANE, MESH_UVSPHERE,
 };
 
+use super::hierarchy_widget::HierarchySelectionFlag;
+
 pub fn render_top_toolbar_widget(world: &World) -> Response {
     let egui = world.borrow::<UniqueView<EguiContext>>().unwrap();
     let mut entities = world.borrow::<EntitiesViewMut>().unwrap();
+    let mut selection =
+        world.borrow::<ViewMut<HierarchySelectionFlag>>().unwrap();
 
     let (mut meshes, mut transforms, mut scene_targets, mut hierarchies) =
         world
@@ -72,14 +73,19 @@ pub fn render_top_toolbar_widget(world: &World) -> Response {
                         .button(format!("{} Cylinder", MESH_CYLINDER))
                         .clicked()
                     {
-                        println!("Add cylinder");
+                        mesh = Some(cylinder_mesh_component());
+                        hierarchy = Some(Hierarchy::new(
+                            crate::gui::icons::MESH_CYLINDER,
+                            "Cylinder".to_owned(),
+                        ));
+                        ui.close_menu()
                     }
 
                     if ui.button(format!("{} Cone", MESH_CONE)).clicked() {
                         mesh = Some(cone_mesh_component());
                         hierarchy = Some(Hierarchy::new(
                             crate::gui::icons::MESH_CONE,
-                            "Plane".to_owned(),
+                            "Cone".to_owned(),
                         ));
                         ui.close_menu();
                     }
@@ -95,7 +101,7 @@ pub fn render_top_toolbar_widget(world: &World) -> Response {
                 });
 
                 if let (Some(mesh), Some(hierarchy)) = (mesh, hierarchy) {
-                    entities.add_entity(
+                    let id = entities.add_entity(
                         (
                             &mut meshes,
                             &mut transforms,
@@ -113,6 +119,10 @@ pub fn render_top_toolbar_widget(world: &World) -> Response {
                             hierarchy,
                         ),
                     );
+
+                    selection.clear();
+                    selection
+                        .add_component_unchecked(id, HierarchySelectionFlag);
                 }
             });
         })

@@ -1,5 +1,3 @@
-use std::f32::consts::PI;
-
 use nalgebra::{Vector2, Vector3};
 use shipyard::{UniqueView, UniqueViewMut};
 
@@ -46,6 +44,7 @@ impl Pluggable for PrimitivesPlugin {
         configure_sphere_primitive(&gpu, &mut a_server);
         configure_plane_primitive(&gpu, &mut a_server);
         configure_cone_primitive(&gpu, &mut a_server);
+        configure_cylinder_primitive(&gpu, &mut a_server);
     }
 }
 
@@ -387,7 +386,7 @@ fn configure_plane_primitive(gpu: &AbstractGpu, a_server: &mut AssetServer) {
 }
 
 // CONE
-pub const CONE_PRIMITIVE_ID: &str = "CYLINDER_PRIMITIVE_MESH";
+pub const CONE_PRIMITIVE_ID: &str = "CONE_PRIMITIVE_MESH";
 
 pub fn cone_mesh_resource() -> MeshResourceID {
     MeshResourceID(CONE_PRIMITIVE_ID.to_owned())
@@ -426,7 +425,7 @@ fn generate_cone_mesh(resolution: usize) -> (Vec<Vertex>, Vec<u16>) {
     let mut index_cout = 0;
     let mut indices: Vec<u16> = vec![0; resolution * 3 + (resolution - 2) * 3];
 
-    let angle = (360.0 as f32).to_radians() / resolution as f32;
+    let angle = 360.0_f32.to_radians() / resolution as f32;
 
     for i in 1..resolution + 1 {
         let local_angle = (i - 1) as f32 * angle;
@@ -461,6 +460,103 @@ fn generate_cone_mesh(resolution: usize) -> (Vec<Vertex>, Vec<u16>) {
         indices[index_cout + 2] = 1;
 
         index_cout += 3;
+    }
+
+    (vertices, indices)
+}
+
+// CYLINDER
+pub const CYLINDER_PRIMITIVE_ID: &str = "CYLINDER_PRIMITIVE_MESH";
+
+pub fn cylinder_mesh_resource() -> MeshResourceID {
+    MeshResourceID(CYLINDER_PRIMITIVE_ID.to_owned())
+}
+
+pub fn cylinder_mesh_component() -> MeshComponent {
+    MeshComponent(cylinder_mesh_resource())
+}
+
+fn configure_cylinder_primitive(gpu: &AbstractGpu, a_server: &mut AssetServer) {
+    let (vertices, indices) = generate_cylinder_mesh(20);
+
+    let v_buffer = gpu.allocate_vertex_buffer(
+        "Cube primitive vertices",
+        bytemuck::cast_slice(&vertices),
+    );
+
+    let i_buffer = gpu.allocate_index_buffer(
+        "Cube primitive indices",
+        bytemuck::cast_slice(&indices),
+    );
+
+    let mesh = Mesh::new(v_buffer, i_buffer, indices.len() as u32);
+    a_server.register_mesh(CYLINDER_PRIMITIVE_ID.to_owned(), mesh)
+}
+
+fn generate_cylinder_mesh(resolution: usize) -> (Vec<Vertex>, Vec<u16>) {
+    let mut vertices = vec![
+        Vertex {
+            pos: [0.0, 0.0, 0.0],
+            col: [0.0, 0.0, 0.0]
+        };
+        resolution * 2
+    ];
+    let mut indices = vec![0_u16; (resolution * 6) + (resolution - 2) * 6];
+    let mut index_count = 0;
+
+    let angle = 360.0_f32.to_radians() / resolution as f32;
+
+    for i in 0..resolution {
+        let local_angle = i as f32 * angle;
+        let x = local_angle.cos();
+        let y = local_angle.sin();
+
+        let top_index = i * 2;
+        let bottom_index = i * 2 + 1;
+
+        // TOP
+        vertices[top_index] = Vertex {
+            pos: [x, 1.0, y],
+            col: [x, 0.0, y],
+        };
+
+        // BOTTOM
+        vertices[bottom_index] = Vertex {
+            pos: [x, -1.0, y],
+            col: [x, 0.0, y],
+        };
+
+        // SIDE
+        if i < resolution - 1 {
+            indices[index_count] = top_index as u16;
+            indices[index_count + 1] = (top_index + 2) as u16;
+            indices[index_count + 2] = (bottom_index + 2) as u16;
+
+            indices[index_count + 3] = top_index as u16;
+            indices[index_count + 4] = (bottom_index + 2) as u16;
+            indices[index_count + 5] = bottom_index as u16;
+
+            if i < resolution - 2 {
+                indices[index_count + 6] = 0;
+                indices[index_count + 7] = top_index as u16 + 4;
+                indices[index_count + 8] = top_index as u16 + 2;
+
+                indices[index_count + 9] = bottom_index as u16 + 2;
+                indices[index_count + 10] = bottom_index as u16 + 2 + 2;
+                indices[index_count + 11] = 1;
+
+                index_count += 6;
+            }
+            index_count += 6;
+        } else {
+            indices[index_count] = top_index as u16;
+            indices[index_count + 1] = 0;
+            indices[index_count + 2] = 1;
+
+            indices[index_count + 3] = top_index as u16;
+            indices[index_count + 4] = 1;
+            indices[index_count + 5] = bottom_index as u16;
+        };
     }
 
     (vertices, indices)

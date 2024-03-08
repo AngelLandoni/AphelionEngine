@@ -1,7 +1,7 @@
 use std::process::exit;
 
 use engine::{
-    egui::{vec2, Context, Response, TopBottomPanel},
+    egui::{vec2, Response, TopBottomPanel},
     plugin::graphics::egui::EguiContext,
 };
 use shipyard::{UniqueView, UniqueViewMut, World};

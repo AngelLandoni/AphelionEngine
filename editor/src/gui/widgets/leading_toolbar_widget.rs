@@ -1,6 +1,6 @@
 use egui_gizmo::{GizmoMode, GizmoOrientation};
 use engine::{
-    egui::{Context, Response, SidePanel},
+    egui::{Response, SidePanel},
     log::{error, info, warn},
     plugin::graphics::egui::EguiContext,
 };

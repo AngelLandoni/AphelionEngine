@@ -6,8 +6,8 @@ use shipyard::{Unique, UniqueView, UniqueViewMut, World};
 
 use engine::{
     egui::{
-        ahash::AHashMap, vec2,
-        Grid, Image, Response, Rounding, ScrollArea, TextureId, Ui,
+        ahash::AHashMap, vec2, Grid, Image, Response, Rounding, ScrollArea,
+        TextureId, Ui,
     },
     graphics::gpu::AbstractGpu,
     plugin::graphics::egui::EguiRenderer,

@@ -1,9 +1,8 @@
 use shipyard::Unique;
 
 use wgpu::{
-    BindGroupLayout, BlendComponent, ColorTargetState, ColorWrites,
-    FragmentState, PipelineLayoutDescriptor, RenderPipeline,
-    RenderPipelineDescriptor, VertexState,
+    BindGroupLayout, ColorTargetState, FragmentState, PipelineLayoutDescriptor,
+    RenderPipeline, RenderPipelineDescriptor, VertexState,
 };
 
 use crate::wgpu_graphics::gpu::Gpu;

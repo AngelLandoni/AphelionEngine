@@ -1,6 +1,5 @@
 use std::iter;
 
-
 use shipyard::UniqueView;
 use wgpu::{
     CommandEncoderDescriptor, Operations, RenderPassDepthStencilAttachment,
@@ -12,9 +11,7 @@ use crate::{
     wgpu_graphics::{
         buffer::{WGPUBindGroup, WGPUTexture},
         gpu::Gpu,
-        pipelines::{
-            sky_pipeline::SkyPipeline,
-        },
+        pipelines::sky_pipeline::SkyPipeline,
         CommandQueue, CommandSubmitOrder, OrderCommandBuffer,
     },
 };
