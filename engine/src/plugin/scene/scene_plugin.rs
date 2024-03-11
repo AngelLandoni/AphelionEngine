@@ -13,11 +13,7 @@ use crate::{
     host::window::Window,
     plugin::Pluggable,
     scene::{
-        asset_server::AssetServer,
-        keyboard::Keyboard,
-        mouse::{Cursor, CursorDelta},
-        scene::SceneDescriptor,
-        scene_state::SceneState,
+        assets::asset_server::AssetServer, keyboard::Keyboard, mouse::{Cursor, CursorDelta}, scene::SceneDescriptor, scene_state::SceneState
     },
     schedule::Schedule,
 };

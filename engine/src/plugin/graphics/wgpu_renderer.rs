@@ -1,13 +1,7 @@
 use shipyard::{UniqueView, UniqueViewMut, World};
 
 use crate::{
-    app::App,
-    graphics::{components::DepthTexture, gpu::AbstractGpu, BufferCreator},
-    host::window::Window,
-    plugin::Pluggable,
-    scene::asset_server::AssetServer,
-    schedule::Schedule,
-    wgpu_graphics::{
+    app::App, graphics::{components::DepthTexture, gpu::AbstractGpu, BufferCreator}, host::window::Window, plugin::Pluggable, scene::assets::asset_server::AssetServer, schedule::Schedule, wgpu_graphics::{
         components::{ScreenFrame, ScreenTexture},
         gpu::Gpu,
         passes::{
@@ -37,7 +31,7 @@ use crate::{
             submit_commands_in_order,
         },
         CommandQueue, OrderCommandQueue, MAX_NUMBER_IF_COMMANDS_PER_FRAME,
-    },
+    }
 };
 
 pub struct WgpuRendererPlugin;

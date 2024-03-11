@@ -8,12 +8,7 @@ use engine::{
     egui::{
         ahash::AHashMap, vec2, Grid, Image, Response, Rounding, ScrollArea,
         TextureId, Ui,
-    },
-    graphics::gpu::AbstractGpu,
-    plugin::graphics::egui::EguiRenderer,
-    scene::asset_server::AssetServer,
-    types::Size,
-    wgpu_graphics::{buffer::WGPUTexture, gpu::Gpu},
+    }, graphics::gpu::AbstractGpu, log::info, plugin::graphics::egui::EguiRenderer, scene::assets::asset_server::AssetServer, types::Size, wgpu_graphics::{buffer::WGPUTexture, gpu::Gpu}
 };
 
 use crate::gui::config::{AssetServerSection, GuiState};
@@ -61,6 +56,8 @@ pub fn sync_egui_asset_server(world: &World) {
 
 pub fn render_asset_server(ui: &mut Ui, world: &World) -> Response {
     let mut gui_state = world.borrow::<UniqueViewMut<GuiState>>().unwrap();
+
+    let gpu = world.borrow::<UniqueView<AbstractGpu>>().unwrap();
     let egui_asset_server =
         world.borrow::<UniqueView<EguiAssetServer>>().unwrap();
     let mut asset_server =
@@ -98,6 +95,8 @@ pub fn render_asset_server(ui: &mut Ui, world: &World) -> Response {
                 &egui_asset_server,
                 height,
             ),
+
+            Some(AssetServerSection::Mesh) => render_mesh_section(ui, &gpu),
 
             _ => ui.label("No selected"),
         }
@@ -189,6 +188,25 @@ fn render_texture_section(
                     }
                 })
             });
+    })
+    .response
+}
+
+fn render_mesh_section(ui: &mut Ui, gpu: &AbstractGpu) -> Response {
+    ui.vertical(|ui| {
+        if ui.button("Load gltf").clicked() {
+            let task = rfd::AsyncFileDialog::new().pick_files();
+            let ctx = ui.ctx().clone();
+
+            execute(async move {
+                let files = match task.await {
+                    Some(f) => f,
+                    _ => return,
+                };
+
+                ctx.request_repaint();
+            });
+        }
     })
     .response
 }

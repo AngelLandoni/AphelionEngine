@@ -5,7 +5,7 @@ use wgpu::{
 
 use crate::{
     graphics::gpu::AbstractGpu,
-    scene::{asset_server::AssetServer, scene_state::SceneState},
+    scene::{assets::asset_server::AssetServer, scene_state::SceneState},
     wgpu_graphics::{
         buffer::{
             WGPUBindGroup, WGPUTexture, WgpuIndexBuffer, WgpuVertexBuffer,
