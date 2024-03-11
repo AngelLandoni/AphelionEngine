@@ -6,18 +6,14 @@ use std::{
 use ahash::AHashMap;
 use shipyard::Unique;
 
-use crate::{
-    graphics::{gpu::AbstractGpu, mesh::Mesh, Texture},
-    scene::asset_loader::AssetLoader,
-};
+use crate::graphics::{gpu::AbstractGpu, mesh::Mesh, Texture};
 
-use super::{AssetResourceID, MeshResourceID};
+use super::{asset_loader::AssetLoader, AssetResourceID, MeshResourceID};
 
 /// Conatins all the assets which a `Scene` can use.
 #[derive(Unique)]
 pub struct AssetServer {
     pub data: Arc<RwLock<AssetServerData>>,
-
     pub loader: Arc<Mutex<AssetLoader>>,
 }
 

@@ -8,7 +8,13 @@ use engine::{
     egui::{
         ahash::AHashMap, vec2, Grid, Image, Response, Rounding, ScrollArea,
         TextureId, Ui,
-    }, graphics::gpu::AbstractGpu, log::info, plugin::graphics::egui::EguiRenderer, scene::assets::asset_server::AssetServer, types::Size, wgpu_graphics::{buffer::WGPUTexture, gpu::Gpu}
+    },
+    graphics::gpu::AbstractGpu,
+    log::{info, warn},
+    plugin::graphics::egui::EguiRenderer,
+    scene::assets::{asset_server::AssetServer, model::ModelType},
+    types::Size,
+    wgpu_graphics::{buffer::WGPUTexture, gpu::Gpu},
 };
 
 use crate::gui::config::{AssetServerSection, GuiState};
@@ -96,7 +102,9 @@ pub fn render_asset_server(ui: &mut Ui, world: &World) -> Response {
                 height,
             ),
 
-            Some(AssetServerSection::Mesh) => render_mesh_section(ui, &gpu),
+            Some(AssetServerSection::Mesh) => {
+                render_mesh_section(ui, &gpu, &mut asset_server)
+            }
 
             _ => ui.label("No selected"),
         }
@@ -192,17 +200,40 @@ fn render_texture_section(
     .response
 }
 
-fn render_mesh_section(ui: &mut Ui, gpu: &AbstractGpu) -> Response {
+fn render_mesh_section(
+    ui: &mut Ui,
+    gpu: &AbstractGpu,
+    asset_server: &mut AssetServer,
+) -> Response {
     ui.vertical(|ui| {
         if ui.button("Load gltf").clicked() {
             let task = rfd::AsyncFileDialog::new().pick_files();
             let ctx = ui.ctx().clone();
+
+            let loader = asset_server.loader.clone();
 
             execute(async move {
                 let files = match task.await {
                     Some(f) => f,
                     _ => return,
                 };
+
+                let mut loader_lock = loader.lock().unwrap();
+
+                for file in files {
+                    let models = match ModelType::Obj(file.path()).load_model()
+                    {
+                        Ok(m) => m,
+                        _ => {
+                            warn!("Error loading {:?}", file.path());
+                            continue;
+                        }
+                    };
+
+                    models.into_iter().for_each(|m| {
+                        loader_lock.load_model(file.file_name(), m)
+                    });
+                }
 
                 ctx.request_repaint();
             });
