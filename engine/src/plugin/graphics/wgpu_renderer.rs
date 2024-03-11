@@ -1,7 +1,18 @@
 use shipyard::{UniqueView, UniqueViewMut, World};
 
 use crate::{
-    app::App, graphics::{components::DepthTexture, gpu::AbstractGpu, BufferCreator}, host::window::Window, plugin::Pluggable, scene::assets::asset_server::AssetServer, schedule::Schedule, wgpu_graphics::{
+    app::App,
+    graphics::{
+        components::DepthTexture,
+        gpu::{self, AbstractGpu},
+        mesh::Mesh,
+        BufferCreator,
+    },
+    host::window::Window,
+    plugin::Pluggable,
+    scene::assets::asset_server::AssetServer,
+    schedule::Schedule,
+    wgpu_graphics::{
         components::{ScreenFrame, ScreenTexture},
         gpu::Gpu,
         passes::{
@@ -31,7 +42,7 @@ use crate::{
             submit_commands_in_order,
         },
         CommandQueue, OrderCommandQueue, MAX_NUMBER_IF_COMMANDS_PER_FRAME,
-    }
+    },
 };
 
 pub struct WgpuRendererPlugin;
@@ -82,6 +93,7 @@ impl Pluggable for WgpuRendererPlugin {
 
             app.schedule(Schedule::Update, |world| {
                 load_textures(world);
+                load_models(world);
                 sync_sky_pipeline_uniforms(world);
                 clear_sky_updater(world);
             });
@@ -142,6 +154,43 @@ fn load_textures(world: &World) {
         );
 
         asset_loader.register_texture(id, Box::new(texture));
+    }
+}
+
+fn load_models(world: &World) {
+    let gpu = world
+        .borrow::<UniqueView<AbstractGpu>>()
+        .expect("Unable to acquire AbtractGpu");
+
+    let mut asset_loader = world
+        .borrow::<UniqueViewMut<AssetServer>>()
+        .expect("Unable to acquire asset loader lock");
+
+    let meshes = {
+        let model_loder = asset_loader.loader.lock().unwrap();
+
+        let mut meshes = Vec::new();
+
+        for (id, model) in &model_loder.models_to_load {
+            let vertices = gpu.allocate_vertex_buffer(
+                id.as_str(),
+                bytemuck::cast_slice(&model.vertices),
+            );
+
+            let indices = gpu.allocate_index_buffer(
+                id.as_str(),
+                bytemuck::cast_slice(&model.indices),
+            );
+
+            let mesh = Mesh::new(vertices, indices, model.indices.len() as u32);
+            meshes.push((id.clone(), mesh));
+        }
+
+        meshes
+    };
+
+    for (id, mesh) in meshes {
+        asset_loader.register_mesh(id.clone(), mesh);
     }
 }
 

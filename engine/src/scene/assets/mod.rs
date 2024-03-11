@@ -1,6 +1,8 @@
-use std::ops::Deref;
-
+pub mod asset_loader;
 pub mod asset_server;
+pub mod model;
+
+use std::ops::Deref;
 
 type AssetResourceID = String;
 
