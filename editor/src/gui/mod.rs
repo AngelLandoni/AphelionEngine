@@ -8,6 +8,7 @@ pub mod style;
 pub mod widgets;
 pub mod windows;
 
+use egui_extras::install_image_loaders;
 use shipyard::{
     AllStoragesViewMut, EntitiesView, Get, SparseSet, Unique, UniqueView,
     UniqueViewMut, ViewMut, World,
@@ -130,6 +131,8 @@ fn configure_gui_system(
     mut panel_state: UniqueViewMut<GuiPanelState>,
     mut egui: UniqueViewMut<EguiContext>,
 ) {
+    // EGUI needs a loader to load images.
+    install_image_loaders(&egui.0);
     // Configure all the font styles.
     configure_fonts(&egui.0);
     // Configure the icons font.

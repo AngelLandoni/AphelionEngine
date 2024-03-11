@@ -1,5 +1,6 @@
 pub mod dynamic_panel_widget;
 pub mod hierarchy_widget;
+pub mod icon_button;
 pub mod leading_toolbar_widget;
 pub mod menu_toolbar_widget;
 pub mod menu_widget;

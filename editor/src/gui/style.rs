@@ -1,3 +1,4 @@
+use egui_extras::install_image_loaders;
 use engine::egui::{
     Context, FontData, FontDefinitions, FontFamily, FontId, TextStyle,
 };
@@ -24,7 +25,7 @@ pub fn configure_fonts(ctx: &Context) {
         (TextStyle::Small, FontId::new(10.0, FontFamily::Proportional)),
         (
             TextStyle::Name("Icon".into()),
-            FontId::new(20.0, FontFamily::Proportional),
+            FontId::new(20.0, FontFamily::Monospace),
         ),
     ]
     .into();

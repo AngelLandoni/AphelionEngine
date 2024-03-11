@@ -7,5 +7,6 @@ edition = "2021"
 engine = { path = "../engine" }
 shipyard = "0.6.2"
 egui-gizmo = { git = "https://github.com/AngelLandoni/egui-gizmo", branch = "main" }
+egui_extras = { version = "*", features = ["all_loaders"] }
 rfd = "=0.14.0"
-image = "0.24.9"
+image = { version = "0.24.9", features = ["jpeg", "png"] }
