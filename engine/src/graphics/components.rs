@@ -1,7 +1,7 @@
 use shipyard::{Component, Unique};
 use std::ops::{Deref, DerefMut};
 
-use crate::{graphics::Texture, scene::assets::asset_server::MeshResourceID};
+use crate::{graphics::Texture, scene::assets::MeshResourceID};
 
 // TODO(Angel): Find a better name.
 #[derive(Component)]

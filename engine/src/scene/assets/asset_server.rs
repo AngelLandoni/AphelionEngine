@@ -1,32 +1,17 @@
 use std::{
     collections::HashMap,
-    fs::File,
-    io::{Cursor, Read},
-    ops::Deref,
-    path::Path,
     sync::{Arc, Mutex, RwLock},
 };
 
 use ahash::AHashMap;
 use shipyard::Unique;
 
-use crate::{graphics::{gpu::AbstractGpu, mesh::Mesh, Texture}, scene::asset_loader::AssetLoader};
+use crate::{
+    graphics::{gpu::AbstractGpu, mesh::Mesh, Texture},
+    scene::asset_loader::AssetLoader,
+};
 
-type AssetResourceID = String;
-
-#[derive(Clone, Hash, PartialEq, Eq, Debug)]
-pub struct MeshResourceID(pub(crate) AssetResourceID);
-
-#[derive(Clone, Hash, PartialEq, Eq, Debug)]
-pub struct TextureResourceID(pub(crate) AssetResourceID);
-
-impl Deref for MeshResourceID {
-    type Target = AssetResourceID;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
+use super::{AssetResourceID, MeshResourceID};
 
 /// Conatins all the assets which a `Scene` can use.
 #[derive(Unique)]
