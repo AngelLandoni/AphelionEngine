@@ -1,5 +1,8 @@
 use engine::{
-    egui::{Response, TopBottomPanel},
+    egui::{
+        pos2, Align, Area, Frame, Layout, Order, Response, TopBottomPanel,
+        Window,
+    },
     graphics::components::MeshComponent,
     nalgebra::{UnitQuaternion, Vector3},
     plugin::{
@@ -14,11 +17,14 @@ use engine::{
 use shipyard::{AddComponent, EntitiesViewMut, UniqueView, ViewMut, World};
 
 use crate::gui::icons::{
-    CUBE, DOWNARROW_HLT, FILE_3D, MESH_CONE, MESH_CUBE, MESH_CYLINDER,
-    MESH_PLANE, MESH_UVSPHERE,
+    ADD_ENTITY, CUBE, DOWNARROW_HLT, FILE_3D, GIZMO_ROTATE, GIZMO_SCALE,
+    MESH_CONE, MESH_CUBE, MESH_CYLINDER, MESH_PLANE, MESH_UVSPHERE, POINTER,
 };
 
-use super::hierarchy_widget::HierarchySelectionFlag;
+use super::{
+    hierarchy_widget::HierarchySelectionFlag,
+    icon_button::{render_icon_button, render_icon_context_button},
+};
 
 pub fn render_top_toolbar_widget(world: &World) -> Response {
     let egui = world.borrow::<UniqueView<EguiContext>>().unwrap();
@@ -39,7 +45,8 @@ pub fn render_top_toolbar_widget(world: &World) -> Response {
     TopBottomPanel::top("top_toolbar")
         .resizable(false)
         .show(&egui.0, |ui| {
-            ui.menu_button(format!("{} {}", FILE_3D, DOWNARROW_HLT), |ui| {
+            //render_icon_button(ui, &POINTER, 30.0);
+            render_icon_context_button(ui, &ADD_ENTITY, 30.0, |ui| {
                 if ui.button("Empty").clicked() {
                     println!("Add empty entity");
                 }
@@ -66,7 +73,7 @@ pub fn render_top_toolbar_widget(world: &World) -> Response {
                             crate::gui::icons::MESH_UVSPHERE,
                             "Sphere".to_owned(),
                         ));
-                        //ui.close_menu();
+                        ui.close_menu();
                     }
 
                     if ui

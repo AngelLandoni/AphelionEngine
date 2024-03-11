@@ -1,12 +1,25 @@
+use std::collections::BTreeMap;
+
 use egui_gizmo::{GizmoMode, GizmoOrientation};
 use engine::{
-    egui::{Response, SidePanel},
+    egui::{
+        Button, FontFamily, FontId, Response, RichText, SidePanel, TextStyle,
+    },
     log::{error, info, warn},
     plugin::graphics::egui::EguiContext,
 };
 use shipyard::{UniqueView, UniqueViewMut, World};
 
-use crate::gui::config::GuiState;
+use crate::gui::{
+    config::GuiState,
+    icons::{
+        CON_CHILDOF, GIZMO_ROTATE, GIZMO_SCALE, GIZMO_TRANSLATE, MESH_CIRCLE,
+        MESH_CUBE, OBJECT_ORIGIN, ORIENTATION_GIMBAL, POINTER,
+        RESTRICT_SELECT_OFF,
+    },
+};
+
+use super::icon_button::render_icon_button;
 
 /// Renders the leading toolbar widget.
 pub fn render_leading_toolbar_widget(world: &World) -> Response {
@@ -19,22 +32,22 @@ pub fn render_leading_toolbar_widget(world: &World) -> Response {
         .max_width(35.0)
         .show(&egui.0, |ui| {
             // Disable the gizmo (enter selection mode).
-            if ui.button("Pointer").clicked() {
+            if render_icon_button(ui, &POINTER, 38.0).clicked() {
                 gui_state.gizmo.kind = None;
             }
 
             // Set the translation gizmo.
-            if ui.button("Move").clicked() {
+            if render_icon_button(ui, &GIZMO_TRANSLATE, 38.0).clicked() {
                 gui_state.gizmo.kind = Some(GizmoMode::Translate);
             }
 
             // Set the rotate gizmo.
-            if ui.button("Rotate").clicked() {
+            if render_icon_button(ui, &GIZMO_ROTATE, 38.0).clicked() {
                 gui_state.gizmo.kind = Some(GizmoMode::Rotate);
             }
 
             // Set the scale gizmo.
-            if ui.button("Scale").clicked() {
+            if render_icon_button(ui, &GIZMO_SCALE, 38.0).clicked() {
                 gui_state.gizmo.kind = Some(GizmoMode::Scale);
             }
 
@@ -53,7 +66,7 @@ pub fn render_leading_toolbar_widget(world: &World) -> Response {
                 warn!("This is a warning");
                 error!("This is an error");
                 info!("This is info");
-            }
+            };
         })
         .response
 }

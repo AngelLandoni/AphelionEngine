@@ -1,5 +1,7 @@
 #![allow(dead_code)]
 
+use engine::egui::{Image, ImageSource};
+
 pub const ACTION: char = '\u{e900}';
 pub const ACTION_TWEAK: char = '\u{e901}';
 pub const ADD: char = '\u{e902}';
@@ -666,3 +668,37 @@ pub const ZOOM_IN: char = '\u{eb96}';
 pub const ZOOM_OUT: char = '\u{eb97}';
 pub const ZOOM_PREVIOUS: char = '\u{eb98}';
 pub const ZOOM_SELECTED: char = '\u{eb99}';
+
+#[derive(Clone, Copy, Debug)]
+pub struct Icon {
+    /// Human readable unique id
+    pub id: &'static str,
+
+    pub png_bytes: &'static [u8],
+}
+
+impl Icon {
+    pub const fn new(id: &'static str, png_bytes: &'static [u8]) -> Self {
+        Self { id, png_bytes }
+    }
+
+    pub fn as_image(&self) -> Image<'static> {
+        Image::new(ImageSource::Bytes {
+            uri: self.id.into(),
+            bytes: self.png_bytes.into(),
+        })
+    }
+}
+
+pub const GIZMO_ROTATE: Icon =
+    Icon::new("gizmo_rotate", include_bytes!("../assets/icons/rotate.png"));
+pub const GIZMO_TRANSLATE: Icon = Icon::new(
+    "gizmo_translate",
+    include_bytes!("../assets/icons/translate.png"),
+);
+pub const GIZMO_SCALE: Icon =
+    Icon::new("gizmo_scale", include_bytes!("../assets/icons/scale.png"));
+pub const POINTER: Icon =
+    Icon::new("pointer", include_bytes!("../assets/icons/pointer.png"));
+pub const ADD_ENTITY: Icon =
+    Icon::new("add_entity", include_bytes!("../assets/icons/add_entity.png"));
