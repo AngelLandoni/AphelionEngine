@@ -1,15 +1,16 @@
 use std::{
     collections::HashMap,
+    fs::File,
+    io::{Cursor, Read},
     ops::Deref,
+    path::Path,
     sync::{Arc, Mutex, RwLock},
 };
 
 use ahash::AHashMap;
 use shipyard::Unique;
 
-use crate::graphics::{mesh::Mesh, Texture};
-
-use super::asset_loader::AssetLoader;
+use crate::{graphics::{gpu::AbstractGpu, mesh::Mesh, Texture}, scene::asset_loader::AssetLoader};
 
 type AssetResourceID = String;
 
@@ -76,6 +77,30 @@ impl AssetServer {
             .expect("Unable to acquire write lock")
             .meshes
             .insert(id, Arc::new(mesh));
+    }
+
+    /// Registers a custom mesh into the server.
+    pub fn register_mesh_using_path(
+        &mut self,
+        gpu: &AbstractGpu,
+        id: AssetResourceID,
+        vertices: &[u8],
+        indices: &[u8],
+    ) {
+        let v_buffer = gpu.allocate_vertex_buffer(
+            "Sphere primitive vertices",
+            bytemuck::cast_slice(vertices),
+        );
+
+        let i_buffer = gpu.allocate_index_buffer(
+            "Sphere primitive indices",
+            bytemuck::cast_slice(indices),
+        );
+
+        self.register_mesh(
+            id,
+            Mesh::new(v_buffer, i_buffer, indices.len() as u32),
+        )
     }
 
     pub fn register_texture(

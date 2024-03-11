@@ -6,8 +6,7 @@ use crate::{
     graphics::{
         components::MeshComponent, gpu::AbstractGpu, mesh::Mesh, vertex::Vertex,
     },
-    plugin::Pluggable,
-    scene::asset_server::{AssetServer, MeshResourceID},
+    plugin::Pluggable, scene::assets::asset_server::{AssetServer, MeshResourceID},
 };
 
 /// Allocates and setups all the default primitives (Triangle, Quad, Cube, Cone,
