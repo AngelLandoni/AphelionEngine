@@ -22,7 +22,7 @@ impl Mouse {
         self.keys_down.remove(key);
     }
 
-    pub(crate) fn is_key_down(&mut self, key: MouseKeyCode) -> bool {
+    pub fn is_key_down(&self, key: MouseKeyCode) -> bool {
         self.keys_down.contains(&key)
     }
 }

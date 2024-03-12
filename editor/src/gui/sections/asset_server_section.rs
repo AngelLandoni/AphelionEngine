@@ -103,7 +103,7 @@ pub fn render_asset_server(ui: &mut Ui, world: &World) -> Response {
             ),
 
             Some(AssetServerSection::Mesh) => {
-                render_mesh_section(ui, &gpu, &mut asset_server, height)
+                render_mesh_section(ui, &mut asset_server, height)
             }
 
             _ => ui.label("No selected"),
@@ -202,7 +202,6 @@ fn render_texture_section(
 
 fn render_mesh_section(
     ui: &mut Ui,
-    gpu: &AbstractGpu,
     asset_server: &mut AssetServer,
     height: f32,
 ) -> Response {
