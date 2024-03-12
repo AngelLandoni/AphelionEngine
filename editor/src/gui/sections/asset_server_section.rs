@@ -7,7 +7,7 @@ use shipyard::{Unique, UniqueView, UniqueViewMut, World};
 use engine::{
     egui::{
         ahash::AHashMap, vec2, Grid, Image, Response, Rounding, ScrollArea,
-        TextureId, Ui,
+        Sense, TextureId, Ui,
     },
     graphics::gpu::AbstractGpu,
     log::{info, warn},
@@ -103,7 +103,7 @@ pub fn render_asset_server(ui: &mut Ui, world: &World) -> Response {
             ),
 
             Some(AssetServerSection::Mesh) => {
-                render_mesh_section(ui, &gpu, &mut asset_server)
+                render_mesh_section(ui, &gpu, &mut asset_server, height)
             }
 
             _ => ui.label("No selected"),
@@ -204,6 +204,7 @@ fn render_mesh_section(
     ui: &mut Ui,
     gpu: &AbstractGpu,
     asset_server: &mut AssetServer,
+    height: f32,
 ) -> Response {
     ui.vertical(|ui| {
         if ui.button("Load gltf").clicked() {
@@ -231,13 +232,45 @@ fn render_mesh_section(
                     };
 
                     models.into_iter().for_each(|m| {
-                        loader_lock.load_model(file.file_name(), m)
+                        loader_lock.load_model(
+                            format!("{}#{}", file.file_name(), m.name),
+                            m,
+                        )
                     });
                 }
 
                 ctx.request_repaint();
             });
         }
+
+        let width = ui.available_width();
+
+        let (_, rect) = ui.allocate_space(vec2(width, height));
+        let mut ui = ui.child_ui(rect, Default::default());
+
+        ScrollArea::vertical()
+            .auto_shrink([false; 2])
+            .show(&mut ui, |ui| {
+                Grid::new("meshes_asset_server_grid").show(ui, |ui| {
+                    for mesh in &asset_server.meshes() {
+                        ui.push_id(mesh.0.clone(), |ui| {
+                            ui.vertical(|ui| {
+                                ui.allocate_exact_size(
+                                    vec2(60.0, 60.0),
+                                    Sense::click(),
+                                );
+                                ui.label(mesh.0.clone());
+                            })
+                            .response
+                            .context_menu(|ui| {
+                                if ui.button("Delete").clicked() {
+                                    println!("Delete texture...")
+                                }
+                            })
+                        });
+                    }
+                })
+            });
     })
     .response
 }

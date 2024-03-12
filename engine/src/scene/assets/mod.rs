@@ -7,7 +7,7 @@ use std::ops::Deref;
 type AssetResourceID = String;
 
 #[derive(Clone, Hash, PartialEq, Eq, Debug)]
-pub struct MeshResourceID(pub(crate) AssetResourceID);
+pub struct MeshResourceID(pub AssetResourceID);
 
 #[derive(Clone, Hash, PartialEq, Eq, Debug)]
 pub struct TextureResourceID(pub(crate) AssetResourceID);

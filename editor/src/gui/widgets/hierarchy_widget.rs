@@ -2,11 +2,11 @@ use engine::{
     egui::{
         vec2, Align2, Color32, FontId, Rect, Response, ScrollArea, Sense, Ui,
     },
-    scene::hierarchy::Hierarchy,
+    scene::hierarchy::{self, Hierarchy},
 };
 use shipyard::{
     AddComponent, Component, Delete, EntitiesView, EntityId, Get, Remove,
-    ViewMut,
+    ViewMut, World,
 };
 
 use crate::gui::{
@@ -31,14 +31,23 @@ pub struct HierarchySelectionFlag;
 pub struct HierarchyExpandedFlag;
 
 /// Renders a nice hierarcy widget.
-pub fn render_hierarchy_widget(
-    ui: &mut Ui,
-    entities: &EntitiesView,
-    items: &ViewMut<Hierarchy>,
-    deletion_flags: &mut ViewMut<HierarchyDeletionFlag>,
-    selection_flags: &mut ViewMut<HierarchySelectionFlag>,
-    expanded_flags: &mut ViewMut<HierarchyExpandedFlag>,
-) -> Response {
+pub fn render_hierarchy_widget(ui: &mut Ui, world: &World) -> Response {
+    let entities = world.borrow::<EntitiesView>().unwrap();
+    let mut hierarchies = world.borrow::<ViewMut<Hierarchy>>().unwrap();
+    let mut deletion_flags =
+        world.borrow::<ViewMut<HierarchyDeletionFlag>>().unwrap();
+    let mut hierarchy_selection =
+        world.borrow::<ViewMut<HierarchySelectionFlag>>().unwrap();
+    let mut hierarchy_expanded =
+        world.borrow::<ViewMut<HierarchyExpandedFlag>>().unwrap();
+
+    let filtered_entities = entities
+        .iter()
+        .filter_map(|e| hierarchies.get(e).ok().map(|h| (e, h)))
+        .filter(|(_, h)| h.level == 0)
+        .map(|(e, _)| e)
+        .collect::<Vec<_>>();
+
     ui.vertical(|ui| {
         ui.label("The search part");
 
@@ -48,22 +57,16 @@ pub fn render_hierarchy_widget(
 
             let scroll = ScrollArea::vertical().auto_shrink([false; 2]);
             scroll.show(ui, |ui| {
-                entities
-                    .iter()
-                    .filter_map(|e| items.get(e).ok().map(|h| (e, h)))
-                    // We want onyl the first level, the `render_item` is
-                    // in charge of render the children.
-                    .filter(|(_, h)| h.level == 0)
-                    .for_each(|(e, _)| {
-                        render_item(
-                            ui,
-                            &e,
-                            deletion_flags,
-                            items,
-                            selection_flags,
-                            expanded_flags,
-                        );
-                    });
+                filtered_entities.iter().for_each(|e| {
+                    render_item(
+                        ui,
+                        &e,
+                        &mut deletion_flags,
+                        &mut hierarchies,
+                        &mut hierarchy_selection,
+                        &mut hierarchy_expanded,
+                    );
+                });
             });
         });
     })

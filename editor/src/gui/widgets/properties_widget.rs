@@ -4,23 +4,30 @@ use engine::{
         TextEdit, Ui,
     },
     graphics::components::MeshComponent,
+    log::info,
     nalgebra::UnitQuaternion,
-    scene::{components::Transform, hierarchy::Hierarchy},
+    scene::{
+        assets::asset_server::AssetServer, components::Transform,
+        hierarchy::Hierarchy,
+    },
 };
 use shipyard::{
-    AllStoragesView, EntitiesView, EntityId, Get, IntoIter, ViewMut,
+    AllStoragesView, EntitiesView, EntityId, Get, IntoIter, UniqueView,
+    ViewMut, World,
 };
 
 use super::hierarchy_widget::HierarchySelectionFlag;
 
 /// Renders the `Properties` section.
-pub fn properties_widget(
-    ui: &mut Ui,
-    entities: &EntitiesView,
-    hierarchy: &mut ViewMut<Hierarchy>,
-    selection_flag: &mut ViewMut<HierarchySelectionFlag>,
-    transforms: &mut ViewMut<Transform>,
-) -> Response {
+pub fn properties_widget(ui: &mut Ui, world: &World) -> Response {
+    let asset_server = world.borrow::<UniqueView<AssetServer>>().unwrap();
+    let entities = world.borrow::<EntitiesView>().unwrap();
+    let mut hierarchy = world.borrow::<ViewMut<Hierarchy>>().unwrap();
+    let mut selection_flag =
+        world.borrow::<ViewMut<HierarchySelectionFlag>>().unwrap();
+    let mut transforms = world.borrow::<ViewMut<Transform>>().unwrap();
+    let mut mesh_components = world.borrow::<ViewMut<MeshComponent>>().unwrap();
+
     ui.vertical(|ui| {
         ScrollArea::vertical()
             .auto_shrink([false; 2])
@@ -29,7 +36,14 @@ pub fn properties_widget(
                     .iter()
                     .filter(|e| selection_flag.get(*e).is_ok())
                     .for_each(|e| {
-                        render_section(ui, &e, hierarchy, transforms);
+                        render_section(
+                            ui,
+                            &e,
+                            &asset_server,
+                            &mut hierarchy,
+                            &mut transforms,
+                            &mut mesh_components,
+                        );
                     });
             })
     })
@@ -39,8 +53,10 @@ pub fn properties_widget(
 fn render_section(
     ui: &mut Ui,
     entity: &EntityId,
+    asset_server: &AssetServer,
     hierarchy: &mut ViewMut<Hierarchy>,
     transforms: &mut ViewMut<Transform>,
+    mesh_components: &mut ViewMut<MeshComponent>,
 ) {
     Frame::none()
         .inner_margin(Margin::same(10.0))
@@ -89,7 +105,13 @@ fn render_section(
                     ui.add(TextEdit::singleline(&mut h.title));
                 });
 
-                render_transform_component_if_required(ui, entity, transforms)
+                render_transform_component_if_required(ui, entity, transforms);
+                render_mesh_if_required(
+                    ui,
+                    entity,
+                    asset_server,
+                    mesh_components,
+                );
             });
         });
 }
@@ -186,24 +208,43 @@ fn convert_euler_angle_to_degrees(angle: f32) -> f32 {
 }
 
 fn render_mesh_if_required(
-    _ui: &mut Ui,
+    ui: &mut Ui,
     entity: &EntityId,
-    all_storages: &AllStoragesView,
+    asset_server: &AssetServer,
+    mesh_components: &mut ViewMut<MeshComponent>,
 ) {
-    let mut m = match all_storages.borrow::<ViewMut<MeshComponent>>() {
-        Ok(t) => t,
-        _ => return,
-    };
-    let m: &mut ViewMut<MeshComponent> = m.as_mut();
-    let _mesh: &mut MeshComponent = match m.get(*entity) {
+    let mesh: &mut MeshComponent = match mesh_components.get(*entity) {
         Ok(m) => m,
-        _ => return,
+        _ => {
+            info!("No mesh!");
+            return;
+        }
     };
 
-    /*let mut res = mesh.0.;
+    let InnerResponse { inner, response } = ui.menu_button("Mesh", |ui| {
+        ScrollArea::vertical()
+            .auto_shrink([false; 2])
+            .max_height(250.0)
+            .id_source("inspector icons")
+            .show(ui, |ui| {
+                ui.set_width(200.0);
+                ui.set_height(250.0);
+                ui.horizontal_wrapped(|ui| {
+                    for mesh in asset_server.meshes() {
+                        if ui.button(&mesh.0).clicked() {
+                            ui.close_menu();
+                            return Some(mesh);
+                        }
+                    }
 
-    ui.horizontal(|ui| {
-        ui.label("Mesh");
-        ui.add(TextEdit::singleline(&mut res))
-        });*/
+                    None
+                })
+            })
+    });
+
+    response.on_hover_cursor(engine::egui::CursorIcon::PointingHand);
+
+    if let Some(name) = inner.and_then(|r| r.inner.inner) {
+        mesh.0 = name;
+    }
 }

@@ -37,6 +37,17 @@ impl AssetServer {
             .expect("Mesh not found")
             .clone()
     }
+
+    /// Returns a list of IDs for all the currently loaded meshes in the server.
+    pub fn meshes(&self) -> Vec<MeshResourceID> {
+        self.data
+            .read()
+            .expect("Unable to acquire read lock")
+            .meshes
+            .keys()
+            .map(|k| MeshResourceID(k.clone()))
+            .collect()
+    }
 }
 
 /// Shipyard requires that `AssetServe` can be used from different threads. The
