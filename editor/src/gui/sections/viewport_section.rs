@@ -84,11 +84,9 @@ pub fn extract_viewport_information(world: &World) -> ViewportInformation {
     }
 }
 
-pub fn render_viewport_section(
-    ui: &mut Ui,
-    info: &ViewportInformation,
-    transforms: &mut ViewMut<Transform>,
-) -> Response {
+pub fn render_viewport_section(ui: &mut Ui, world: &World, info: &ViewportInformation) -> Response {
+    let mut transforms = world.borrow::<ViewMut<Transform>>().unwrap();
+
     let image = Image::new((
         info.texture_id,
         engine::egui::Vec2::new(info.size.width(), info.size.height() - 25.0),
@@ -128,7 +126,7 @@ pub fn render_viewport_section(
             .mode(gizmo_type);
 
         if let Some(response) = gizmo.interact(ui) {
-            let t: &mut Transform = match transforms.get(*e) {
+            let t: &mut Transform = match (&mut transforms).get(*e) {
                 Ok(t) => t,
                 _ => continue,
             };

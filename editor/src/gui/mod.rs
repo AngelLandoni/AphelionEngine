@@ -18,14 +18,14 @@ use std::ops::{Deref, DerefMut};
 use engine::{
     app::App,
     egui::{Frame, Margin, Rect, TextureId},
-    graphics::gpu::AbstractGpu,
+    graphics::{components::MeshComponent, gpu::AbstractGpu},
     plugin::{
         graphics::egui::{EguiContext, EguiRenderer},
         Pluggable,
     },
     scene::{
-        components::Transform, hierarchy::Hierarchy, projection::Projection,
-        scene_state::SceneState,
+        assets::asset_server::AssetServer, components::Transform,
+        hierarchy::Hierarchy, projection::Projection, scene_state::SceneState,
     },
     schedule::Schedule,
     wgpu_graphics::{buffer::WGPUTexture, gpu::Gpu},
@@ -278,26 +278,16 @@ fn render_gui_system(world: &World) {
     // Render gizmo settings if needed.
     render_gizmo_settings(world);
 
-    let egui = world.borrow::<UniqueView<EguiContext>>().unwrap();
-    // Map viewport information.
-    let viewport_information = extract_viewport_information(world);
+    let info = extract_viewport_information(world);
 
-    let entities = world.borrow::<EntitiesView>().unwrap();
+    let egui = world.borrow::<UniqueView<EguiContext>>().unwrap();
+
     let mut panel_state =
         world.borrow::<UniqueViewMut<GuiPanelState>>().unwrap();
     let mut start_drag = world
         .borrow::<UniqueViewMut<TabDragStartPosition>>()
         .unwrap();
     let mut shared_data = world.borrow::<UniqueViewMut<SharedData>>().unwrap();
-    let mut entity_deletion_flags =
-        world.borrow::<ViewMut<HierarchyDeletionFlag>>().unwrap();
-    let mut entity_selection_flags =
-        world.borrow::<ViewMut<HierarchySelectionFlag>>().unwrap();
-    let mut entity_expanded_flags =
-        world.borrow::<ViewMut<HierarchyExpandedFlag>>().unwrap();
-    let mut hierarchy = world.borrow::<ViewMut<Hierarchy>>().unwrap();
-
-    let mut transforms = world.borrow::<ViewMut<Transform>>().unwrap();
 
     engine::egui::CentralPanel::default()
         .frame(Frame {
@@ -312,28 +302,11 @@ fn render_gui_system(world: &World) {
                 &mut start_drag.0,
                 &mut shared_data,
                 &mut |ui, tab: &Tab| match tab.identification.as_str() {
-                    "Viewport" => render_viewport_section(
-                        ui,
-                        &viewport_information,
-                        &mut transforms,
-                    ),
+                    "Viewport" => render_viewport_section(ui, world, &info),
                     "GeneralLogs" => render_log_section(ui),
-                    "Properties" => properties_widget(
-                        ui,
-                        &entities,
-                        &mut hierarchy,
-                        &mut entity_selection_flags,
-                        &mut transforms,
-                    ),
+                    "Properties" => properties_widget(ui, &world),
                     "ScenesConfig" => render_scene_config_section(ui, world),
-                    "EntityHierarchy" => render_hierarchy_widget(
-                        ui,
-                        &entities,
-                        &hierarchy,
-                        &mut entity_deletion_flags,
-                        &mut entity_selection_flags,
-                        &mut entity_expanded_flags,
-                    ),
+                    "EntityHierarchy" => render_hierarchy_widget(ui, &world),
                     "Entities" => ui.label("Entities list"),
                     "AssetServer" => render_asset_server(ui, world),
 

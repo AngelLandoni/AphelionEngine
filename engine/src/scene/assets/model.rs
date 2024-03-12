@@ -9,6 +9,7 @@ pub enum ModelType<'a> {
 }
 
 pub struct Model {
+    pub name: String,
     pub vertices: Vec<Vertex>,
     pub indices: Vec<u16>,
 }
@@ -44,19 +45,28 @@ impl<'a> ModelType<'a> {
                 let local_models = models
                     .iter()
                     .map(|m| Model {
-                        vertices: m
-                            .mesh
-                            .positions
-                            .iter()
-                            .step_by(3)
-                            .enumerate()
-                            .map(|(i, _)| Vertex {
+                        name: m.name.clone(),
+                        vertices: (0..m.mesh.positions.len() / 3)
+                            .map(|i| Vertex {
                                 pos: [
-                                    m.mesh.positions[i],
-                                    m.mesh.positions[i + 1],
-                                    m.mesh.positions[i + 2],
+                                    m.mesh.positions[i * 3],
+                                    m.mesh.positions[i * 3 + 1],
+                                    m.mesh.positions[i * 3 + 2],
                                 ],
-                                col: [1.0, 1.0, 1.0],
+                                col: [
+                                    *m.mesh
+                                        .vertex_color
+                                        .get(i * 3)
+                                        .unwrap_or(&1.0),
+                                    *m.mesh
+                                        .vertex_color
+                                        .get(i * 3 + 1)
+                                        .unwrap_or(&1.0),
+                                    *m.mesh
+                                        .vertex_color
+                                        .get(i * 3 + 2)
+                                        .unwrap_or(&1.0),
+                                ],
                             })
                             .collect(),
                         indices: m
