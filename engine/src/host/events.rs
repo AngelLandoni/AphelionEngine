@@ -1,9 +1,10 @@
-use crate::scene::keyboard::KeyCode;
+use crate::scene::input::{keyboard::KeyCode, mouse::{Mouse, MouseKeyCode}};
 
 /// A generic global event.
 pub enum Event {
     Window(WindowEvent),
     Keyboard(KeyboardEvent),
+    Mouse(MouseEvent),
     CursorMotion(f64, f64),
     UnknownOrNotImplemented,
 }
@@ -22,4 +23,9 @@ pub enum WindowEvent {
 pub enum KeyboardEvent {
     Pressed(KeyCode),
     Released(KeyCode),
+}
+
+pub enum MouseEvent {
+    Pressed(MouseKeyCode),
+    Released(MouseKeyCode),
 }

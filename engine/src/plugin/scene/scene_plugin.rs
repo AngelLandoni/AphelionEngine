@@ -13,7 +13,13 @@ use crate::{
     host::window::Window,
     plugin::Pluggable,
     scene::{
-        assets::asset_server::AssetServer, keyboard::Keyboard, mouse::{Cursor, CursorDelta}, scene::SceneDescriptor, scene_state::SceneState
+        assets::asset_server::AssetServer,
+        input::{
+            keyboard::Keyboard,
+            mouse::{Cursor, CursorDelta, Mouse},
+        },
+        scene::SceneDescriptor,
+        scene_state::SceneState,
     },
     schedule::Schedule,
 };
@@ -32,6 +38,7 @@ pub struct ScenePlugin {
 impl Pluggable for ScenePlugin {
     fn configure(&self, app: &mut App) {
         app.world.add_unique(Keyboard::default());
+        app.world.add_unique(Mouse::default());
         app.world.add_unique(Cursor::default());
         app.world.add_unique(CursorDelta::default());
         app.world.add_unique(AssetServer::default());
