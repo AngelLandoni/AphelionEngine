@@ -6,7 +6,10 @@ use engine::{
     scene::{
         input::{
             keyboard::{KeyCode, Keyboard},
-            mouse::{CursorDelta, Mouse, MouseKeyCode},
+            mouse::{
+                CursorDelta, Mouse, MouseKeyCode, MouseWheelDelta,
+                MouseWheelStepDelta,
+            },
         },
         scene_state::SceneState,
     },
@@ -63,10 +66,56 @@ impl Pluggable for CameraPlugin {
         app.world.add_unique(EditorCamera::default());
 
         app.schedule(Schedule::RequestRedraw, |world| {
+            world.run(update_camera_distance_based_on_mouse_wheel);
             world.run(update_fly_camera_when_mouse_key_is_pressed_system);
             world.run(update_fly_camera_when_keys_are_pressed_system);
         });
     }
+}
+
+fn update_camera_distance_based_on_mouse_wheel(
+    mut e_camera: UniqueViewMut<EditorCamera>,
+    mouse: UniqueView<Mouse>,
+    mut s_state: UniqueViewMut<SceneState>,
+    m_delta: UniqueView<MouseWheelStepDelta>,
+    clock: UniqueView<Clock>,
+) {
+    if mouse.is_key_down(MouseKeyCode::Center)
+        || mouse.is_key_down(MouseKeyCode::Right)
+    {
+        return;
+    }
+
+    if m_delta.y == 0.0 {
+        return;
+    }
+
+    let scene = s_state
+        .sub_scenes
+        .get_mut("WorkbenchScene")
+        .expect("Unable to find workbench scene.");
+
+    let delta = m_delta.y * clock.delta_seconds() as f32 * 20.0;
+
+    e_camera.target_distance += delta;
+
+    e_camera.target_distance = e_camera.target_distance.clamp(1.0, 200.0);
+
+    let rad_yaw = deg_to_rads(180.0 + e_camera.yaw);
+    let rad_pitch = deg_to_rads(360.0 - e_camera.pitch);
+
+    let dir = Vector3::new(
+        rad_yaw.sin() as f32 * rad_pitch.cos() as f32,
+        rad_pitch.sin() as f32,
+        rad_yaw.cos() as f32 * rad_pitch.cos() as f32,
+    )
+    .normalize();
+
+    scene.camera.position = Point3::new(
+        scene.camera.target.x + dir.x * e_camera.target_distance,
+        scene.camera.target.y + dir.y * e_camera.target_distance,
+        scene.camera.target.z + dir.z * e_camera.target_distance,
+    );
 }
 
 /// Updates the fly camera based on user input when mouse keys are pressed.
@@ -104,8 +153,14 @@ fn update_fly_camera_when_mouse_key_is_pressed_system(
 
     // Rotate camera if the center mouse button is pressed
     if mouse.is_key_down(MouseKeyCode::Center) {
-        e_camera.yaw += calculate_camera_rotation_based_on_delta(c_delta.x, clock.delta_seconds());
-        e_camera.pitch += calculate_camera_rotation_based_on_delta(c_delta.y, clock.delta_seconds());
+        e_camera.yaw += calculate_camera_rotation_based_on_delta(
+            c_delta.x,
+            clock.delta_seconds(),
+        );
+        e_camera.pitch += calculate_camera_rotation_based_on_delta(
+            c_delta.y,
+            clock.delta_seconds(),
+        );
 
         let rad_yaw = deg_to_rads(180.0 + e_camera.yaw);
         let rad_pitch = deg_to_rads(360.0 - e_camera.pitch);
@@ -169,23 +224,35 @@ fn update_fly_camera_when_keys_are_pressed_system(
 
     // Update camera position based on keys pressed
     if keyboard.is_key_down(&KeyCode::W) {
-        scene.camera.position += e_camera.direction * e_camera.speed * clock.delta_seconds() as f32;
-        scene.camera.target += e_camera.direction * e_camera.speed * clock.delta_seconds() as f32;
+        scene.camera.position +=
+            e_camera.direction * e_camera.speed * clock.delta_seconds() as f32;
+        scene.camera.target +=
+            e_camera.direction * e_camera.speed * clock.delta_seconds() as f32;
     }
 
     if keyboard.is_key_down(&KeyCode::S) {
-        scene.camera.position -= e_camera.direction * e_camera.speed * clock.delta_seconds() as f32;
-        scene.camera.target -= e_camera.direction * e_camera.speed * clock.delta_seconds() as f32;
+        scene.camera.position -=
+            e_camera.direction * e_camera.speed * clock.delta_seconds() as f32;
+        scene.camera.target -=
+            e_camera.direction * e_camera.speed * clock.delta_seconds() as f32;
     }
 
     if keyboard.is_key_down(&KeyCode::A) {
-        scene.camera.position -= e_camera.tangent_direction * e_camera.speed * clock.delta_seconds() as f32;
-        scene.camera.target -= e_camera.tangent_direction * e_camera.speed * clock.delta_seconds() as f32;
+        scene.camera.position -= e_camera.tangent_direction
+            * e_camera.speed
+            * clock.delta_seconds() as f32;
+        scene.camera.target -= e_camera.tangent_direction
+            * e_camera.speed
+            * clock.delta_seconds() as f32;
     }
 
     if keyboard.is_key_down(&KeyCode::D) {
-        scene.camera.position += e_camera.tangent_direction * e_camera.speed * clock.delta_seconds() as f32;
-        scene.camera.target += e_camera.tangent_direction * e_camera.speed * clock.delta_seconds() as f32;
+        scene.camera.position += e_camera.tangent_direction
+            * e_camera.speed
+            * clock.delta_seconds() as f32;
+        scene.camera.target += e_camera.tangent_direction
+            * e_camera.speed
+            * clock.delta_seconds() as f32;
     }
 
     // Increase camera speed as long as a key is held down
@@ -194,8 +261,14 @@ fn update_fly_camera_when_keys_are_pressed_system(
     }
 
     // Update camera yaw and pitch based on cursor delta
-    e_camera.yaw += calculate_camera_rotation_based_on_delta(c_delta.x, clock.delta_seconds());
-    e_camera.pitch += calculate_camera_rotation_based_on_delta(c_delta.y, clock.delta_seconds());
+    e_camera.yaw += calculate_camera_rotation_based_on_delta(
+        c_delta.x,
+        clock.delta_seconds(),
+    );
+    e_camera.pitch += calculate_camera_rotation_based_on_delta(
+        c_delta.y,
+        clock.delta_seconds(),
+    );
 
     let rad_yaw = deg_to_rads(e_camera.yaw);
     let rad_pitch = deg_to_rads(e_camera.pitch);

@@ -23,7 +23,9 @@ use crate::{
     plugin::Pluggable,
     scene::input::{
         keyboard::KeyCode,
-        mouse::{CursorDelta, MouseKeyCode},
+        mouse::{
+            CursorDelta, MouseKeyCode, MouseWheelDelta, MouseWheelStepDelta,
+        },
     },
     types::Size,
 };
@@ -103,8 +105,22 @@ impl Pluggable for WinitWindowPlugin {
                 .borrow::<UniqueViewMut<CursorDelta>>()
                 .expect("Unable to acquire cursor delta");
 
+            let mut mouse_wheel_delta = world
+                .borrow::<UniqueViewMut<MouseWheelDelta>>()
+                .expect("Unable to acquire cursor delta");
+
+            let mut mouse_wheel_step_delta = world
+                .borrow::<UniqueViewMut<MouseWheelStepDelta>>()
+                .expect("Unable to acquire cursor delta");
+
             cursor_delta.x = 0.0;
             cursor_delta.y = 0.0;
+
+            mouse_wheel_delta.x = 0.0;
+            mouse_wheel_delta.y = 0.0;
+
+            mouse_wheel_step_delta.x = 0.0;
+            mouse_wheel_step_delta.y = 0.0;
         });
 
         app.set_run_loop(move |app: &mut App| {
@@ -192,6 +208,15 @@ fn map_winit_events<T>(event: &Event<T>) -> host::events::Event {
                     ),
                 }
             }
+
+            WindowEvent::MouseWheel { delta, .. } => match delta {
+                winit::event::MouseScrollDelta::LineDelta(x, y) => {
+                    host::events::Event::MouseWheelStepMotion(*x, *y)
+                }
+                winit::event::MouseScrollDelta::PixelDelta(d) => {
+                    host::events::Event::MouseWheelMotion(d.x, d.y)
+                }
+            },
 
             WindowEvent::Resized(size) => host::events::Event::Window(
                 host::events::WindowEvent::Resized(size.width, size.height),

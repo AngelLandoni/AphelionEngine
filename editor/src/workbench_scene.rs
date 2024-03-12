@@ -175,7 +175,7 @@ impl Pluggable for WorkbenchScenePlugin {
             }*/
 
         app.schedule(engine::schedule::Schedule::RequestRedraw, |world| {
-            world.run(attach_target_cube)
+            //world.run(attach_target_cube)
         })
     }
 }
