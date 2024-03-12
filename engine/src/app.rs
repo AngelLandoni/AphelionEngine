@@ -13,6 +13,7 @@ use crate::{
         run_submit_queue_workload, run_update_workload,
         run_window_event_workload, start_frame_workload, update_cursor_delta,
         update_cursor_position, update_keyboard_events, update_mouse_events,
+        update_mouse_wheel_delta, update_mouse_wheel_step_delta,
         update_window_size,
     },
 };
@@ -130,6 +131,14 @@ impl<'app> App<'app> {
 
             Event::CursorMotion(x, y) => {
                 update_cursor_delta(self, x, y);
+            }
+
+            Event::MouseWheelMotion(x, y) => {
+                update_mouse_wheel_delta(self, x, y);
+            }
+
+            Event::MouseWheelStepMotion(x, y) => {
+                update_mouse_wheel_step_delta(self, x, y);
             }
 
             Event::UnknownOrNotImplemented => {}

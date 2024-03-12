@@ -27,6 +27,8 @@ pub enum Schedule {
     EndFrame,
 
     CursorDelta,
+    MouseWheelDelta,
+    MouseWheelStepDelta,
 }
 
 /// Holds a collection of `Workload`s to be executed alongside information about

@@ -3,7 +3,15 @@ use std::borrow::BorrowMut;
 use shipyard::UniqueViewMut;
 
 use crate::{
-    app::App, host::{events::{KeyboardEvent, MouseEvent}, window::Window}, scene::input::mouse::{Cursor, CursorDelta}, schedule::Schedule
+    app::App,
+    host::{
+        events::{KeyboardEvent, MouseEvent},
+        window::Window,
+    },
+    scene::input::mouse::{
+        Cursor, CursorDelta, MouseWheelDelta, MouseWheelStepDelta,
+    },
+    schedule::Schedule,
 };
 
 pub(crate) fn run_generic_event_workload(app: &App) {
@@ -226,13 +234,55 @@ pub(crate) fn update_cursor_delta(app: &mut App, x: &f64, y: &f64) {
         let mut c_d = app
             .world
             .borrow::<UniqueViewMut<CursorDelta>>()
-            .expect("Unable to acquire Keyboard resource");
+            .expect("Unable to acquire Cursor resource");
 
         c_d.x = *x;
         c_d.y = *y;
     }
 
     if let Some(w_u_fns) = app.scheduler.schedules.get(&Schedule::CursorDelta) {
+        for func in w_u_fns {
+            func(&app.world);
+        }
+    }
+}
+
+pub(crate) fn update_mouse_wheel_delta(app: &mut App, x: &f64, y: &f64) {
+    // Capture and release the mouse wheel delta to allow subsequent events to also
+    // take a mutable reference.
+    {
+        let mut c_d = app
+            .world
+            .borrow::<UniqueViewMut<MouseWheelDelta>>()
+            .expect("Unable to acquire Keyboard resource");
+        c_d.x = *x;
+        c_d.y = *y;
+    }
+
+    if let Some(w_u_fns) =
+        app.scheduler.schedules.get(&Schedule::MouseWheelDelta)
+    {
+        for func in w_u_fns {
+            func(&app.world);
+        }
+    }
+}
+
+pub(crate) fn update_mouse_wheel_step_delta(app: &mut App, x: &f32, y: &f32) {
+    // Capture and release the mouse wheel delta to allow subsequent events to also
+    // take a mutable reference.
+    {
+        let mut c_d = app
+            .world
+            .borrow::<UniqueViewMut<MouseWheelStepDelta>>()
+            .expect("Unable to acquire Keyboard resource");
+        c_d.x = *x;
+        c_d.y = *y;
+    }
+
+    if let Some(w_u_fns) =
+        app.scheduler.schedules.get(&Schedule::MouseWheelStepDelta)
+    {
         for func in w_u_fns {
             func(&app.world);
         }

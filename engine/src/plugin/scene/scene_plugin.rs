@@ -16,7 +16,7 @@ use crate::{
         assets::asset_server::AssetServer,
         input::{
             keyboard::Keyboard,
-            mouse::{Cursor, CursorDelta, Mouse},
+            mouse::{Cursor, CursorDelta, Mouse, MouseWheelDelta, MouseWheelStepDelta},
         },
         scene::SceneDescriptor,
         scene_state::SceneState,
@@ -41,6 +41,8 @@ impl Pluggable for ScenePlugin {
         app.world.add_unique(Mouse::default());
         app.world.add_unique(Cursor::default());
         app.world.add_unique(CursorDelta::default());
+        app.world.add_unique(MouseWheelDelta::default());
+        app.world.add_unique(MouseWheelStepDelta::default());
         app.world.add_unique(AssetServer::default());
 
         app.world.add_unique(TempSceneDescriptors {

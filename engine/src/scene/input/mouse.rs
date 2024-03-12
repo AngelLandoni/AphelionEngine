@@ -38,3 +38,15 @@ pub struct CursorDelta {
     pub x: f64,
     pub y: f64,
 }
+
+#[derive(Unique, Default)]
+pub struct MouseWheelDelta {
+    pub x: f64,
+    pub y: f64,
+}
+
+#[derive(Unique, Default)]
+pub struct MouseWheelStepDelta {
+    pub x: f32,
+    pub y: f32,
+}
