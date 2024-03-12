@@ -4,7 +4,9 @@ use shipyard::{Unique, UniqueViewMut};
 
 use winit::{
     dpi::LogicalSize,
-    event::{DeviceEvent, ElementState, Event, KeyEvent, WindowEvent},
+    event::{
+        DeviceEvent, ElementState, Event, KeyEvent, MouseButton, WindowEvent,
+    },
     event_loop::EventLoop,
     keyboard::PhysicalKey,
     platform::macos::WindowBuilderExtMacOS,
@@ -13,13 +15,16 @@ use winit::{
 
 use crate::{
     app::App,
-    host,
     host::{
+        self,
         events::KeyboardEvent,
         window::{Window, WindowInfoAccessible},
     },
     plugin::Pluggable,
-    scene::{keyboard::KeyCode, mouse::CursorDelta},
+    scene::input::{
+        keyboard::KeyCode,
+        mouse::{CursorDelta, MouseKeyCode},
+    },
     types::Size,
 };
 
@@ -157,6 +162,7 @@ fn map_winit_events<T>(event: &Event<T>) -> host::events::Event {
             } => host::events::Event::Keyboard(KeyboardEvent::Pressed(
                 map_keyboard_input(key),
             )),
+
             WindowEvent::KeyboardInput {
                 event:
                     KeyEvent {
@@ -168,21 +174,44 @@ fn map_winit_events<T>(event: &Event<T>) -> host::events::Event {
             } => host::events::Event::Keyboard(KeyboardEvent::Released(
                 map_keyboard_input(key),
             )),
+
+            WindowEvent::MouseInput { state, button, .. } => {
+                let event = match map_mouse_key_input(button) {
+                    Some(e) => e,
+                    None => {
+                        return host::events::Event::UnknownOrNotImplemented
+                    }
+                };
+
+                match state {
+                    ElementState::Pressed => host::events::Event::Mouse(
+                        host::events::MouseEvent::Pressed(event),
+                    ),
+                    ElementState::Released => host::events::Event::Mouse(
+                        host::events::MouseEvent::Released(event),
+                    ),
+                }
+            }
+
             WindowEvent::Resized(size) => host::events::Event::Window(
                 host::events::WindowEvent::Resized(size.width, size.height),
             ),
+
             WindowEvent::CursorMoved {
                 device_id: _,
                 position,
             } => host::events::Event::Window(
                 host::events::WindowEvent::CursorMoved(position.x, position.y),
             ),
+
             WindowEvent::CloseRequested => host::events::Event::Window(
                 host::events::WindowEvent::CloseRequested,
             ),
+
             WindowEvent::RedrawRequested => host::events::Event::Window(
                 host::events::WindowEvent::RequestRedraw,
             ),
+
             _ => host::events::Event::Window(
                 host::events::WindowEvent::UnknownOrNotImplemented,
             ),
@@ -213,5 +242,14 @@ fn map_keyboard_input(key: &PhysicalKey) -> KeyCode {
             KeyCode::Unknown
         }
         PhysicalKey::Unidentified(_) => KeyCode::Unknown,
+    }
+}
+
+fn map_mouse_key_input(button: &MouseButton) -> Option<MouseKeyCode> {
+    match button {
+        MouseButton::Left => Some(MouseKeyCode::Left),
+        MouseButton::Right => Some(MouseKeyCode::Right),
+        MouseButton::Middle => Some(MouseKeyCode::Center),
+        _ => None,
     }
 }

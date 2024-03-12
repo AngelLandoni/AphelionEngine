@@ -12,7 +12,8 @@ use crate::{
         run_request_redraw_workload, run_scene_configuration,
         run_submit_queue_workload, run_update_workload,
         run_window_event_workload, start_frame_workload, update_cursor_delta,
-        update_cursor_position, update_keyboard_events, update_window_size,
+        update_cursor_position, update_keyboard_events, update_mouse_events,
+        update_window_size,
     },
 };
 
@@ -121,6 +122,10 @@ impl<'app> App<'app> {
 
             Event::Keyboard(event) => {
                 update_keyboard_events(self, event);
+            }
+
+            Event::Mouse(event) => {
+                update_mouse_events(self, event);
             }
 
             Event::CursorMotion(x, y) => {

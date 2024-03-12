@@ -3,10 +3,7 @@ use std::borrow::BorrowMut;
 use shipyard::UniqueViewMut;
 
 use crate::{
-    app::App,
-    host::{events::KeyboardEvent, window::Window},
-    scene::mouse::{Cursor, CursorDelta},
-    schedule::Schedule,
+    app::App, host::{events::{KeyboardEvent, MouseEvent}, window::Window}, scene::input::mouse::{Cursor, CursorDelta}, schedule::Schedule
 };
 
 pub(crate) fn run_generic_event_workload(app: &App) {
@@ -200,12 +197,25 @@ pub(crate) fn update_window_size(app: &mut App, width: &u32, height: &u32) {
 pub(crate) fn update_keyboard_events(app: &mut App, keyboard: &KeyboardEvent) {
     let mut k = app
         .world
-        .borrow::<UniqueViewMut<crate::scene::keyboard::Keyboard>>()
+        .borrow::<UniqueViewMut<crate::scene::input::keyboard::Keyboard>>()
         .expect("Unable to acquire Keyboard resource");
 
     match keyboard {
         KeyboardEvent::Pressed(key) => k.register_key(*key),
         KeyboardEvent::Released(key) => k.remove_key(key),
+    }
+}
+
+/// Updates the state of the keys in the globat keyboard state.
+pub(crate) fn update_mouse_events(app: &mut App, key: &MouseEvent) {
+    let mut m = app
+        .world
+        .borrow::<UniqueViewMut<crate::scene::input::mouse::Mouse>>()
+        .expect("Unable to acquire Mouse resource");
+
+    match key {
+        MouseEvent::Pressed(key) => m.register_key(*key),
+        MouseEvent::Released(key) => m.remove_key(key),
     }
 }
 

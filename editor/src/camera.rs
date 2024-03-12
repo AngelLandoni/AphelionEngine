@@ -3,9 +3,8 @@ use engine::{
     nalgebra::{Point3, Vector3},
     plugin::{core::clock::Clock, Pluggable},
     scene::{
-        keyboard::{KeyCode, Keyboard},
-        mouse::CursorDelta,
-        scene_state::SceneState,
+        input::{keyboard::{KeyCode, Keyboard}, mouse::CursorDelta},
+        scene_state::SceneState
     },
     schedule::Schedule,
 };
