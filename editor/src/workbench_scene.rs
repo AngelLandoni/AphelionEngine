@@ -122,17 +122,6 @@ impl Pluggable for WorkbenchScenePlugin {
             ),
         ));
 
-        let t_cube = app.world.add_entity((
-            cube_mesh_component(),
-            Transform {
-                position: Vector3::new(20.0, 0.0, 0.0),
-                rotation: rot,
-                scale: Vector3::new(1.0, 1.0, 1.0),
-            },
-            SceneTarget::SubScene("WorkbenchScene".to_string()),
-            TargetCube,
-        ));
-
         {
             let mut h = app.world.borrow::<ViewMut<Hierarchy>>().unwrap();
             add_child(c_1, c_2, &mut h);
@@ -173,10 +162,6 @@ impl Pluggable for WorkbenchScenePlugin {
                 }
             }
             }*/
-
-        app.schedule(engine::schedule::Schedule::RequestRedraw, |world| {
-            //world.run(attach_target_cube)
-        })
     }
 }
 
@@ -200,28 +185,4 @@ fn rotate_landscape_cube(
 fn angle_to_quaternion(angle: f32, axis: Vector3<f32>) -> UnitQuaternion<f32> {
     let axis = Unit::new_normalize(axis);
     UnitQuaternion::from_axis_angle(&axis, angle)
-}
-
-// DELTE
-
-#[derive(Component)]
-struct TargetCube;
-
-fn attach_target_cube(
-    mut transforms: ViewMut<Transform>,
-    mut s_state: UniqueViewMut<SceneState>,
-    target: View<TargetCube>,
-) {
-    let scene = s_state
-        .sub_scenes
-        .get_mut("WorkbenchScene")
-        .expect("Unable to find workbench scene.");
-
-    for (t, _) in (&mut transforms, &target).iter() {
-        t.position = Vector3::new(
-            scene.camera.target.x,
-            scene.camera.target.y,
-            scene.camera.target.z,
-        );
-    }
 }

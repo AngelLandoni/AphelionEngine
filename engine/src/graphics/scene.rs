@@ -9,8 +9,12 @@ use shipyard::{
 use crate::{
     graphics::UniformBuffer,
     scene::{
-        assets::MeshResourceID, camera::Camera, components::Transform,
-        hierarchy::Hierarchy, projection::Projection, scene::SceneTarget,
+        assets::{asset_server::AssetServer, MeshResourceID},
+        camera::Camera,
+        components::Transform,
+        hierarchy::Hierarchy,
+        projection::Projection,
+        scene::SceneTarget,
         scene_state::SceneState,
     },
 };
@@ -102,6 +106,7 @@ fn sync_scene(
     let mut scene_raw_transforms: AHashMap<MeshResourceID, Vec<u8>> =
         AHashMap::new();
 
+    // Allocate a transform buffer for the mesh if it does not exists.
     for ent in meshes.iter() {
         let id = ent.0.clone();
 
@@ -287,4 +292,12 @@ fn sync_scene(
                 e.1 = b.len() as u64 / Transform::raw_size();
             });
     }
+
+    scene
+        .mesh_transform_buffers
+        .iter_mut()
+        .filter(|mesh| !scene_raw_transforms.contains_key(mesh.0))
+        .for_each(|(_, buffer)| {
+            buffer.1 = 0;
+        });
 }
