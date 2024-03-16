@@ -1,9 +1,4 @@
-use image::{io::Reader as ImageReader, GenericImageView};
-
-use std::{future::Future, io::Cursor};
-
-use shipyard::{Unique, UniqueView, UniqueViewMut, World};
-
+use crate::gui::config::{AssetServerSection, GuiState};
 use engine::{
     egui::{
         ahash::AHashMap, vec2, Grid, Image, Response, Rounding, ScrollArea,
@@ -16,11 +11,12 @@ use engine::{
     types::Size,
     wgpu_graphics::{buffer::WGPUTexture, gpu::Gpu},
 };
+use image::{io::Reader as ImageReader, GenericImageView};
+use shipyard::{Unique, UniqueView, UniqueViewMut, World};
+use std::{future::Future, io::Cursor};
 
-use crate::gui::config::{AssetServerSection, GuiState};
-
-/// A custom asset server used just in the editor just to keep
-/// track of each texture as a Egui TextureId to render them
+/// A custom asset server used just in the editor to keep
+/// track of each texture as an Egui TextureId to render them
 /// in Egui.
 #[derive(Unique, Default)]
 pub struct EguiAssetServer {
@@ -41,7 +37,7 @@ pub fn sync_egui_asset_server(world: &World) {
         .get_textures()
         .iter()
         .for_each(|(id, texture)| {
-            // Do not sync of the texture is already registered.
+            // Do not sync if the texture is already registered.
             if egui_asset_server.textures.contains_key(id.as_str()) {
                 return;
             }
@@ -61,6 +57,7 @@ pub fn sync_egui_asset_server(world: &World) {
         });
 }
 
+/// Renders the asset server UI.
 pub fn render_asset_server(ui: &mut Ui, world: &World) -> Response {
     let mut gui_state = world.borrow::<UniqueViewMut<GuiState>>().unwrap();
 
@@ -107,12 +104,13 @@ pub fn render_asset_server(ui: &mut Ui, world: &World) -> Response {
                 render_mesh_section(ui, &mut asset_server, height)
             }
 
-            _ => ui.label("No selected"),
+            _ => ui.label("No selection"),
         }
     })
     .response
 }
 
+/// Renders the texture section of the asset server UI.
 fn render_texture_section(
     ui: &mut Ui,
     asset_server: &mut AssetServer,
@@ -133,7 +131,7 @@ fn render_texture_section(
                         _ => return,
                     };
 
-                    // TODO(Angel): Load in parallel.
+                    // Load each file in parallel.
                     for file in files {
                         let buffer = file.read().await;
 
@@ -185,7 +183,6 @@ fn render_texture_section(
                                     engine::egui::Vec2::new(100.0, 100.0),
                                 ))
                                 .rounding(Rounding::same(4.0));
-                                // Render the scene.
                                 ui.add(image);
                                 ui.label(id);
                             })
@@ -203,6 +200,7 @@ fn render_texture_section(
     .response
 }
 
+/// Renders the mesh section of the asset server UI.
 fn render_mesh_section(
     ui: &mut Ui,
     asset_server: &mut AssetServer,
@@ -278,7 +276,7 @@ fn render_mesh_section(
     .response
 }
 
+/// Executes a future in a separate thread.
 fn execute<F: Future<Output = ()> + Send + 'static>(f: F) {
-    // this is stupid... use any executor of your choice instead
     std::thread::spawn(move || engine::futures_lite::future::block_on(f));
 }
