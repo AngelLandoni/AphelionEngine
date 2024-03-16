@@ -1,4 +1,7 @@
-use std::cmp::Ordering;
+use std::{
+    cmp::Ordering,
+    sync::{Arc, Mutex},
+};
 
 use ahash::AHashMap;
 use nalgebra::Matrix4;
@@ -7,7 +10,11 @@ use shipyard::{
 };
 
 use crate::{
-    graphics::UniformBuffer,
+    graphics::{
+        components::MeshComponent, gpu::AbstractGpu, material::Material,
+        mesh::Mesh, BindGroup, BufferUsage, Texture, UniformBuffer,
+        VertexBuffer,
+    },
     scene::{
         assets::AssetResourceID, camera::Camera, components::Transform,
         hierarchy::Hierarchy, projection::Projection, scene::SceneTarget,
@@ -15,10 +22,28 @@ use crate::{
     },
 };
 
-use super::{
-    components::MeshComponent, gpu::AbstractGpu, BindGroup, BufferUsage,
-    Texture, VertexBuffer,
-};
+/// Represents a combination of a mesh with a material, used to
+/// identify the buffer information to be rendered.
+pub struct ForwardModelID {
+    mesh_id: AssetResourceID,
+    material_id: AssetResourceID,
+}
+
+/// A model to be rendered X number of times.
+pub(crate) struct ForwardModel {
+    /// A reference to the mesh data.
+    mesh: Arc<Mesh>,
+    /// A refernece to the material data.
+    material: Arc<Box<dyn Material>>,
+    /// Contains the chunk of memory on the GPU designated to
+    /// the transformations.
+    transforms_buffer: Box<dyn VertexBuffer>,
+    /// Contains the number of instances to be rendered.
+    number_of_instances: Mutex<u64>,
+}
+
+unsafe impl Send for ForwardModel {}
+unsafe impl Sync for ForwardModel {}
 
 pub struct Scene {
     /// Contains a debug tag.
@@ -35,8 +60,10 @@ pub struct Scene {
     pub(crate) mesh_transform_buffers:
         AHashMap<AssetResourceID, (Box<dyn VertexBuffer>, u64)>,
 
+    /// Contains the models to be rendered.
+    pub(crate) forward_models: AHashMap<ForwardModelID, ForwardModel>,
+
     /// Contains the `Texture where the color will be rendered
-    // TODO(Angel): Add here PBR.
     pub target_texture: Box<dyn Texture>,
     /// Contains the depth `Texture`.
     pub(crate) depth_texture: Box<dyn Texture>,

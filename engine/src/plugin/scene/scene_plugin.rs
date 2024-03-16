@@ -16,7 +16,10 @@ use crate::{
         assets::asset_server::AssetServer,
         input::{
             keyboard::Keyboard,
-            mouse::{Cursor, CursorDelta, Mouse, MouseWheelDelta, MouseWheelStepDelta},
+            mouse::{
+                Cursor, CursorDelta, Mouse, MouseWheelDelta,
+                MouseWheelStepDelta,
+            },
         },
         scene::SceneDescriptor,
         scene_state::SceneState,
@@ -105,6 +108,7 @@ fn allocate_scenes(world: &World) {
             projection: scene_d.projection,
             camera_buffer,
             mesh_transform_buffers: AHashMap::new(),
+            forward_models: AHashMap::new(),
             target_texture,
             depth_texture,
             should_sync_resolution_to_window: scene_d.resolution.is_none(),
