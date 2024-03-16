@@ -9,12 +9,8 @@ use shipyard::{
 use crate::{
     graphics::UniformBuffer,
     scene::{
-        assets::{asset_server::AssetServer, MeshResourceID},
-        camera::Camera,
-        components::Transform,
-        hierarchy::Hierarchy,
-        projection::Projection,
-        scene::SceneTarget,
+        assets::AssetResourceID, camera::Camera, components::Transform,
+        hierarchy::Hierarchy, projection::Projection, scene::SceneTarget,
         scene_state::SceneState,
     },
 };
@@ -37,7 +33,7 @@ pub struct Scene {
     /// Contains the buffer which holds the transform information.
     // TODO(Angel): Set this as u32, WGPU only supports u32 for instancing
     pub(crate) mesh_transform_buffers:
-        AHashMap<MeshResourceID, (Box<dyn VertexBuffer>, u64)>,
+        AHashMap<AssetResourceID, (Box<dyn VertexBuffer>, u64)>,
 
     /// Contains the `Texture where the color will be rendered
     // TODO(Angel): Add here PBR.
@@ -103,7 +99,7 @@ fn sync_scene(
     scene_targets: &View<SceneTarget>,
     hierarchy: &View<Hierarchy>,
 ) {
-    let mut scene_raw_transforms: AHashMap<MeshResourceID, Vec<u8>> =
+    let mut scene_raw_transforms: AHashMap<AssetResourceID, Vec<u8>> =
         AHashMap::new();
 
     // Allocate a transform buffer for the mesh if it does not exists.
@@ -112,7 +108,7 @@ fn sync_scene(
 
         scene.mesh_transform_buffers.entry(id).or_insert_with(|| {
             let buffer = gpu.allocate_aligned_zero_vertex_buffer(
-                &format!("Mesh({}) transform", ent.0 .0),
+                &format!("Mesh({}) transform", ent.0),
                 // TODO(Angel): The size must be configured using the pipeline props.
                 200000 * std::mem::size_of::<[[f32; 4]; 4]>() as u64,
                 BufferUsage::COPY_DST,

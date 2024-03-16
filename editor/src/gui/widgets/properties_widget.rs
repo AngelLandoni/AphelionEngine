@@ -11,10 +11,7 @@ use engine::{
         hierarchy::Hierarchy,
     },
 };
-use shipyard::{
-    AllStoragesView, EntitiesView, EntityId, Get, IntoIter, UniqueView,
-    ViewMut, World,
-};
+use shipyard::{EntitiesView, EntityId, Get, UniqueView, ViewMut, World};
 
 use super::hierarchy_widget::HierarchySelectionFlag;
 
@@ -231,7 +228,7 @@ fn render_mesh_if_required(
                 ui.set_height(250.0);
                 ui.horizontal_wrapped(|ui| {
                     for mesh in asset_server.meshes() {
-                        if ui.button(&mesh.0).clicked() {
+                        if ui.button(&mesh).clicked() {
                             ui.close_menu();
                             return Some(mesh);
                         }

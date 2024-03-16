@@ -1,14 +1,14 @@
 use shipyard::{Component, Unique};
 use std::ops::{Deref, DerefMut};
 
-use crate::{graphics::Texture, scene::assets::MeshResourceID};
+use crate::{graphics::Texture, scene::assets::AssetResourceID};
 
 // TODO(Angel): Find a better name.
 #[derive(Component)]
-pub struct MeshComponent(pub MeshResourceID);
+pub struct MeshComponent(pub AssetResourceID);
 
 impl Deref for MeshComponent {
-    type Target = MeshResourceID;
+    type Target = AssetResourceID;
 
     fn deref(&self) -> &Self::Target {
         &self.0

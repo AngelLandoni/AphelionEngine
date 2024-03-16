@@ -1,3 +1,4 @@
+use log::warn;
 use nalgebra::{Vector2, Vector3};
 use shipyard::{UniqueView, UniqueViewMut};
 
@@ -7,7 +8,7 @@ use crate::{
         components::MeshComponent, gpu::AbstractGpu, mesh::Mesh, vertex::Vertex,
     },
     plugin::Pluggable,
-    scene::assets::{asset_server::AssetServer, MeshResourceID},
+    scene::assets::asset_server::AssetServer,
 };
 
 /// Allocates and setups all the default primitives (Triangle, Quad, Cube, Cone,
@@ -24,7 +25,7 @@ impl Pluggable for PrimitivesPlugin {
             match app.world.borrow::<UniqueViewMut<AssetServer>>() {
                 Ok(s) => s,
                 Err(_) => {
-                    println!(
+                    warn!(
                     "Primitives are not configured, AssetServer not configured"
                 );
                     return;
@@ -34,7 +35,7 @@ impl Pluggable for PrimitivesPlugin {
         let gpu = match app.world.borrow::<UniqueView<AbstractGpu>>() {
             Ok(s) => s,
             Err(_) => {
-                println!("Unable to find gpu abstraction");
+                warn!("Unable to find gpu abstraction");
                 return;
             }
         };
@@ -95,12 +96,8 @@ fn configure_pentagon_primitive(gpu: &AbstractGpu, a_server: &mut AssetServer) {
 // CUBE
 pub const CUBE_PRIMITIVE_ID: &str = "CUBE_PRIMITIVE_MESH";
 
-pub fn cube_mesh_resource() -> MeshResourceID {
-    MeshResourceID(CUBE_PRIMITIVE_ID.to_owned())
-}
-
 pub fn cube_mesh_component() -> MeshComponent {
-    MeshComponent(cube_mesh_resource())
+    MeshComponent(CUBE_PRIMITIVE_ID.to_owned())
 }
 
 const CUBE_VERTICES: &[Vertex] = &[
@@ -217,31 +214,28 @@ const CUBE_INDICES: &[u16] = &[
 ];
 
 fn configure_cube_primitive(gpu: &AbstractGpu, a_server: &mut AssetServer) {
-    let v_buffer = gpu.allocate_vertex_buffer(
-        "Cube primitive vertices",
-        bytemuck::cast_slice(CUBE_VERTICES),
+    a_server.register_mesh(
+        CUBE_PRIMITIVE_ID.to_owned(),
+        Mesh::new(
+            gpu.allocate_vertex_buffer(
+                "Cube primitive vertices",
+                bytemuck::cast_slice(CUBE_VERTICES),
+            ),
+            gpu.allocate_index_buffer(
+                "Cube primitive indices",
+                bytemuck::cast_slice(CUBE_INDICES),
+            ),
+            CUBE_INDICES.len() as u32,
+        ),
     );
-
-    let i_buffer = gpu.allocate_index_buffer(
-        "Cube primitive indices",
-        bytemuck::cast_slice(CUBE_INDICES),
-    );
-
-    let mesh = Mesh::new(v_buffer, i_buffer, CUBE_INDICES.len() as u32);
-
-    a_server.register_mesh(CUBE_PRIMITIVE_ID.to_owned(), mesh);
 }
 
 // SPHERE
 pub const SPHERE_PRIMITIVE_ID: &str = "SPHERE_PRIMITIVE_MESH";
 const SPHERE_RESOLUTION: usize = 10;
 
-pub fn sphere_mesh_resource() -> MeshResourceID {
-    MeshResourceID(SPHERE_PRIMITIVE_ID.to_owned())
-}
-
 pub fn sphere_mesh_component() -> MeshComponent {
-    MeshComponent(sphere_mesh_resource())
+    MeshComponent(SPHERE_PRIMITIVE_ID.to_owned())
 }
 
 fn configure_sphere_primitive(gpu: &AbstractGpu, a_server: &mut AssetServer) {
@@ -268,19 +262,20 @@ fn configure_sphere_primitive(gpu: &AbstractGpu, a_server: &mut AssetServer) {
         })
         .collect::<Vec<_>>();
 
-    let v_buffer = gpu.allocate_vertex_buffer(
-        "Sphere primitive vertices",
-        bytemuck::cast_slice(&vertices),
+    a_server.register_mesh(
+        SPHERE_PRIMITIVE_ID.to_owned(),
+        Mesh::new(
+            gpu.allocate_vertex_buffer(
+                "Sphere primitive vertices",
+                bytemuck::cast_slice(&vertices),
+            ),
+            gpu.allocate_index_buffer(
+                "Sphere primitive indices",
+                bytemuck::cast_slice(&indices),
+            ),
+            indices.len() as u32,
+        ),
     );
-
-    let i_buffer = gpu.allocate_index_buffer(
-        "Sphere primitive indices",
-        bytemuck::cast_slice(&indices),
-    );
-
-    let mesh = Mesh::new(v_buffer, i_buffer, indices.len() as u32);
-
-    a_server.register_mesh(SPHERE_PRIMITIVE_ID.to_owned(), mesh);
 }
 
 fn face(dir: &Vector3<f32>, resolution: usize) -> (Vec<Vertex>, Vec<u16>) {
@@ -340,12 +335,8 @@ fn face(dir: &Vector3<f32>, resolution: usize) -> (Vec<Vertex>, Vec<u16>) {
 // PLANE
 pub const PLANE_PRIMITIVE_ID: &str = "PLANE_PRIMITIVE_MESH";
 
-pub fn plane_mesh_resource() -> MeshResourceID {
-    MeshResourceID(PLANE_PRIMITIVE_ID.to_owned())
-}
-
 pub fn plane_mesh_component() -> MeshComponent {
-    MeshComponent(plane_mesh_resource())
+    MeshComponent(PLANE_PRIMITIVE_ID.to_owned())
 }
 
 const PLANE_VERTICES: &[Vertex] = &[
@@ -370,47 +361,46 @@ const PLANE_VERTICES: &[Vertex] = &[
 const PLANE_INDICES: &[u16] = &[0, 1, 2, 2, 3, 0];
 
 fn configure_plane_primitive(gpu: &AbstractGpu, a_server: &mut AssetServer) {
-    let v_buffer = gpu.allocate_vertex_buffer(
-        "Cube primitive vertices",
-        bytemuck::cast_slice(PLANE_VERTICES),
+    a_server.register_mesh(
+        PLANE_PRIMITIVE_ID.to_owned(),
+        Mesh::new(
+            gpu.allocate_vertex_buffer(
+                "Cube primitive vertices",
+                bytemuck::cast_slice(PLANE_VERTICES),
+            ),
+            gpu.allocate_index_buffer(
+                "Cube primitive indices",
+                bytemuck::cast_slice(PLANE_INDICES),
+            ),
+            PLANE_INDICES.len() as u32,
+        ),
     );
-
-    let i_buffer = gpu.allocate_index_buffer(
-        "Cube primitive indices",
-        bytemuck::cast_slice(PLANE_INDICES),
-    );
-
-    let mesh = Mesh::new(v_buffer, i_buffer, PLANE_INDICES.len() as u32);
-
-    a_server.register_mesh(PLANE_PRIMITIVE_ID.to_owned(), mesh);
 }
 
 // CONE
 pub const CONE_PRIMITIVE_ID: &str = "CONE_PRIMITIVE_MESH";
 
-pub fn cone_mesh_resource() -> MeshResourceID {
-    MeshResourceID(CONE_PRIMITIVE_ID.to_owned())
-}
-
 pub fn cone_mesh_component() -> MeshComponent {
-    MeshComponent(cone_mesh_resource())
+    MeshComponent(CONE_PRIMITIVE_ID.to_owned())
 }
 
 fn configure_cone_primitive(gpu: &AbstractGpu, a_server: &mut AssetServer) {
     let (vertices, indices) = generate_cone_mesh(23);
 
-    let v_buffer = gpu.allocate_vertex_buffer(
-        "Cube primitive vertices",
-        bytemuck::cast_slice(&vertices),
+    a_server.register_mesh(
+        CONE_PRIMITIVE_ID.to_owned(),
+        Mesh::new(
+            gpu.allocate_vertex_buffer(
+                "Cube primitive vertices",
+                bytemuck::cast_slice(&vertices),
+            ),
+            gpu.allocate_index_buffer(
+                "Cube primitive indices",
+                bytemuck::cast_slice(&indices),
+            ),
+            indices.len() as u32,
+        ),
     );
-
-    let i_buffer = gpu.allocate_index_buffer(
-        "Cube primitive indices",
-        bytemuck::cast_slice(&indices),
-    );
-
-    let mesh = Mesh::new(v_buffer, i_buffer, indices.len() as u32);
-    a_server.register_mesh(CONE_PRIMITIVE_ID.to_owned(), mesh)
 }
 
 fn generate_cone_mesh(resolution: usize) -> (Vec<Vertex>, Vec<u16>) {
@@ -468,29 +458,27 @@ fn generate_cone_mesh(resolution: usize) -> (Vec<Vertex>, Vec<u16>) {
 // CYLINDER
 pub const CYLINDER_PRIMITIVE_ID: &str = "CYLINDER_PRIMITIVE_MESH";
 
-pub fn cylinder_mesh_resource() -> MeshResourceID {
-    MeshResourceID(CYLINDER_PRIMITIVE_ID.to_owned())
-}
-
 pub fn cylinder_mesh_component() -> MeshComponent {
-    MeshComponent(cylinder_mesh_resource())
+    MeshComponent(CYLINDER_PRIMITIVE_ID.to_owned())
 }
 
 fn configure_cylinder_primitive(gpu: &AbstractGpu, a_server: &mut AssetServer) {
     let (vertices, indices) = generate_cylinder_mesh(20);
 
-    let v_buffer = gpu.allocate_vertex_buffer(
-        "Cube primitive vertices",
-        bytemuck::cast_slice(&vertices),
+    a_server.register_mesh(
+        CYLINDER_PRIMITIVE_ID.to_owned(),
+        Mesh::new(
+            gpu.allocate_vertex_buffer(
+                "Cube primitive vertices",
+                bytemuck::cast_slice(&vertices),
+            ),
+            gpu.allocate_index_buffer(
+                "Cube primitive indices",
+                bytemuck::cast_slice(&indices),
+            ),
+            indices.len() as u32,
+        ),
     );
-
-    let i_buffer = gpu.allocate_index_buffer(
-        "Cube primitive indices",
-        bytemuck::cast_slice(&indices),
-    );
-
-    let mesh = Mesh::new(v_buffer, i_buffer, indices.len() as u32);
-    a_server.register_mesh(CYLINDER_PRIMITIVE_ID.to_owned(), mesh)
 }
 
 fn generate_cylinder_mesh(resolution: usize) -> (Vec<Vertex>, Vec<u16>) {

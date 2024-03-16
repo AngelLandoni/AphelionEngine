@@ -1,3 +1,4 @@
+use log::warn;
 use shipyard::UniqueView;
 use wgpu::{
     CommandEncoderDescriptor, Operations, RenderPassDepthStencilAttachment,
@@ -39,8 +40,13 @@ pub(crate) fn dynamic_mesh_pass_system(
         .main
         .mesh_transform_buffers
         .iter()
-        .map(|(mesh_id, (buffer, count))| {
-            (asset_server.load_mesh(mesh_id), buffer, count)
+        .filter_map(|(mesh_id, (buffer, count))| {
+            if let Some(mesh) = asset_server.load_mesh(mesh_id) {
+                Some((mesh, buffer, count))
+            } else {
+                warn!("Unable to find mesh \"{:?}\"", mesh_id);
+                None
+            }
         })
         .collect::<Vec<_>>();
 
@@ -185,7 +191,10 @@ pub(crate) fn dynamic_mesh_pass_system(
             for (mesh, t_buffer, count) in main_meshes
                 .iter()
                 // Only execute the draw if there are entities for the mesh.
-                .filter(|(_, _, c)| **c >= 1)
+                .filter(|(_, _, count)| **count >= 1)
+                .filter_map(|(mesh, buffer, count)| {
+                    mesh.as_ref().map(|mesh| (mesh, buffer, count))
+                })
             {
                 let v_buffer = mesh
                     .vertex_buffer

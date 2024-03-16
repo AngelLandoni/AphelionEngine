@@ -214,15 +214,12 @@ pub(crate) fn sync_sky_pipeline_uniforms(world: &World) {
         .downcast_ref::<Gpu>()
         .expect("Incorrect GPU type expecting WGPU gpu");
 
-    let asset_lock = &asset_server
-        .data
-        .read()
-        .expect("Unable to take asset store lock on updating sky");
-
-    let texture = match asset_lock.textures.get(sky_updater.texture_id.as_str())
-    {
+    let texture = match asset_server.get_texture(&sky_updater.texture_id) {
         Some(t) => t,
-        _ => return,
+        _ => {
+            warn!("Unable to acquire texture {}", sky_updater.texture_id);
+            return;
+        }
     };
 
     let wgpu_texture = &texture

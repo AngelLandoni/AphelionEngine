@@ -37,27 +37,28 @@ pub fn sync_egui_asset_server(world: &World) {
     let mut egui_asset_server =
         world.borrow::<UniqueViewMut<EguiAssetServer>>().unwrap();
 
-    // Take read lock over the asset server.
-    let data_lock = asset_server.data.read().unwrap();
+    asset_server
+        .get_textures()
+        .iter()
+        .for_each(|(id, texture)| {
+            // Do not sync of the texture is already registered.
+            if egui_asset_server.textures.contains_key(id.as_str()) {
+                return;
+            }
 
-    for (id, texture) in &data_lock.textures {
-        // Do not sync of the texture is already registered.
-        if egui_asset_server.textures.contains_key(id.as_str()) {
-            continue;
-        }
+            let texture = texture.downcast_ref::<WGPUTexture>().unwrap();
 
-        let texture = texture.downcast_ref::<WGPUTexture>().unwrap();
+            let egui_texture_id =
+                egui_renderer.renderer.register_native_texture(
+                    &gpu.device,
+                    &texture.view,
+                    engine::wgpu::FilterMode::Linear,
+                );
 
-        let egui_texture_id = egui_renderer.renderer.register_native_texture(
-            &gpu.device,
-            &texture.view,
-            engine::wgpu::FilterMode::Linear,
-        );
-
-        egui_asset_server
-            .textures
-            .insert((*id).to_owned(), egui_texture_id);
-    }
+            egui_asset_server
+                .textures
+                .insert((*id).to_owned(), egui_texture_id);
+        });
 }
 
 pub fn render_asset_server(ui: &mut Ui, world: &World) -> Response {
@@ -150,14 +151,16 @@ fn render_texture_section(
                         };
 
                         let (width, height) = img.dimensions();
-
                         let buffer = img.to_rgba8().into_raw();
-                        let mut loader_lock = loader.lock().unwrap();
-                        loader_lock.load_texture(
-                            file.file_name(),
-                            buffer,
-                            Size::new(width, height),
-                        );
+
+                        loader
+                            .write()
+                            .expect("Unable to acquire lock")
+                            .load_texture(
+                                file.file_name(),
+                                buffer,
+                                Size::new(width, height),
+                            );
                     }
 
                     ctx.request_repaint();
@@ -218,7 +221,8 @@ fn render_mesh_section(
                     _ => return,
                 };
 
-                let mut loader_lock = loader.lock().unwrap();
+                let mut loader_lock =
+                    loader.write().expect("Unable to acquire lock");
 
                 for file in files {
                     let models = match ModelType::Obj(file.path()).load_model()
@@ -252,13 +256,13 @@ fn render_mesh_section(
             .show(&mut ui, |ui| {
                 Grid::new("meshes_asset_server_grid").show(ui, |ui| {
                     for mesh in &asset_server.meshes() {
-                        ui.push_id(mesh.0.clone(), |ui| {
+                        ui.push_id(mesh.clone(), |ui| {
                             ui.vertical(|ui| {
                                 ui.allocate_exact_size(
                                     vec2(60.0, 60.0),
                                     Sense::click(),
                                 );
-                                ui.label(mesh.0.clone());
+                                ui.label(mesh.clone());
                             })
                             .response
                             .context_menu(|ui| {

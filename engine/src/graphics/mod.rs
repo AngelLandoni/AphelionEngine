@@ -5,6 +5,7 @@ use crate::types::Size;
 pub mod camera;
 pub mod components;
 pub mod gpu;
+pub mod material;
 pub mod mesh;
 pub mod scene;
 pub mod vertex;
