@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use ahash::HashMap;
 use downcast_rs::Downcast;
 use shipyard::Component;
@@ -14,6 +16,14 @@ impl MaterialComponent {
     /// Creates a new instance of `MaterialComponent` with the given asset resource ID.
     pub fn new(id: AssetResourceID) -> Self {
         Self(id)
+    }
+}
+
+impl Deref for MaterialComponent {
+    type Target = String;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 

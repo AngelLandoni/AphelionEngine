@@ -7,7 +7,11 @@ use crate::{
     graphics::{
         camera::CameraUniform,
         gpu::AbstractGpu,
-        scene::{sync_main_scene_dynamic_entities_transform, Scene},
+        scene::{
+            sync_forward_models_memory_for_all_scenes_system,
+            sync_main_scene_dynamic_entities_transform,
+            sync_transforms_hierarchy_system, Scene,
+        },
         Texture, UniformBuffer,
     },
     host::window::Window,
@@ -68,9 +72,11 @@ impl Pluggable for ScenePlugin {
             );
         });
 
-        app.schedule(Schedule::Update, |world| {
+        app.schedule(Schedule::RequestRedraw, |world| {
             world.run(sync_scene_cameras_with_their_uniforms_system);
             world.run(sync_main_scene_dynamic_entities_transform);
+            world.run(sync_forward_models_memory_for_all_scenes_system);
+            world.run(sync_transforms_hierarchy_system);
         });
     }
 }

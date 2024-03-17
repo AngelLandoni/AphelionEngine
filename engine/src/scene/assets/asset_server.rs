@@ -60,6 +60,45 @@ impl AssetServer {
             .collect()
     }
 
+    /// Retrieves a mesh by its resource ID.
+    ///
+    /// # Arguments
+    ///
+    /// * `mesh_id` - The resource ID of the mesh to retrieve.
+    ///
+    /// # Returns
+    ///
+    /// An `Option` containing a reference to the mesh if found, otherwise `None`.
+    pub fn get_mesh(&self, mesh_id: &String) -> Option<Arc<Mesh>> {
+        self.data
+            .read()
+            .expect("Unable to acquire read lock")
+            .meshes
+            .get(mesh_id)
+            .map(|d| d.clone())
+    }
+
+    /// Retrieves a material by its resource ID.
+    ///
+    /// # Arguments
+    ///
+    /// * `material_id` - The resource ID of the material to retrieve.
+    ///
+    /// # Returns
+    ///
+    /// An `Option` containing a reference to the material if found, otherwise `None`.
+    pub fn get_material(
+        &self,
+        material_id: &String,
+    ) -> Option<Arc<dyn Material>> {
+        self.data
+            .read()
+            .expect("Unable to acquire read lock")
+            .materials
+            .get(material_id)
+            .map(|d| d.clone())
+    }
+
     /// Registers a mesh into the Asset Server.
     ///
     /// # Arguments

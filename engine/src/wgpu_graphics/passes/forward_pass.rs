@@ -15,6 +15,8 @@ use crate::{
     },
 };
 
+pub(crate) const INTERNAL_MAIN_SCENE_ID: &str = "_INTERNAL_MAIN_SCENE_ID";
+
 enum ForwardError {
     UnableToExtractTargetTexture,
     UnableToExtractTargetDepthTexture,
@@ -75,7 +77,7 @@ pub(crate) fn forward_pass_system(
             });
 
     // Need to keep the id in memory.
-    let main_scene_temp_id = "_INTERNAL_MAIN_SCENE".to_owned();
+    let main_scene_temp_id = INTERNAL_MAIN_SCENE_ID.to_owned();
 
     // Chain the subscenes along side the main scene to make the code
     // easier and cleaner.
