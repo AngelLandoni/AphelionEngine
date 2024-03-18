@@ -1,6 +1,6 @@
 use engine::{
     app::App,
-    graphics::material::{DefaultMaterial, MaterialComponent},
+    graphics::material::{Material, MaterialComponent},
     nalgebra::{Unit, UnitQuaternion, Vector3},
     plugin::{scene::primitives_plugin::cube_mesh_component, Pluggable},
     scene::{components::Transform, hierarchy::Hierarchy, scene::SceneTarget},
@@ -18,7 +18,6 @@ impl Pluggable for WorkbenchScenePlugin {
 
         app.world.add_entity((
             cube_mesh_component(),
-            MaterialComponent::new(DefaultMaterial::id()),
             Transform {
                 position: Vector3::new(0.0, 0.0, -10.0),
                 rotation: rot,

@@ -1,10 +1,15 @@
 use std::ops::Deref;
 
 use ahash::HashMap;
-use downcast_rs::Downcast;
 use shipyard::Component;
+use wgpu::{BindGroupLayout, RenderPipeline};
 
-use crate::scene::assets::AssetResourceID;
+use crate::{
+    scene::assets::{asset_server::AssetServer, AssetResourceID},
+    wgpu_graphics::{
+        gpu::Gpu, pipelines::forward_pipeline::create_forward_pipeline,
+    },
+};
 
 /// Represents a material component associated with an asset resource ID.
 ///
@@ -27,11 +32,6 @@ impl Deref for MaterialComponent {
     }
 }
 
-/// Trait representing a material.
-///
-/// Any struct implementing this trait can be considered a material.
-pub trait Material: Downcast + Send + Sync {}
-
 /// Represents all the possible types of textures associated with a material.
 pub enum MaterialTexture {
     /// Diffuse texture.
@@ -50,19 +50,83 @@ impl MaterialTexture {
 /// A convenient type used to describe the storage location of all the textures associated with a material.
 type MaterialTextures = HashMap<String, AssetResourceID>;
 
-/// Represents a default material stored in the GPU.
+/// Defines the type of material we are dealing with.
+///
+/// This is usefull to determine which data we should pass to the
+/// shader.
+#[derive(Copy, Clone)]
+pub enum MaterialKind {
+    Untextured,
+}
+
+impl MaterialKind {
+    fn pipeline_id(&self) -> String {
+        match self {
+            MaterialKind::Untextured => {
+                "untextured_material_pipeline_id".to_owned()
+            }
+        }
+    }
+
+    fn fragment_shader(&self) -> &'static str {
+        match self {
+            MaterialKind::Untextured => {
+                include_str!("shaders/materials/untextured.wgsl")
+            }
+        }
+    }
+
+    fn bind_group_layouts(&self, gpu: &Gpu) -> BindGroupLayout {
+        match self {
+            MaterialKind::Untextured => gpu.device.create_bind_group_layout(
+                &wgpu::BindGroupLayoutDescriptor {
+                    label: Some("Untextured bind group layout"),
+                    entries: &[],
+                },
+            ),
+        }
+    }
+}
+
+/// Represents a material stored in the GPU.
 ///
 /// This material contains a collection of textures.
-pub struct DefaultMaterial {
+#[derive(Clone)]
+pub struct Material {
+    pub kind: MaterialKind,
     /// Contains all the available textures for the material.
     pub textures: MaterialTextures,
 }
 
-impl DefaultMaterial {
-    /// Returns the ID associated with the default material.
-    pub fn id() -> AssetResourceID {
-        "default_material".to_owned()
-    }
+fn generate_material_pipeline(
+    kind: MaterialKind,
+    gpu: &Gpu,
+    camera_bind_group_layout: &BindGroupLayout,
+) -> (String, RenderPipeline) {
+    let fragment_program = gpu
+        .compile_program("Untextured fragment shader", kind.fragment_shader());
+
+    (
+        kind.pipeline_id(),
+        create_forward_pipeline(
+            gpu,
+            camera_bind_group_layout,
+            &kind.bind_group_layouts(gpu),
+            &fragment_program,
+        ),
+    )
 }
 
-impl Material for DefaultMaterial {}
+/// Registers the default material into the system.
+pub(crate) fn register_materials(
+    gpu: &Gpu,
+    asset_server: &mut AssetServer,
+    camera_bind_group_layout: &BindGroupLayout,
+) {
+    let (pipeline_id, pipeline) = generate_material_pipeline(
+        MaterialKind::Untextured,
+        gpu,
+        camera_bind_group_layout,
+    );
+    asset_server.register_material_pipeline(pipeline_id, pipeline);
+}

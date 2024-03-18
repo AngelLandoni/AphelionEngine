@@ -5,7 +5,8 @@ use shipyard::{UniqueView, UniqueViewMut, World};
 use crate::{
     app::App,
     graphics::{
-        components::DepthTexture, gpu::AbstractGpu, mesh::Mesh, BufferCreator,
+        components::DepthTexture, gpu::AbstractGpu,
+        material::register_materials, mesh::Mesh, BufferCreator,
     },
     host::window::Window,
     plugin::Pluggable,
@@ -124,8 +125,7 @@ impl Pluggable for WgpuRendererPlugin {
 
 /// Moves all the textures from RAM to GPU RAM.
 fn load_textures(world: &World) {
-    let mut asset_server =
-        world.borrow::<UniqueViewMut<AssetServer>>().unwrap();
+    let asset_server = world.borrow::<UniqueViewMut<AssetServer>>().unwrap();
 
     let textures_to_load = asset_server.extract_textures_to_load();
 
@@ -154,7 +154,7 @@ fn load_models(world: &World) {
         .borrow::<UniqueView<AbstractGpu>>()
         .expect("Unable to acquire AbtractGpu");
 
-    let mut asset_server = world
+    let asset_server = world
         .borrow::<UniqueViewMut<AssetServer>>()
         .expect("Unable to acquire asset loader lock");
 
@@ -213,6 +213,10 @@ fn setup_pipelines(world: &World) {
         .downcast_ref::<Gpu>()
         .expect("Unable to acquire Wgpu GPU");
 
+    let mut asset_server = world
+        .borrow::<UniqueViewMut<AssetServer>>()
+        .expect("Unable to acquire Asset Server");
+
     // Creates the commond camera bindgroup layout used in all the
     // pipelines.
     let camera_bind_group_layout = create_camera_bind_group_layout(gpu);
@@ -222,6 +226,9 @@ fn setup_pipelines(world: &World) {
     let infinite_grid =
         InfiniteGridPipeline::new(gpu, &camera_bind_group_layout);
     let sky = SkyPipeline::new(gpu, &camera_bind_group_layout);
+
+    // Materials.
+    register_materials(gpu, &mut asset_server, &camera_bind_group_layout);
 
     world.add_unique(dynamic_mesh);
     world.add_unique(frame_composition);

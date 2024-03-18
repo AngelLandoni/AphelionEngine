@@ -2,6 +2,7 @@ use std::sync::{Arc, RwLock};
 
 use ahash::AHashMap;
 use shipyard::Unique;
+use wgpu::RenderPipeline;
 
 use crate::{
     graphics::{gpu::AbstractGpu, material::Material, mesh::Mesh, Texture},
@@ -89,8 +90,8 @@ impl AssetServer {
     /// An `Option` containing a reference to the material if found, otherwise `None`.
     pub fn get_material(
         &self,
-        material_id: &String,
-    ) -> Option<Arc<dyn Material>> {
+        material_id: &AssetResourceID,
+    ) -> Option<Material> {
         self.data
             .read()
             .expect("Unable to acquire read lock")
@@ -152,6 +153,24 @@ impl AssetServer {
             .expect("Unable to acquire write lock")
             .textures
             .insert(id, texture);
+    }
+
+    /// Registers a material pipeline into the Asset Server.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The resource ID of the material pipeline.
+    /// * `pipeline` - The material pipeline to register.
+    pub fn register_material_pipeline(
+        &self,
+        id: AssetResourceID,
+        pipeline: RenderPipeline,
+    ) {
+        self.data
+            .write()
+            .expect("UNable to acquire write lock")
+            .materials_pipelines
+            .insert(id, pipeline);
     }
 
     /// Retrieves a texture by its resource ID.
@@ -251,5 +270,7 @@ struct AssetServerData {
     /// Contains all the available textures.
     textures: AHashMap<AssetResourceID, Arc<dyn Texture>>,
     /// Contains all the available materials.
-    materials: AHashMap<AssetResourceID, Arc<dyn Material>>,
+    materials: AHashMap<AssetResourceID, Material>,
+    /// Conatins all the materials's pipelines.
+    materials_pipelines: AHashMap<AssetResourceID, RenderPipeline>,
 }

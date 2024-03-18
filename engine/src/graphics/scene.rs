@@ -1,5 +1,4 @@
 use std::{
-    borrow::BorrowMut,
     cmp::Ordering,
     hash::{Hash, Hasher},
     sync::{Arc, Mutex},
@@ -14,9 +13,8 @@ use shipyard::{
 
 use crate::{
     graphics::{
-        components::MeshComponent, gpu::AbstractGpu, material::Material,
-        mesh::Mesh, BindGroup, BufferUsage, Texture, UniformBuffer,
-        VertexBuffer,
+        components::MeshComponent, gpu::AbstractGpu, mesh::Mesh, BindGroup,
+        BufferUsage, Texture, UniformBuffer, VertexBuffer,
     },
     scene::{
         assets::{asset_server::AssetServer, AssetResourceID},
@@ -32,7 +30,7 @@ use crate::{
     },
 };
 
-use super::material::MaterialComponent;
+use super::material::{Material, MaterialComponent};
 
 /// Describes how many entities which a specific mesh and material
 /// can be displayed at the same time.
@@ -58,7 +56,7 @@ pub(crate) struct ForwardModel {
     /// A reference to the mesh data.
     mesh: Arc<Mesh>,
     /// A refernece to the material data.
-    material: Option<Arc<dyn Material>>,
+    material: Option<Material>,
     /// Contains the chunk of memory on the GPU designated to
     /// the transformations.
     transforms_buffer: Box<dyn VertexBuffer>,
