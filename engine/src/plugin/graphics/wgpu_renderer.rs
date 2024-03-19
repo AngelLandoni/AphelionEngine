@@ -17,6 +17,7 @@ use crate::{
         gpu::Gpu,
         passes::{
             dynamic_mesh_pass::dynamic_mesh_pass_system,
+            forward_pass::forward_pass_system,
             frame_composition_pass_system::frame_composition_pass_system,
             infinite_grid_pass::infinite_grid_pass_system,
             sky_pass::sky_pass_system,
@@ -100,6 +101,7 @@ impl Pluggable for WgpuRendererPlugin {
 
             app.schedule(Schedule::RequestRedraw, |world| {
                 world.run(dynamic_mesh_pass_system);
+                world.run(forward_pass_system);
                 world.run(frame_composition_pass_system);
                 world.run(infinite_grid_pass_system);
                 world.run(sky_pass_system);

@@ -1,7 +1,7 @@
 pub mod buffer;
 pub(crate) mod components;
 pub mod gpu;
-pub(crate) mod passes;
+pub mod passes;
 pub mod pipelines;
 pub(crate) mod rendering;
 
@@ -20,6 +20,7 @@ pub(crate) enum CommandSubmitOrder {
     DebugGui,
     DebugGrid,
     DynamicMeshes,
+    ForwardPass,
     Sky,
 }
 

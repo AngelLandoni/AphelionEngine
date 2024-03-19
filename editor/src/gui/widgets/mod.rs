@@ -1,3 +1,4 @@
+pub mod dropdown_widget;
 pub mod dynamic_panel_widget;
 pub mod hierarchy_widget;
 pub mod icon_button;

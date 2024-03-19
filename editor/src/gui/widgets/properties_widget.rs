@@ -3,17 +3,26 @@ use engine::{
         DragValue, Frame, InnerResponse, Margin, Response, ScrollArea,
         TextEdit, Ui,
     },
-    graphics::components::MeshComponent,
+    graphics::{
+        components::MeshComponent,
+        material::{self, MaterialComponent},
+    },
     log::info,
     nalgebra::UnitQuaternion,
     scene::{
         assets::asset_server::AssetServer, components::Transform,
         hierarchy::Hierarchy,
     },
+    wgpu_graphics::passes::forward_pass::{self, ForwardRender},
 };
-use shipyard::{EntitiesView, EntityId, Get, UniqueView, ViewMut, World};
+use shipyard::{
+    AddComponent, EntitiesView, EntityId, Get, Remove, UniqueView,
+    UniqueViewMut, ViewMut, World,
+};
 
-use super::hierarchy_widget::HierarchySelectionFlag;
+use super::{
+    dropdown_widget::DropDownBox, hierarchy_widget::HierarchySelectionFlag,
+};
 
 /// Renders the `Properties` section.
 pub fn properties_widget(ui: &mut Ui, world: &World) -> Response {
@@ -24,6 +33,9 @@ pub fn properties_widget(ui: &mut Ui, world: &World) -> Response {
         world.borrow::<ViewMut<HierarchySelectionFlag>>().unwrap();
     let mut transforms = world.borrow::<ViewMut<Transform>>().unwrap();
     let mut mesh_components = world.borrow::<ViewMut<MeshComponent>>().unwrap();
+    let mut forward_renderer =
+        world.borrow::<ViewMut<ForwardRender>>().unwrap();
+    let mut materials = world.borrow::<ViewMut<MaterialComponent>>().unwrap();
 
     ui.vertical(|ui| {
         ScrollArea::vertical()
@@ -40,6 +52,8 @@ pub fn properties_widget(ui: &mut Ui, world: &World) -> Response {
                             &mut hierarchy,
                             &mut transforms,
                             &mut mesh_components,
+                            &mut forward_renderer,
+                            &mut materials,
                         );
                     });
             })
@@ -54,6 +68,8 @@ fn render_section(
     hierarchy: &mut ViewMut<Hierarchy>,
     transforms: &mut ViewMut<Transform>,
     mesh_components: &mut ViewMut<MeshComponent>,
+    forward_renderer: &mut ViewMut<ForwardRender>,
+    materials: &mut ViewMut<MaterialComponent>,
 ) {
     Frame::none()
         .inner_margin(Margin::same(10.0))
@@ -103,12 +119,14 @@ fn render_section(
                 });
 
                 render_transform_component_if_required(ui, entity, transforms);
+                render_renderer(ui, entity, forward_renderer);
                 render_mesh_if_required(
                     ui,
                     entity,
                     asset_server,
                     mesh_components,
                 );
+                render_materials_selection(ui, entity, materials, asset_server);
             });
         });
 }
@@ -204,6 +222,40 @@ fn convert_euler_angle_to_degrees(angle: f32) -> f32 {
     }
 }
 
+fn render_renderer(
+    ui: &mut Ui,
+    entity: &EntityId,
+    forward_renderer: &mut ViewMut<ForwardRender>,
+) {
+    let mut resp = "".to_owned();
+
+    ui.add(DropDownBox::from_iter(
+        &["Forward", "Dynamic"],
+        "test_dropbox",
+        &mut resp,
+        |ui, text| {
+            if text == "Forward" {
+                return ui.selectable_label(
+                    forward_renderer.contains(*entity),
+                    text,
+                );
+            }
+
+            ui.selectable_label(false, text)
+        },
+    ));
+
+    if resp == "Forward" {
+        println!("Adding forward");
+        forward_renderer.add_component_unchecked(*entity, ForwardRender);
+    }
+
+    if resp == "Dynamic" {
+        println!("Removing forward");
+        forward_renderer.remove(*entity);
+    }
+}
+
 fn render_mesh_if_required(
     ui: &mut Ui,
     entity: &EntityId,
@@ -243,5 +295,38 @@ fn render_mesh_if_required(
 
     if let Some(name) = inner.and_then(|r| r.inner.inner) {
         mesh.0 = name;
+    }
+}
+
+fn render_materials_selection(
+    ui: &mut Ui,
+    entity: &EntityId,
+    materials: &mut ViewMut<MaterialComponent>,
+    asset_server: &AssetServer,
+) {
+    let InnerResponse { inner, response } = ui.menu_button("Material", |ui| {
+        ScrollArea::vertical()
+            .auto_shrink([false; 2])
+            .max_height(250.0)
+            .id_source("inspector icons")
+            .show(ui, |ui| {
+                ui.set_width(200.0);
+                ui.set_height(250.0);
+                ui.horizontal_wrapped(|ui| {
+                    for (id, material) in asset_server.get_materials() {
+                        if ui.button(&id).clicked() {
+                            ui.close_menu();
+                            return Some((id, material));
+                        }
+                    }
+                    None
+                })
+            })
+    });
+
+    response.on_hover_cursor(engine::egui::CursorIcon::PointingHand);
+
+    if let Some((id, material)) = inner.and_then(|r| r.inner.inner) {
+        materials.add_component_unchecked(*entity, MaterialComponent::new(id));
     }
 }

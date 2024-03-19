@@ -4,6 +4,7 @@ use engine::{
     nalgebra::{Unit, UnitQuaternion, Vector3},
     plugin::{scene::primitives_plugin::cube_mesh_component, Pluggable},
     scene::{components::Transform, hierarchy::Hierarchy, scene::SceneTarget},
+    wgpu_graphics::passes::forward_pass::ForwardRender,
 };
 
 use crate::camera::EditorCamera;
@@ -18,6 +19,8 @@ impl Pluggable for WorkbenchScenePlugin {
 
         app.world.add_entity((
             cube_mesh_component(),
+            MaterialComponent("debug_material".to_owned()),
+            // ForwardRender,
             Transform {
                 position: Vector3::new(0.0, 0.0, -10.0),
                 rotation: rot,
@@ -26,8 +29,55 @@ impl Pluggable for WorkbenchScenePlugin {
             SceneTarget::SubScene("WorkbenchScene".to_string()),
             Hierarchy::new(
                 crate::gui::icons::MESH_CUBE,
-                "Root cube".to_owned(),
+                "Debug Mat".to_owned(),
             ),
         ));
+
+        app.world.add_entity((
+            cube_mesh_component(),
+            MaterialComponent("debug_material".to_owned()),
+            ForwardRender,
+            Transform {
+                position: Vector3::new(0.0, 0.0, -10.0),
+                rotation: rot,
+                scale: Vector3::new(2.0, 2.0, 2.0),
+            },
+            SceneTarget::SubScene("WorkbenchScene".to_string()),
+            Hierarchy::new(
+                crate::gui::icons::MESH_CUBE,
+                "Debug Mat + Forward".to_owned(),
+            ),
+        ));
+
+        app.world.add_entity((
+            cube_mesh_component(),
+            MaterialComponent("untextured_material".to_owned()),
+            ForwardRender,
+            Transform {
+                position: Vector3::new(0.0, 0.0, -10.0),
+                rotation: rot,
+                scale: Vector3::new(2.0, 2.0, 2.0),
+            },
+            SceneTarget::SubScene("WorkbenchScene".to_string()),
+            Hierarchy::new(
+                crate::gui::icons::MESH_CUBE,
+                "Untextured Mat + Forward".to_owned(),
+            ),
+        ));
+
+        /*app.world.add_entity((
+        cube_mesh_component(),
+        ForwardRender,
+        Transform {
+            position: Vector3::new(0.0, 0.0, -10.0),
+            rotation: rot,
+            scale: Vector3::new(2.0, 2.0, 2.0),
+        },
+        SceneTarget::SubScene("WorkbenchScene".to_string()),
+        Hierarchy::new(
+            crate::gui::icons::MESH_CUBE,
+            "Second cube".to_owned(),
+        ),
+        ));*/
     }
 }

@@ -88,6 +88,12 @@ pub fn render_asset_server(ui: &mut Ui, world: &World) -> Response {
                 Some(AssetServerSection::Mesh),
                 "Meshes",
             );
+
+            ui.selectable_value(
+                &mut gui_state.asset_server.active_asset_server_section,
+                Some(AssetServerSection::Material),
+                "Materials",
+            );
         });
 
         ui.separator();
@@ -102,6 +108,10 @@ pub fn render_asset_server(ui: &mut Ui, world: &World) -> Response {
 
             Some(AssetServerSection::Mesh) => {
                 render_mesh_section(ui, &mut asset_server, height)
+            }
+
+            Some(AssetServerSection::Material) => {
+                render_materials_section(ui, &mut asset_server, height)
             }
 
             _ => ui.label("No selection"),
@@ -271,6 +281,32 @@ fn render_mesh_section(
                         });
                     }
                 })
+            });
+    })
+    .response
+}
+
+fn render_materials_section(
+    ui: &mut Ui,
+    asset_server: &mut AssetServer,
+    height: f32,
+) -> Response {
+    ui.vertical(|ui| {
+        ui.horizontal(|ui| {
+            ui.button("Create Material");
+        });
+
+        let width = ui.available_width();
+
+        let (_, rect) = ui.allocate_space(vec2(width, height));
+        let mut ui = ui.child_ui(rect, Default::default());
+
+        ScrollArea::vertical()
+            .auto_shrink([false; 2])
+            .show(&mut ui, |ui| {
+                Grid::new("material_asset_server_grid").show(ui, |ui| {
+                    ui.label("Matsss!!");
+                });
             });
     })
     .response

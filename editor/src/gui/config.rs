@@ -31,6 +31,7 @@ pub enum AssetServerSection {
     Texture,
     Cubemap,
     Mesh,
+    Material,
 }
 
 #[derive(Clone, Copy, Default)]

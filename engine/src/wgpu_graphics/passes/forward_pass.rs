@@ -7,11 +7,13 @@ use wgpu::{
 
 use crate::{
     graphics::{gpu::AbstractGpu, scene::Scene},
-    scene::scene_state::SceneState,
+    scene::{assets::asset_server::AssetServer, scene_state::SceneState},
     wgpu_graphics::{
-        buffer::{WGPUBindGroup, WGPUTexture},
+        buffer::{
+            WGPUBindGroup, WGPUTexture, WgpuIndexBuffer, WgpuVertexBuffer,
+        },
         gpu::Gpu,
-        CommandQueue,
+        CommandQueue, CommandSubmitOrder, OrderCommandBuffer,
     },
 };
 
@@ -106,12 +108,66 @@ pub(crate) fn forward_pass_system(
             }
         };
 
-        // Init pass.
-        let mut pass = start_pass(id, &mut encoder, &target.view, &depth.view);
+        {
+            // Init pass.
+            let mut pass =
+                start_pass(id, &mut encoder, &target.view, &depth.view);
 
-        // Where I should get the pipeline, the material?.
-        // pass.set_pipeline();
+            // Camera bind group.
+            pass.set_bind_group(0, &camera_bind_group.0, &[]);
+
+            for (id, model) in &scene.forward_models {
+                let vertex_buffer = model
+                    .mesh
+                    .vertex_buffer
+                    .downcast_ref::<WgpuVertexBuffer>()
+                    .expect("Incorrect vertex buffer type, expecting WGPU vertex buffer");
+
+                let index_buffer = model
+                    .mesh
+                    .index_buffer
+                    .downcast_ref::<WgpuIndexBuffer>()
+                    .expect("Incorrect vertex buffer type, expecting WGPU vertex buffer");
+
+                let trasnform_buffer = model.transforms_buffer
+                    .downcast_ref::<WgpuVertexBuffer>()
+                    .expect("Incorrect vertex buffer type, expecting WGPU vertex buffer");
+
+                let instance_count = model
+                    .number_of_instances
+                    .lock()
+                    .expect("Unable to acquire lock");
+
+                if let Some(pipeline) = &model.material_pipeline {
+                    pass.set_pipeline(pipeline);
+                } else {
+                    warn!(
+                        "Tring to render a model which does not have material",
+                    );
+                    continue;
+                    // TODO(Angel): If there is not mat pipeline set one as default.
+                }
+
+                pass.set_vertex_buffer(0, vertex_buffer.0.slice(..));
+                pass.set_vertex_buffer(1, trasnform_buffer.0.slice(..));
+                pass.set_index_buffer(
+                    index_buffer.0.slice(..),
+                    wgpu::IndexFormat::Uint16,
+                );
+                pass.draw_indexed(
+                    0..model.mesh.index_count,
+                    0,
+                    0..*instance_count as u32,
+                )
+            }
+        }
     }
+
+    let _ = queue.0.push(OrderCommandBuffer::new(
+        Some("Render dynamic meshes".to_owned()),
+        CommandSubmitOrder::ForwardPass,
+        encoder.finish(),
+    ));
 }
 
 /// Tries to extract the target and depth textures from the provided scene.

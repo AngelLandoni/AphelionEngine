@@ -10,6 +10,7 @@ use nalgebra::Matrix4;
 use shipyard::{
     EntitiesView, EntityId, Get, IntoIter, UniqueView, UniqueViewMut, View,
 };
+use wgpu::RenderPipeline;
 
 use crate::{
     graphics::{
@@ -40,8 +41,8 @@ const MAX_NUMBER_OF_INSANCES_PER_MESH_MATERIAL: u64 = 2000;
 /// identify the buffer information to be rendered.
 #[derive(PartialEq, Eq, Clone)]
 pub struct ForwardModelID {
-    mesh_id: AssetResourceID,
-    material_id: Option<AssetResourceID>,
+    pub(crate) mesh_id: AssetResourceID,
+    pub(crate) material_id: Option<AssetResourceID>,
 }
 
 impl Hash for ForwardModelID {
@@ -54,14 +55,16 @@ impl Hash for ForwardModelID {
 /// A model to be rendered X number of times.
 pub(crate) struct ForwardModel {
     /// A reference to the mesh data.
-    mesh: Arc<Mesh>,
+    pub(crate) mesh: Arc<Mesh>,
     /// A refernece to the material data.
-    material: Option<Material>,
+    pub(crate) material: Option<Material>,
+    /// The render pipeline assigned to this material.
+    pub(crate) material_pipeline: Option<Arc<RenderPipeline>>,
     /// Contains the chunk of memory on the GPU designated to
     /// the transformations.
-    transforms_buffer: Box<dyn VertexBuffer>,
+    pub(crate) transforms_buffer: Box<dyn VertexBuffer>,
     /// Contains the number of instances to be rendered.
-    number_of_instances: Mutex<u64>,
+    pub(crate) number_of_instances: Mutex<u64>,
 }
 
 unsafe impl Send for ForwardModel {}
@@ -399,9 +402,8 @@ pub(crate) fn sync_forward_models_memory_for_all_scenes_system(
         // Allocate transform buffer if the mesh + material does not exist.
 
         // If the entity has mesh and material.
-        (&meshes, &materials)
-            .iter()
-            .for_each(|(mesh_id, material_id)| {
+        (&meshes, &materials, &forward_renderer).iter().for_each(
+            |(mesh_id, material_id, _)| {
                 allocate_transform_buffer_if_it_does_not_exist(
                     &gpu,
                     scene,
@@ -409,12 +411,19 @@ pub(crate) fn sync_forward_models_memory_for_all_scenes_system(
                     Some(&material_id),
                     &asset_server,
                 );
-            });
+            },
+        );
 
         // If the entity hash only mesh.
+        // TODO(Angel): Determine what we want to do with forward entities
+        // which does not have material.
         entities
             .iter()
-            .filter(|e| meshes.contains(*e) && !materials.contains(*e))
+            .filter(|e| {
+                meshes.contains(*e)
+                    && !materials.contains(*e)
+                    && forward_renderer.contains(*e)
+            })
             .filter_map(|e| meshes.get(e).ok())
             .for_each(|mesh_id| {
                 allocate_transform_buffer_if_it_does_not_exist(
@@ -480,6 +489,12 @@ fn allocate_transform_buffer_if_it_does_not_exist(
         }
     };
 
+    let material_pipeline = if let Some(material) = &material {
+        asset_server.get_material_pipeline(&material.pipeline_id)
+    } else {
+        None
+    };
+
     let transforms_buffer = gpu.allocate_aligned_zero_vertex_buffer(
         format!(
             "Forward render: Mesh: {} - Material: {}",
@@ -494,6 +509,7 @@ fn allocate_transform_buffer_if_it_does_not_exist(
     let model = ForwardModel {
         mesh,
         material,
+        material_pipeline,
         transforms_buffer,
         number_of_instances: Mutex::new(0),
     };
@@ -523,6 +539,7 @@ pub(crate) fn sync_transforms_hierarchy_system(
     meshes: View<MeshComponent>,
     materials: View<MaterialComponent>,
     transforms: View<Transform>,
+    forward_renderer: View<ForwardRender>,
     hierarchy: View<Hierarchy>,
     scene_targets: View<SceneTarget>,
 ) {
@@ -583,6 +600,8 @@ pub(crate) fn sync_transforms_hierarchy_system(
                     transforms.get(*entity).ok()?,
                 ))
             })
+            // Filter entities which have forward render flag.
+            .filter(|(entity, _, _, _)| forward_renderer.contains(**entity))
             // Assing entity to main if it does not have any associated scene
             // target.
             .filter_map(|(entity, mesh_id, material_id, transform)| {

@@ -170,7 +170,40 @@ impl AssetServer {
             .write()
             .expect("UNable to acquire write lock")
             .materials_pipelines
-            .insert(id, pipeline);
+            .insert(id, Arc::new(pipeline));
+    }
+
+    /// Registers a material with the specified ID into the asset server.
+    ///
+    /// This method allows registering a material with a unique identifier (`id`) into the asset server.
+    ///
+    /// # Arguments
+    ///
+    /// * `id` - The resource ID of the material to register.
+    /// * `material` - The material to register.
+    ///
+    /// # Panics
+    ///
+    /// Panics if unable to acquire a write lock on the internal data structure.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use crate::AssetServer;
+    /// use some_library::Material;
+    ///
+    /// let asset_server = AssetServer::new();
+    /// let material_id = "my_material".to_string();
+    /// let material = Material::new();
+    ///
+    /// asset_server.register_material(material_id, material);
+    /// ```
+    pub fn register_material(&self, id: AssetResourceID, material: Material) {
+        self.data
+            .write()
+            .expect("UNable to acquire write lock")
+            .materials
+            .insert(id, material);
     }
 
     /// Retrieves a texture by its resource ID.
@@ -209,6 +242,69 @@ impl AssetServer {
             .clone()
             .into_iter()
             .collect()
+    }
+
+    /// Retrieves a list of IDs for all materials stored in the material resource.
+    ///
+    /// # Returns
+    ///
+    /// A vector containing the IDs of all materials stored in the resource.
+    ///
+    /// # Panics
+    ///
+    /// Panics if unable to acquire a read lock on the material data.
+    pub fn get_materials(&self) -> Vec<(AssetResourceID, Material)> {
+        Vec::from_iter(
+            self.data
+                .read()
+                .expect("Unable to acquire read lock")
+                .materials
+                .iter()
+                .map(|(key, value)| (key.clone(), value.clone())),
+        )
+    }
+
+    /// Retrieves a material pipeline associated with the specified ID from the asset server.
+    ///
+    /// This method retrieves a material pipeline with the given `pipeline_id` from the asset server.
+    ///
+    /// # Arguments
+    ///
+    /// * `pipeline_id` - The resource ID of the material pipeline to retrieve.
+    ///
+    /// # Returns
+    ///
+    /// Returns `Some(RenderPipeline)` if the material pipeline exists, otherwise `None`.
+    ///
+    /// # Panics
+    ///
+    /// Panics if unable to acquire a read lock on the internal data structure.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use crate::AssetServer;
+    /// use some_library::RenderPipeline;
+    ///
+    /// let asset_server = AssetServer::new();
+    /// let pipeline_id = "my_pipeline".to_string();
+    ///
+    /// if let Some(pipeline) = asset_server.get_material_pipeline(&pipeline_id) {
+    ///     // Use the retrieved material pipeline...
+    /// } else {
+    ///     println!("Material pipeline with ID '{}' not found", pipeline_id);
+    /// }
+    /// ```
+    pub fn get_material_pipeline(
+        &self,
+        pipeline_id: &AssetResourceID,
+    ) -> Option<Arc<RenderPipeline>> {
+        self.data
+            .read()
+            .expect("Unable to acquire read lock")
+            .materials_pipelines
+            .get(pipeline_id)
+            .map(|pipeline| pipeline.clone())
     }
 
     /// Extracts textures to be loaded.
@@ -272,5 +368,5 @@ struct AssetServerData {
     /// Contains all the available materials.
     materials: AHashMap<AssetResourceID, Material>,
     /// Conatins all the materials's pipelines.
-    materials_pipelines: AHashMap<AssetResourceID, RenderPipeline>,
+    materials_pipelines: AHashMap<AssetResourceID, Arc<RenderPipeline>>,
 }

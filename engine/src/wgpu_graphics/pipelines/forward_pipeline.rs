@@ -14,7 +14,7 @@ use crate::{
 pub(crate) fn create_forward_pipeline(
     gpu: &Gpu,
     camera_bind_group_layout: &BindGroupLayout,
-    material_bindgroup_layouts: &BindGroupLayout,
+    material_bindgroup_layouts: Option<&BindGroupLayout>,
     fragment_shader: &ShaderModule,
 ) -> RenderPipeline {
     // The vertex shader used by all forward passes remains constant,
@@ -26,15 +26,17 @@ pub(crate) fn create_forward_pipeline(
     );
 
     // Combine the camera bindgroup and the material ones.
-    let bind_group_layouts =
-        &[camera_bind_group_layout, material_bindgroup_layouts];
+    let mut bind_group_layouts = vec![camera_bind_group_layout];
+    if let Some(material_bindgroup_layouts) = material_bindgroup_layouts {
+        bind_group_layouts.push(material_bindgroup_layouts);
+    }
 
     // Creates the new pipeline using the provided bind groups layouts.
     let pipeline_layout =
         gpu.device
             .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Forward renderer pipeline layout"),
-                bind_group_layouts,
+                bind_group_layouts: &bind_group_layouts,
                 push_constant_ranges: &[],
             });
 
