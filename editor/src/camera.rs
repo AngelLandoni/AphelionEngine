@@ -1,13 +1,12 @@
 use engine::{
     app::App,
-    graphics::scene::Scene,
     nalgebra::{Point3, Vector3},
     plugin::{core::clock::Clock, Pluggable},
     scene::{
         input::{
             keyboard::{KeyCode, Keyboard},
             mouse::{
-                CursorDelta, Mouse, MouseKeyCode, MouseWheelDelta,
+                CursorDelta, Mouse, MouseKeyCode,
                 MouseWheelStepDelta,
             },
         },
@@ -139,7 +138,7 @@ fn update_camera_distance_based_on_mouse_wheel(
 /// rotation over the pivot when the center mouse button is pressed, adjusting camera yaw and pitch
 /// angles. The camera position is updated accordingly based on these angles.
 fn update_fly_camera_when_mouse_key_is_pressed_system(
-    keyboard: UniqueView<Keyboard>,
+    _keyboard: UniqueView<Keyboard>,
     mouse: UniqueView<Mouse>,
     mut s_state: UniqueViewMut<SceneState>,
     mut e_camera: UniqueViewMut<EditorCamera>,

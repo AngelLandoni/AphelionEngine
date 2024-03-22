@@ -1,7 +1,6 @@
 use engine::{
     egui::{
-        pos2, Align, Area, Frame, Layout, Order, Response, TopBottomPanel,
-        Window,
+        Response, TopBottomPanel,
     },
     graphics::components::MeshComponent,
     nalgebra::{UnitQuaternion, Vector3},
@@ -17,13 +16,13 @@ use engine::{
 use shipyard::{AddComponent, EntitiesViewMut, UniqueView, ViewMut, World};
 
 use crate::gui::icons::{
-    ADD_ENTITY, CUBE, DOWNARROW_HLT, FILE_3D, GIZMO_ROTATE, GIZMO_SCALE,
-    MESH_CONE, MESH_CUBE, MESH_CYLINDER, MESH_PLANE, MESH_UVSPHERE, POINTER,
+    ADD_ENTITY, CUBE,
+    MESH_CONE, MESH_CUBE, MESH_CYLINDER, MESH_PLANE, MESH_UVSPHERE,
 };
 
 use super::{
     hierarchy_widget::HierarchySelectionFlag,
-    icon_button::{render_icon_button, render_icon_context_button},
+    icon_button::{render_icon_context_button},
 };
 
 pub fn render_top_toolbar_widget(world: &World) -> Response {

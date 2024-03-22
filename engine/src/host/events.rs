@@ -1,6 +1,6 @@
 use crate::scene::input::{
     keyboard::KeyCode,
-    mouse::{Mouse, MouseKeyCode},
+    mouse::{MouseKeyCode},
 };
 
 /// A generic global event.

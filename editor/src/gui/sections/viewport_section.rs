@@ -84,7 +84,11 @@ pub fn extract_viewport_information(world: &World) -> ViewportInformation {
     }
 }
 
-pub fn render_viewport_section(ui: &mut Ui, world: &World, info: &ViewportInformation) -> Response {
+pub fn render_viewport_section(
+    ui: &mut Ui,
+    world: &World,
+    info: &ViewportInformation,
+) -> Response {
     let mut transforms = world.borrow::<ViewMut<Transform>>().unwrap();
 
     let image = Image::new((

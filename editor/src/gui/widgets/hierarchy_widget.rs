@@ -2,7 +2,7 @@ use engine::{
     egui::{
         vec2, Align2, Color32, FontId, Rect, Response, ScrollArea, Sense, Ui,
     },
-    scene::hierarchy::{self, Hierarchy},
+    scene::hierarchy::{Hierarchy},
 };
 use shipyard::{
     AddComponent, Component, Delete, EntitiesView, EntityId, Get, Remove,
@@ -60,7 +60,7 @@ pub fn render_hierarchy_widget(ui: &mut Ui, world: &World) -> Response {
                 filtered_entities.iter().for_each(|e| {
                     render_item(
                         ui,
-                        &e,
+                        e,
                         &mut deletion_flags,
                         &mut hierarchies,
                         &mut hierarchy_selection,

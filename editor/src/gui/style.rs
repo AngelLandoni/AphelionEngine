@@ -1,4 +1,4 @@
-use egui_extras::install_image_loaders;
+
 use engine::egui::{
     Context, FontData, FontDefinitions, FontFamily, FontId, TextStyle,
 };

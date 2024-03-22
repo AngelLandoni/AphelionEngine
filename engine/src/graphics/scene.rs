@@ -380,7 +380,7 @@ pub(crate) fn sync_forward_models_memory_for_all_scenes_system(
     asset_server: UniqueView<AssetServer>,
     entities: EntitiesView,
     forward_renderer: View<ForwardRender>,
-    transforms: View<Transform>,
+    _transforms: View<Transform>,
     meshes: View<MeshComponent>,
     materials: View<MaterialComponent>,
 ) {
@@ -397,7 +397,7 @@ pub(crate) fn sync_forward_models_memory_for_all_scenes_system(
         .iter_mut()
         .chain(std::iter::once((&main_scene_temp_id, scenes_view_mut.main)));
 
-    for (id, scene) in scenes {
+    for (_id, scene) in scenes {
         // Allocate transform buffer if the mesh + material does not exist.
 
         // If the entity has mesh and material.
@@ -406,8 +406,8 @@ pub(crate) fn sync_forward_models_memory_for_all_scenes_system(
                 allocate_transform_buffer_if_it_does_not_exist(
                     &gpu,
                     scene,
-                    &mesh_id,
-                    Some(&material_id),
+                    mesh_id,
+                    Some(material_id),
                     &asset_server,
                 );
             },
@@ -428,7 +428,7 @@ pub(crate) fn sync_forward_models_memory_for_all_scenes_system(
                 allocate_transform_buffer_if_it_does_not_exist(
                     &gpu,
                     scene,
-                    &mesh_id,
+                    mesh_id,
                     None,
                     &asset_server,
                 );
@@ -464,7 +464,7 @@ fn allocate_transform_buffer_if_it_does_not_exist(
 ) {
     let id = ForwardModelID {
         mesh_id: mesh_id.clone(),
-        material_id: material_id.map(|material_id| material_id.clone()),
+        material_id: material_id.cloned(),
     };
 
     // Avoid allocation if the model is already represented on GPU memory.
@@ -472,7 +472,7 @@ fn allocate_transform_buffer_if_it_does_not_exist(
         return;
     }
 
-    let mesh = match asset_server.get_mesh(&mesh_id) {
+    let mesh = match asset_server.get_mesh(mesh_id) {
         Some(mesh) => mesh,
         None => {
             warn!("Failed to allocate transform buffer for {} mesh does not exist", mesh_id);
@@ -482,7 +482,7 @@ fn allocate_transform_buffer_if_it_does_not_exist(
 
     let material = {
         if let Some(material_id) = material_id {
-            asset_server.get_material(&material_id)
+            asset_server.get_material(material_id)
         } else {
             None
         }

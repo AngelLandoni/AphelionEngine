@@ -1,10 +1,9 @@
 use engine::egui::{
-    pos2, vec2, Align, Align2, Area, Button, Color32, FontFamily, FontId,
-    Frame, Galley, Id, Layout, Order, Rect, Response, RichText, Sense, Shape,
+    vec2, Color32, Rect, Response, Sense,
     Stroke, Ui,
 };
 
-use crate::gui::icons::{Icon, MESH_CUBE};
+use crate::gui::icons::{Icon};
 
 pub fn render_icon_button(ui: &mut Ui, icon: &Icon, size: f32) -> Response {
     let (rect, response) =
@@ -40,6 +39,7 @@ pub fn render_icon_button(ui: &mut Ui, icon: &Icon, size: f32) -> Response {
 }
 
 #[derive(Clone, Copy)]
+#[derive(Default)]
 struct MenuState {
     is_open: bool,
 }
@@ -60,11 +60,7 @@ impl MenuState {
     }
 }
 
-impl Default for MenuState {
-    fn default() -> Self {
-        Self { is_open: false }
-    }
-}
+
 
 pub fn render_icon_context_button<R>(
     ui: &mut Ui,

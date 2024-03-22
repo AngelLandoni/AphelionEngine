@@ -40,7 +40,9 @@ pub(crate) fn create_forward_pipeline(
                 push_constant_ranges: &[],
             });
 
-    let pipeline = gpu.device
+    
+
+    gpu.device
         .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("Forward renderer pipeline"),
             layout: Some(&pipeline_layout),
@@ -101,7 +103,5 @@ pub(crate) fn create_forward_pipeline(
                 })],
             }),
             multiview: None,
-        });
-
-    pipeline
+        })
 }

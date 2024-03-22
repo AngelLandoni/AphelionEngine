@@ -24,7 +24,7 @@ pub fn render_shadow_widget(
                     ),
             ),
             corner_radius,
-            Color32::from_hex(color).unwrap_or(Color32::default()),
+            Color32::from_hex(color).unwrap_or_default(),
         );
     }
 }
@@ -64,7 +64,7 @@ pub fn render_partial_shadow_widget(
                     ),
             ),
             corner_radius,
-            Color32::from_hex(color).unwrap_or(Color32::default()),
+            Color32::from_hex(color).unwrap_or_default(),
         );
     }
 }

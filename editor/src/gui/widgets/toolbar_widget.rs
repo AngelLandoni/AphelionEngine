@@ -21,7 +21,7 @@ impl<'a> TabWidget<'a> {
 impl<'a> Widget for TabWidget<'a> {
     fn ui(self, ui: &mut engine::egui::Ui) -> engine::egui::Response {
         Frame::group(&Style::default())
-            .fill(Color32::from_hex("#242424").unwrap_or(Color32::default()))
+            .fill(Color32::from_hex("#242424").unwrap_or_default())
             .stroke(Stroke::NONE)
             .outer_margin(Margin::ZERO)
             .inner_margin(Margin::symmetric(10.0, 5.0))
@@ -49,7 +49,7 @@ impl Widget for ToolbarWidget {
 
             Frame::group(&Style::default())
                 .fill(
-                    Color32::from_hex("#151515").unwrap_or(Color32::default()),
+                    Color32::from_hex("#151515").unwrap_or_default(),
                 )
                 .stroke(Stroke::NONE)
                 .outer_margin(Margin::ZERO)
@@ -78,7 +78,7 @@ impl Widget for ToolbarWidget {
 
             Frame::group(&Style::default())
                 .fill(
-                    Color32::from_hex("#242424").unwrap_or(Color32::default()),
+                    Color32::from_hex("#242424").unwrap_or_default(),
                 )
                 .stroke(Stroke::NONE)
                 .outer_margin(Margin::ZERO)

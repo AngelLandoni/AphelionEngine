@@ -91,7 +91,7 @@ pub(crate) fn forward_pass_system(
     // Iterate over each scene and render the content.
     for (id, scene) in scenes {
         // Extract textures.
-        let (target, depth) = match extract_scene_target_textures(&scene) {
+        let (target, depth) = match extract_scene_target_textures(scene) {
             Ok(target) => target,
             Err(err) => {
                 warn!("Forward pass: {}", err);
@@ -100,7 +100,7 @@ pub(crate) fn forward_pass_system(
         };
 
         // Extract bind groups.
-        let camera_bind_group = match extract_bind_groups(&scene) {
+        let camera_bind_group = match extract_bind_groups(scene) {
             Ok(bind_group) => bind_group,
             Err(err) => {
                 warn!("Forward pass: {}", err);
@@ -116,7 +116,7 @@ pub(crate) fn forward_pass_system(
             // Camera bind group.
             pass.set_bind_group(0, &camera_bind_group.0, &[]);
 
-            for (id, model) in &scene.forward_models {
+            for (_id, model) in &scene.forward_models {
                 let vertex_buffer = model
                     .mesh
                     .vertex_buffer
@@ -171,9 +171,9 @@ pub(crate) fn forward_pass_system(
 }
 
 /// Tries to extract the target and depth textures from the provided scene.
-fn extract_scene_target_textures<'a>(
-    scene: &'a Scene,
-) -> Result<(&'a WGPUTexture, &'a WGPUTexture), ForwardError> {
+fn extract_scene_target_textures(
+    scene: &Scene,
+) -> Result<(&WGPUTexture, &WGPUTexture), ForwardError> {
     let target = scene
         .target_texture
         .downcast_ref()
@@ -188,8 +188,8 @@ fn extract_scene_target_textures<'a>(
 }
 
 /// Tries to extract the bind groups from the provided scene.
-fn extract_bind_groups<'a>(
-    scene: &'a Scene,
+fn extract_bind_groups(
+    scene: &Scene,
 ) -> Result<&WGPUBindGroup, ForwardError> {
     let camera_bind_group = scene
         .camera_bind_group
@@ -223,7 +223,7 @@ fn start_pass<'encoder>(
             }),
         ],
         depth_stencil_attachment: Some(RenderPassDepthStencilAttachment {
-            view: &depth_texture,
+            view: depth_texture,
             depth_ops: Some(Operations {
                 load: wgpu::LoadOp::Load,
                 store: wgpu::StoreOp::Store,

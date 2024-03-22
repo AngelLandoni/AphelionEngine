@@ -75,8 +75,7 @@ impl AssetServer {
             .read()
             .expect("Unable to acquire read lock")
             .meshes
-            .get(mesh_id)
-            .map(|d| d.clone())
+            .get(mesh_id).cloned()
     }
 
     /// Retrieves a material by its resource ID.
@@ -96,8 +95,7 @@ impl AssetServer {
             .read()
             .expect("Unable to acquire read lock")
             .materials
-            .get(material_id)
-            .map(|d| d.clone())
+            .get(material_id).cloned()
     }
 
     /// Registers a mesh into the Asset Server.
@@ -303,8 +301,7 @@ impl AssetServer {
             .read()
             .expect("Unable to acquire read lock")
             .materials_pipelines
-            .get(pipeline_id)
-            .map(|pipeline| pipeline.clone())
+            .get(pipeline_id).cloned()
     }
 
     /// Extracts textures to be loaded.

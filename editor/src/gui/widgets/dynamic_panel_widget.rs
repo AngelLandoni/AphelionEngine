@@ -320,7 +320,7 @@ fn render_list_of_tabs(
             sw: PANEL_CORNER_RADIUS,
             se: PANEL_CORNER_RADIUS,
         },
-        Color32::from_hex("#242424").unwrap_or(Color32::default()),
+        Color32::from_hex("#242424").unwrap_or_default(),
     );
 
     let mut ui = ui.child_ui(tabs_rect, Default::default());

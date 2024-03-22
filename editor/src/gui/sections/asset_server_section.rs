@@ -63,7 +63,7 @@ pub fn sync_egui_asset_server(world: &World) {
 pub fn render_asset_server(ui: &mut Ui, world: &World) -> Response {
     let mut gui_state = world.borrow::<UniqueViewMut<GuiState>>().unwrap();
 
-    let gpu = world.borrow::<UniqueView<AbstractGpu>>().unwrap();
+    let _gpu = world.borrow::<UniqueView<AbstractGpu>>().unwrap();
     let egui_asset_server =
         world.borrow::<UniqueView<EguiAssetServer>>().unwrap();
     let mut asset_server =
@@ -290,7 +290,7 @@ fn render_mesh_section(
 
 fn render_materials_section(
     ui: &mut Ui,
-    asset_server: &mut AssetServer,
+    _asset_server: &mut AssetServer,
     height: f32,
 ) -> Response {
     ui.vertical(|ui| {

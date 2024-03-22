@@ -29,7 +29,7 @@ pub fn properties_widget(ui: &mut Ui, world: &World) -> Response {
     let asset_server = world.borrow::<UniqueView<AssetServer>>().unwrap();
     let entities = world.borrow::<EntitiesView>().unwrap();
     let mut hierarchy = world.borrow::<ViewMut<Hierarchy>>().unwrap();
-    let mut selection_flag =
+    let selection_flag =
         world.borrow::<ViewMut<HierarchySelectionFlag>>().unwrap();
     let mut transforms = world.borrow::<ViewMut<Transform>>().unwrap();
     let mut mesh_components = world.borrow::<ViewMut<MeshComponent>>().unwrap();
@@ -326,7 +326,7 @@ fn render_materials_selection(
 
     response.on_hover_cursor(engine::egui::CursorIcon::PointingHand);
 
-    if let Some((id, material)) = inner.and_then(|r| r.inner.inner) {
+    if let Some((id, _material)) = inner.and_then(|r| r.inner.inner) {
         materials.add_component_unchecked(*entity, MaterialComponent::new(id));
     }
 }

@@ -1,9 +1,9 @@
-use std::collections::BTreeMap;
+
 
 use egui_gizmo::{GizmoMode, GizmoOrientation};
 use engine::{
     egui::{
-        Button, FontFamily, FontId, Response, RichText, SidePanel, TextStyle,
+        Response, SidePanel,
     },
     log::{error, info, warn},
     plugin::graphics::egui::EguiContext,
@@ -13,9 +13,7 @@ use shipyard::{UniqueView, UniqueViewMut, World};
 use crate::gui::{
     config::GuiState,
     icons::{
-        CON_CHILDOF, GIZMO_ROTATE, GIZMO_SCALE, GIZMO_TRANSLATE, MESH_CIRCLE,
-        MESH_CUBE, OBJECT_ORIGIN, ORIENTATION_GIMBAL, POINTER,
-        RESTRICT_SELECT_OFF,
+        GIZMO_ROTATE, GIZMO_SCALE, GIZMO_TRANSLATE, POINTER,
     },
 };
 

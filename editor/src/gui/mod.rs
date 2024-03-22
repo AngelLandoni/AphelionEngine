@@ -299,9 +299,9 @@ fn render_gui_system(world: &World) {
                 &mut |ui, tab: &Tab| match tab.identification.as_str() {
                     "Viewport" => render_viewport_section(ui, world, &info),
                     "GeneralLogs" => render_log_section(ui),
-                    "Properties" => properties_widget(ui, &world),
+                    "Properties" => properties_widget(ui, world),
                     "ScenesConfig" => render_scene_config_section(ui, world),
-                    "EntityHierarchy" => render_hierarchy_widget(ui, &world),
+                    "EntityHierarchy" => render_hierarchy_widget(ui, world),
                     "Entities" => ui.label("Entities list"),
                     "AssetServer" => render_asset_server(ui, world),
 
