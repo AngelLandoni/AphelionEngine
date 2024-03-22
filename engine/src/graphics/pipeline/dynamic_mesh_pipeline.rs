@@ -8,9 +8,9 @@ use wgpu::{
     VertexState,
 };
 
-use crate::{
-    graphics::vertex::Vertex,
-    wgpu_graphics::gpu::{Gpu, DEPTH_TEXTURE_FORMAT},
+use crate::graphics::{
+    gpu::{Gpu, DEPTH_TEXTURE_FORMAT},
+    vertex::Vertex,
 };
 
 #[derive(Unique)]

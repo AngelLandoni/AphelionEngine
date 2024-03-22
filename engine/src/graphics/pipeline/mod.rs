@@ -1,21 +1,22 @@
+pub(crate) mod dynamic_mesh_pipeline;
+pub(crate) mod forward_pipeline;
+pub(crate) mod frame_composition_pipeline;
+pub(crate) mod infinite_grid_pipeline;
+pub mod sky_pipeline;
+
 use shipyard::{Unique, UniqueView, UniqueViewMut};
 use wgpu::{
     BindGroupLayout, BindGroupLayoutDescriptor, BindGroupLayoutEntry,
     ShaderStages,
 };
 
-use crate::{graphics::gpu::AbstractGpu, scene::scene_state::SceneState};
-
-use super::{
-    buffer::{WGPUBindGroup, WgpuUniformBuffer},
-    gpu::Gpu,
+use crate::{
+    graphics::{
+        buffer::{WGPUBindGroup, WgpuUniformBuffer},
+        gpu::{AbstractGpu, Gpu},
+    },
+    scene::scene_state::SceneState,
 };
-
-pub(crate) mod dynamic_mesh_pipeline;
-pub(crate) mod forward_pipeline;
-pub(crate) mod frame_composition_pipeline;
-pub(crate) mod infinite_grid_pipeline;
-pub mod sky_pipeline;
 
 #[derive(Unique)]
 pub(crate) struct GlobalBindGroupLayouts {

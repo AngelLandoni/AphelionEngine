@@ -1,10 +1,11 @@
 use engine::{
     app::App,
-    graphics::material::{Material, MaterialComponent},
+    graphics::{
+        material::MaterialComponent, passes::forward_pass::ForwardRender,
+    },
     nalgebra::{Unit, UnitQuaternion, Vector3},
     plugin::{scene::primitives_plugin::cube_mesh_component, Pluggable},
     scene::{components::Transform, hierarchy::Hierarchy, scene::SceneTarget},
-    wgpu_graphics::passes::forward_pass::ForwardRender,
 };
 
 use crate::camera::EditorCamera;

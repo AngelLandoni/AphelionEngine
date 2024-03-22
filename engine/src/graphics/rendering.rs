@@ -2,21 +2,18 @@ use shipyard::{UniqueView, UniqueViewMut};
 use wgpu::CommandBuffer;
 
 use crate::{
-    graphics::{components::DepthTexture, gpu::AbstractGpu, BufferCreator},
+    graphics::{
+        buffer::WGPUTexture,
+        components::{DepthTexture, ScreenFrame, ScreenTexture},
+        gpu::{AbstractGpu, Gpu},
+        pipeline::frame_composition_pipeline::{
+            create_frame_composition_texture_bind_group,
+            FrameCompositionPipeline,
+        },
+        BufferCreator, CommandQueue, OrderCommandBuffer,
+    },
     host::window::Window,
     scene::scene_state::SceneState,
-    wgpu_graphics::{
-        components::{ScreenFrame, ScreenTexture},
-        gpu::Gpu,
-        CommandQueue, OrderCommandBuffer,
-    },
-};
-
-use super::{
-    buffer::WGPUTexture,
-    pipelines::frame_composition_pipeline::{
-        create_frame_composition_texture_bind_group, FrameCompositionPipeline,
-    },
 };
 
 /// DepthTexture: After the window is resized or the resolution changes the

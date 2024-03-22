@@ -5,9 +5,9 @@ use wgpu::{
     ShaderModule, StencilState, VertexBufferLayout,
 };
 
-use crate::{
-    graphics::vertex::Vertex,
-    wgpu_graphics::gpu::{Gpu, DEPTH_TEXTURE_FORMAT},
+use crate::graphics::{
+    gpu::{Gpu, DEPTH_TEXTURE_FORMAT},
+    vertex::Vertex,
 };
 
 /// Creates a new forward pipeline using the provided information.

@@ -4,14 +4,13 @@ use wgpu::{
 };
 
 use crate::{
-    graphics::gpu::AbstractGpu,
-    scene::scene_state::SceneState,
-    wgpu_graphics::{
+    graphics::{
         buffer::{WGPUBindGroup, WGPUTexture},
-        gpu::Gpu,
-        pipelines::infinite_grid_pipeline::InfiniteGridPipeline,
+        gpu::{AbstractGpu, Gpu},
+        pipeline::infinite_grid_pipeline::InfiniteGridPipeline,
         CommandQueue, CommandSubmitOrder, OrderCommandBuffer,
     },
+    scene::scene_state::SceneState,
 };
 
 pub(crate) fn infinite_grid_pass_system(

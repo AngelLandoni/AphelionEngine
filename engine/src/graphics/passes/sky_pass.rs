@@ -6,14 +6,13 @@ use wgpu::{
 };
 
 use crate::{
-    graphics::gpu::AbstractGpu,
-    scene::scene_state::SceneState,
-    wgpu_graphics::{
+    graphics::{
         buffer::{WGPUBindGroup, WGPUTexture},
-        gpu::Gpu,
-        pipelines::sky_pipeline::SkyPipeline,
+        gpu::{AbstractGpu, Gpu},
+        pipeline::sky_pipeline::SkyPipeline,
         CommandQueue, CommandSubmitOrder, OrderCommandBuffer,
     },
+    scene::scene_state::SceneState,
 };
 
 pub(crate) fn sky_pass_system(

@@ -1,20 +1,20 @@
 use log::warn;
-use shipyard::{Component, UniqueView, View};
+use shipyard::{Component, UniqueView};
 use wgpu::{
     CommandEncoder, CommandEncoderDescriptor, Operations, RenderPass,
-    RenderPassDepthStencilAttachment, Texture, TextureView,
+    RenderPassDepthStencilAttachment, TextureView,
 };
 
 use crate::{
-    graphics::{gpu::AbstractGpu, scene::Scene},
-    scene::{assets::asset_server::AssetServer, scene_state::SceneState},
-    wgpu_graphics::{
+    graphics::{
         buffer::{
             WGPUBindGroup, WGPUTexture, WgpuIndexBuffer, WgpuVertexBuffer,
         },
-        gpu::Gpu,
+        gpu::{AbstractGpu, Gpu},
+        scene::Scene,
         CommandQueue, CommandSubmitOrder, OrderCommandBuffer,
     },
+    scene::scene_state::SceneState,
 };
 
 pub(crate) const INTERNAL_MAIN_SCENE_ID: &str = "_INTERNAL_MAIN_SCENE_ID";

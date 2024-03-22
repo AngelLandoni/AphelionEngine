@@ -10,25 +10,23 @@ pub mod windows;
 
 use egui_extras::install_image_loaders;
 use shipyard::{
-    AllStoragesViewMut, EntitiesView, Get, SparseSet, Unique, UniqueView,
-    UniqueViewMut, ViewMut, World,
+    AllStoragesViewMut, SparseSet, Unique, UniqueView, UniqueViewMut, World,
 };
 use std::ops::{Deref, DerefMut};
 
 use engine::{
     app::App,
     egui::{Frame, Margin, Rect, TextureId},
-    graphics::{components::MeshComponent, gpu::AbstractGpu},
+    graphics::{
+        buffer::WGPUTexture,
+        gpu::{AbstractGpu, Gpu},
+    },
     plugin::{
         graphics::egui::{EguiContext, EguiRenderer},
         Pluggable,
     },
-    scene::{
-        assets::asset_server::AssetServer, components::Transform,
-        hierarchy::Hierarchy, projection::Projection, scene_state::SceneState,
-    },
+    scene::{projection::Projection, scene_state::SceneState},
     schedule::Schedule,
-    wgpu_graphics::{buffer::WGPUTexture, gpu::Gpu},
 };
 
 use crate::gui::{
@@ -48,10 +46,7 @@ use crate::gui::{
             calculate_tag_dragging_system, render_dynamic_panel_widget,
             SharedData, TabDragStartPosition,
         },
-        hierarchy_widget::{
-            render_hierarchy_widget, HierarchyDeletionFlag,
-            HierarchyExpandedFlag, HierarchySelectionFlag,
-        },
+        hierarchy_widget::{render_hierarchy_widget, HierarchyDeletionFlag},
         properties_widget::properties_widget,
     },
     widgets::{

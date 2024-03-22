@@ -7,7 +7,11 @@ use wgpu::{Operations, RenderPassColorAttachment, RenderPassDescriptor};
 
 use crate::{
     app::App,
-    graphics::gpu::AbstractGpu,
+    graphics::{
+        buffer::WGPUTexture,
+        gpu::{AbstractGpu, Gpu},
+        CommandQueue, CommandSubmitOrder, OrderCommandBuffer,
+    },
     host::window::Window,
     plugin::{
         host::window::{UniqueWinitEvent, WinitWindowWrapper},
@@ -15,10 +19,6 @@ use crate::{
     },
     scene::scene_state::SceneState,
     schedule::Schedule,
-    wgpu_graphics::{
-        buffer::WGPUTexture, gpu::Gpu, CommandQueue, CommandSubmitOrder,
-        OrderCommandBuffer,
-    },
 };
 
 #[derive(Unique)]

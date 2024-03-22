@@ -7,9 +7,11 @@ use wgpu::{
 };
 
 use crate::{
-    graphics::gpu::AbstractGpu,
+    graphics::{
+        buffer::WGPUTexture,
+        gpu::{AbstractGpu, Gpu},
+    },
     scene::scene_state::SceneState,
-    wgpu_graphics::{buffer::WGPUTexture, gpu::Gpu},
 };
 
 #[derive(Unique)]

@@ -2,14 +2,13 @@ use shipyard::UniqueView;
 use wgpu::{CommandEncoderDescriptor, Operations};
 
 use crate::{
-    graphics::gpu::AbstractGpu,
-    scene::scene_state::SceneState,
-    wgpu_graphics::{
+    graphics::{
         components::{ScreenFrame, ScreenTexture},
-        gpu::Gpu,
-        pipelines::frame_composition_pipeline::FrameCompositionPipeline,
+        gpu::{AbstractGpu, Gpu},
+        pipeline::frame_composition_pipeline::FrameCompositionPipeline,
         CommandQueue, CommandSubmitOrder, OrderCommandBuffer,
     },
+    scene::scene_state::SceneState,
 };
 
 pub(crate) fn frame_composition_pass_system(

@@ -5,10 +5,8 @@ use shipyard::Component;
 use wgpu::{BindGroupLayout, RenderPipeline};
 
 use crate::{
+    graphics::{gpu::Gpu, pipeline::forward_pipeline::create_forward_pipeline},
     scene::assets::{asset_server::AssetServer, AssetResourceID},
-    wgpu_graphics::{
-        gpu::Gpu, pipelines::forward_pipeline::create_forward_pipeline,
-    },
 };
 
 /// Represents a material component associated with an asset resource ID.

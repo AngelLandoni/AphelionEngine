@@ -3,11 +3,10 @@ use engine::{
         Grid, Id, Image, InnerResponse, Response, Rounding, ScrollArea, Sense,
         Ui,
     },
-    graphics::scene::Scene,
-    log::info,
+    graphics::{pipeline::sky_pipeline::SkyUpdater, scene::Scene},
     scene::scene_state::SceneState,
-    wgpu_graphics::pipelines::sky_pipeline::SkyUpdater,
 };
+
 use shipyard::{UniqueView, UniqueViewMut, World};
 
 use super::asset_server_section::EguiAssetServer;
@@ -103,7 +102,6 @@ fn render_scene_component(
     response.on_hover_cursor(engine::egui::CursorIcon::PointingHand);
 
     if let Some(id) = inner.and_then(|i| i.inner.inner) {
-        info!("Adding sky updater!");
         if let Some(s_id) = scene_id {
             world.add_unique(SkyUpdater::new(id.to_owned(), s_id.clone()));
         }

@@ -5,24 +5,18 @@ use shipyard::{UniqueView, UniqueViewMut, World};
 use crate::{
     app::App,
     graphics::{
-        components::DepthTexture, gpu::AbstractGpu,
-        material::register_materials, mesh::Mesh, BufferCreator,
-    },
-    host::window::Window,
-    plugin::Pluggable,
-    scene::assets::asset_server::AssetServer,
-    schedule::Schedule,
-    wgpu_graphics::{
-        components::{ScreenFrame, ScreenTexture},
-        gpu::Gpu,
+        components::{DepthTexture, ScreenFrame, ScreenTexture},
+        gpu::{AbstractGpu, Gpu},
+        material::register_materials,
+        mesh::Mesh,
         passes::{
             dynamic_mesh_pass::dynamic_mesh_pass_system,
             forward_pass::forward_pass_system,
-            frame_composition_pass_system::frame_composition_pass_system,
+            frame_composition_pass::frame_composition_pass_system,
             infinite_grid_pass::infinite_grid_pass_system,
             sky_pass::sky_pass_system,
         },
-        pipelines::{
+        pipeline::{
             create_camera_bind_group_layout,
             dynamic_mesh_pipeline::DynamicMeshPipeline,
             frame_composition_pipeline::{
@@ -42,8 +36,13 @@ use crate::{
             reconfigure_main_textures_if_needed_system,
             submit_commands_in_order,
         },
-        CommandQueue, OrderCommandQueue, MAX_NUMBER_IF_COMMANDS_PER_FRAME,
+        BufferCreator, CommandQueue, OrderCommandQueue,
+        MAX_NUMBER_IF_COMMANDS_PER_FRAME,
     },
+    host::window::Window,
+    plugin::Pluggable,
+    scene::assets::asset_server::AssetServer,
+    schedule::Schedule,
 };
 
 pub struct WgpuRendererPlugin;

@@ -14,8 +14,12 @@ use wgpu::RenderPipeline;
 
 use crate::{
     graphics::{
-        components::MeshComponent, gpu::AbstractGpu, mesh::Mesh, BindGroup,
-        BufferUsage, Texture, UniformBuffer, VertexBuffer,
+        components::MeshComponent,
+        gpu::AbstractGpu,
+        material::{Material, MaterialComponent},
+        mesh::Mesh,
+        passes::forward_pass::{ForwardRender, INTERNAL_MAIN_SCENE_ID},
+        BindGroup, BufferUsage, Texture, UniformBuffer, VertexBuffer,
     },
     scene::{
         assets::{asset_server::AssetServer, AssetResourceID},
@@ -26,12 +30,7 @@ use crate::{
         scene::SceneTarget,
         scene_state::SceneState,
     },
-    wgpu_graphics::passes::forward_pass::{
-        ForwardRender, INTERNAL_MAIN_SCENE_ID,
-    },
 };
-
-use super::material::{Material, MaterialComponent};
 
 /// Describes how many entities which a specific mesh and material
 /// can be displayed at the same time.

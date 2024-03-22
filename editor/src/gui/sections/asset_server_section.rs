@@ -4,12 +4,14 @@ use engine::{
         ahash::AHashMap, vec2, Grid, Image, Response, Rounding, ScrollArea,
         Sense, TextureId, Ui,
     },
-    graphics::gpu::AbstractGpu,
-    log::{info, warn},
+    graphics::{
+        buffer::WGPUTexture,
+        gpu::{AbstractGpu, Gpu},
+    },
+    log::warn,
     plugin::graphics::egui::EguiRenderer,
     scene::assets::{asset_server::AssetServer, model::ModelType},
     types::Size,
-    wgpu_graphics::{buffer::WGPUTexture, gpu::Gpu},
 };
 use image::{io::Reader as ImageReader, GenericImageView};
 use shipyard::{Unique, UniqueView, UniqueViewMut, World};

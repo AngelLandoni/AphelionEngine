@@ -5,16 +5,15 @@ use wgpu::{
 };
 
 use crate::{
-    graphics::gpu::AbstractGpu,
-    scene::{assets::asset_server::AssetServer, scene_state::SceneState},
-    wgpu_graphics::{
+    graphics::{
         buffer::{
             WGPUBindGroup, WGPUTexture, WgpuIndexBuffer, WgpuVertexBuffer,
         },
-        gpu::Gpu,
-        pipelines::dynamic_mesh_pipeline::DynamicMeshPipeline,
+        gpu::{AbstractGpu, Gpu},
+        pipeline::dynamic_mesh_pipeline::DynamicMeshPipeline,
         CommandQueue, CommandSubmitOrder, OrderCommandBuffer,
     },
+    scene::{assets::asset_server::AssetServer, scene_state::SceneState},
 };
 
 /// Renders the triangle test.

@@ -1,11 +1,16 @@
+use shipyard::{
+    AddComponent, EntitiesView, EntityId, Get, Remove, UniqueView, ViewMut,
+    World,
+};
+
 use engine::{
     egui::{
         DragValue, Frame, InnerResponse, Margin, Response, ScrollArea,
         TextEdit, Ui,
     },
     graphics::{
-        components::MeshComponent,
-        material::{self, MaterialComponent},
+        components::MeshComponent, material::MaterialComponent,
+        passes::forward_pass::ForwardRender,
     },
     log::info,
     nalgebra::UnitQuaternion,
@@ -13,14 +18,9 @@ use engine::{
         assets::asset_server::AssetServer, components::Transform,
         hierarchy::Hierarchy,
     },
-    wgpu_graphics::passes::forward_pass::{self, ForwardRender},
-};
-use shipyard::{
-    AddComponent, EntitiesView, EntityId, Get, Remove, UniqueView,
-    UniqueViewMut, ViewMut, World,
 };
 
-use super::{
+use crate::gui::widgets::{
     dropdown_widget::DropDownBox, hierarchy_widget::HierarchySelectionFlag,
 };
 

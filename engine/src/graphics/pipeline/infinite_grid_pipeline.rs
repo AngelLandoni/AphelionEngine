@@ -5,7 +5,7 @@ use wgpu::{
     RenderPipeline, RenderPipelineDescriptor, VertexState,
 };
 
-use crate::wgpu_graphics::gpu::Gpu;
+use crate::graphics::gpu::Gpu;
 
 #[derive(Unique)]
 pub struct InfiniteGridPipeline {

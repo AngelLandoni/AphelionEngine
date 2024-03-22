@@ -8,15 +8,15 @@ use wgpu::{
 };
 
 use crate::{
-    graphics::{gpu::AbstractGpu, scene::Scene, BindGroup},
-    scene::{assets::asset_server::AssetServer, scene_state::SceneState},
-    wgpu_graphics::{
+    graphics::{
         buffer::{WGPUBindGroup, WGPUTexture},
-        gpu::{Gpu, DEPTH_TEXTURE_FORMAT},
+        gpu::{AbstractGpu, Gpu, DEPTH_TEXTURE_FORMAT},
+        scene::Scene,
+        BindGroup,
     },
+    scene::{assets::asset_server::AssetServer, scene_state::SceneState},
 };
 
-// TODO(Angel): Move this out wgpu graphics.
 #[derive(Unique)]
 pub struct SkyUpdater {
     texture_id: String,
