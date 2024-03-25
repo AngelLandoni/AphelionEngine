@@ -16,13 +16,14 @@ var<uniform> camera: CameraUniform;
 struct VertexInput {
     @location(0) position: vec3<f32>,
     @location(1) color: vec3<f32>,
+    @location(2) uv: vec2<f32>,
 };
 
 struct TransformInput {
-    @location(2) t0: vec4<f32>,
-    @location(3) t1: vec4<f32>,
-    @location(4) t2: vec4<f32>,
-    @location(5) t3: vec4<f32>,
+    @location(3) t0: vec4<f32>,
+    @location(4) t1: vec4<f32>,
+    @location(5) t2: vec4<f32>,
+    @location(6) t3: vec4<f32>,
 }
 
 struct VertexOutput {

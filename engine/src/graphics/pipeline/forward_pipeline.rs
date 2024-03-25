@@ -40,8 +40,6 @@ pub(crate) fn create_forward_pipeline(
                 push_constant_ranges: &[],
             });
 
-    
-
     gpu.device
         .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
             label: Some("Forward renderer pipeline"),
@@ -54,19 +52,19 @@ pub(crate) fn create_forward_pipeline(
                     VertexBufferLayout {
                         array_stride: std::mem::size_of::<Vertex>() as wgpu::BufferAddress,
                         step_mode: wgpu::VertexStepMode::Vertex,
-                        attributes: &vertex_attr_array![0 => Float32x3, 1 => Float32x3],
+                        attributes: &vertex_attr_array![0 => Float32x3, 1 => Float32x3, 2 => Float32x2],
                     },
                     // Defines the Vertex transform.
                     VertexBufferLayout {
                         array_stride: std::mem::size_of::<[[f32; 4]; 4]>() as BufferAddress,
                         step_mode: wgpu::VertexStepMode::Instance,
                         attributes: &vertex_attr_array![
-                            2 => Float32x4,
                             3 => Float32x4,
                             4 => Float32x4,
                             5 => Float32x4,
+                            6 => Float32x4,
                         ],
-                    }
+                    },
                 ],
             },
             primitive: PrimitiveState {

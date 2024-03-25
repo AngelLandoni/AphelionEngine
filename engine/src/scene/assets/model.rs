@@ -67,6 +67,16 @@ impl<'a> ModelType<'a> {
                                         .get(i * 3 + 2)
                                         .unwrap_or(&1.0),
                                 ],
+                                uv: [
+                                    *m.mesh
+                                        .texcoords
+                                        .get(i * 3)
+                                        .unwrap_or(&1.0),
+                                    *m.mesh
+                                        .texcoords
+                                        .get(i * 3 + 1)
+                                        .unwrap_or(&1.0),
+                                ],
                             })
                             .collect(),
                         indices: m

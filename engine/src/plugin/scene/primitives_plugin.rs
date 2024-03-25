@@ -56,22 +56,27 @@ const PENTAGON_VERTICES: &[Vertex] = &[
     Vertex {
         pos: [-0.0868241, 0.49240386, 0.0],
         col: [0.5, 0.0, 0.5],
+        uv: [0.0, 1.0],
     },
     Vertex {
         pos: [-0.49513406, 0.06958647, 0.0],
         col: [0.5, 0.0, 0.5],
+        uv: [0.0, 1.0],
     },
     Vertex {
         pos: [-0.21918549, -0.44939706, 0.0],
         col: [0.5, 0.0, 0.5],
+        uv: [0.0, 1.0],
     },
     Vertex {
         pos: [0.35966998, -0.3473291, 0.0],
         col: [0.5, 0.0, 0.5],
+        uv: [0.0, 1.0],
     },
     Vertex {
         pos: [0.44147372, 0.2347359, 0.0],
         col: [0.5, 0.0, 0.5],
+        uv: [0.0, 1.0],
     },
 ];
 
@@ -101,106 +106,131 @@ pub fn cube_mesh_component() -> MeshComponent {
 }
 
 const CUBE_VERTICES: &[Vertex] = &[
+    // Front face
     Vertex {
         pos: [-1.0, -1.0, 1.0],
         col: [0.0, 0.0, 1.0],
+        uv: [0.0, 0.0],
     },
     Vertex {
         pos: [1.0, -1.0, 1.0],
         col: [1.0, 0.0, 1.0],
+        uv: [1.0, 0.0],
     },
     Vertex {
         pos: [1.0, 1.0, 1.0],
         col: [1.0, 1.0, 1.0],
+        uv: [1.0, 1.0],
     },
     Vertex {
         pos: [-1.0, 1.0, 1.0],
         col: [0.0, 1.0, 1.0],
+        uv: [0.0, 1.0],
     },
     // Bottom face.
     Vertex {
         pos: [-1.0, 1.0, -1.0],
         col: [1.0, 0.0, 1.0],
+        uv: [0.0, 0.0],
     },
     Vertex {
         pos: [1.0, 1.0, -1.0],
         col: [0.0, 0.0, 1.0],
+        uv: [1.0, 0.0],
     },
     Vertex {
         pos: [1.0, -1.0, -1.0],
         col: [0.0, 1.0, 1.0],
+        uv: [1.0, 1.0],
     },
     Vertex {
         pos: [-1.0, -1.0, -1.0],
         col: [1.0, 1.0, 1.0],
+        uv: [0.0, 1.0],
     },
     // Right face.
     Vertex {
         pos: [1.0, -1.0, -1.0],
         col: [0.0, 0.0, 1.0],
+        uv: [0.0, 0.0],
     },
     Vertex {
         pos: [1.0, 1.0, -1.0],
         col: [1.0, 0.0, 1.0],
+        uv: [1.0, 0.0],
     },
     Vertex {
         pos: [1.0, 1.0, 1.0],
         col: [1.0, 1.0, 1.0],
+        uv: [1.0, 1.0],
     },
     Vertex {
         pos: [1.0, -1.0, 1.0],
         col: [0.0, 1.0, 1.0],
+        uv: [0.0, 1.0],
     },
     // Left face.
     Vertex {
         pos: [-1.0, -1.0, 1.0],
         col: [1.0, 0.0, 1.0],
+        uv: [0.0, 0.0],
     },
     Vertex {
         pos: [-1.0, 1.0, 1.0],
         col: [0.0, 0.0, 1.0],
+        uv: [1.0, 0.0],
     },
     Vertex {
         pos: [-1.0, 1.0, -1.0],
         col: [0.0, 1.0, 1.0],
+        uv: [1.0, 1.0],
     },
     Vertex {
         pos: [-1.0, -1.0, -1.0],
         col: [1.0, 1.0, 1.0],
+        uv: [0.0, 1.0],
     },
-    // Front face.
+    // Back face.
     Vertex {
         pos: [1.0, 1.0, -1.0],
         col: [1.0, 0.0, 1.0],
+        uv: [0.0, 0.0],
     },
     Vertex {
         pos: [-1.0, 1.0, -1.0],
         col: [0.0, 0.0, 1.0],
+        uv: [1.0, 0.0],
     },
     Vertex {
         pos: [-1.0, 1.0, 1.0],
         col: [0.0, 1.0, 1.0],
+        uv: [1.0, 1.0],
     },
     Vertex {
         pos: [1.0, 1.0, 1.0],
         col: [1.0, 1.0, 1.0],
+        uv: [0.0, 1.0],
     },
-    // Back face.
+    // Bottom face
     Vertex {
         pos: [1.0, -1.0, 1.0],
         col: [0.0, 0.0, 1.0],
+        uv: [0.0, 0.0],
     },
     Vertex {
         pos: [-1.0, -1.0, 1.0],
         col: [1.0, 0.0, 1.0],
+        uv: [1.0, 0.0],
     },
     Vertex {
         pos: [-1.0, -1.0, -1.0],
         col: [1.0, 1.0, 1.0],
+        uv: [1.0, 1.0],
     },
     Vertex {
         pos: [1.0, -1.0, -1.0],
         col: [0.0, 1.0, 1.0],
+        uv: [0.0, 1.0],
     },
 ];
 
@@ -283,7 +313,8 @@ fn face(dir: &Vector3<f32>, resolution: usize) -> (Vec<Vertex>, Vec<u16>) {
     let mut vertices = vec![
         Vertex {
             pos: [0.0, 0.0, 0.0],
-            col: [0.0, 0.0, 0.0]
+            col: [0.0, 0.0, 0.0],
+            uv: [0.0, 0.0],
         };
         resolution.pow(2)
     ];
@@ -310,6 +341,7 @@ fn face(dir: &Vector3<f32>, resolution: usize) -> (Vec<Vertex>, Vec<u16>) {
             vertices[i] = Vertex {
                 pos: [position3.x, position3.y, position3.z],
                 col: [position3.x, position3.y, position3.z],
+                uv: [1.0, 0.0],
             };
 
             if x < resolution - 1 && y < resolution - 1 {
@@ -343,18 +375,22 @@ const PLANE_VERTICES: &[Vertex] = &[
     Vertex {
         pos: [-1.0, 0.0, 1.0],
         col: [0.0, 0.0, 1.0],
+        uv: [0.0, 0.0], // Bottom-left
     },
     Vertex {
         pos: [1.0, 0.0, 1.0],
         col: [1.0, 0.0, 1.0],
+        uv: [1.0, 0.0], // Bottom-right
     },
     Vertex {
         pos: [1.0, 0.0, -1.0],
         col: [1.0, 1.0, 1.0],
+        uv: [1.0, 1.0], // Top-right
     },
     Vertex {
         pos: [-1.0, 0.0, -1.0],
         col: [0.0, 1.0, 1.0],
+        uv: [0.0, 1.0], // Top-left
     },
 ];
 
@@ -407,7 +443,8 @@ fn generate_cone_mesh(resolution: usize) -> (Vec<Vertex>, Vec<u16>) {
     let mut vertices = vec![
         Vertex {
             pos: [0.0, 1.0, 0.0],
-            col: [0.0, 0.0, 0.0]
+            col: [0.0, 0.0, 0.0],
+            uv: [0.0, 0.0],
         };
         resolution + 1
     ];
@@ -425,6 +462,7 @@ fn generate_cone_mesh(resolution: usize) -> (Vec<Vertex>, Vec<u16>) {
         vertices[i] = Vertex {
             pos: [x, -1.0, y],
             col: [x, 0.0, y],
+            uv: [0.0, 0.0],
         };
 
         indices[index_cout] = 0;
@@ -485,7 +523,8 @@ fn generate_cylinder_mesh(resolution: usize) -> (Vec<Vertex>, Vec<u16>) {
     let mut vertices = vec![
         Vertex {
             pos: [0.0, 0.0, 0.0],
-            col: [0.0, 0.0, 0.0]
+            col: [0.0, 0.0, 0.0],
+            uv: [0.0, 0.0],
         };
         resolution * 2
     ];
@@ -506,12 +545,14 @@ fn generate_cylinder_mesh(resolution: usize) -> (Vec<Vertex>, Vec<u16>) {
         vertices[top_index] = Vertex {
             pos: [x, 1.0, y],
             col: [x, 0.0, y],
+            uv: [0.0, 0.0],
         };
 
         // BOTTOM
         vertices[bottom_index] = Vertex {
             pos: [x, -1.0, y],
             col: [x, 0.0, y],
+            uv: [0.0, 0.0],
         };
 
         // SIDE
