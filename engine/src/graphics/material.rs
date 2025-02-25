@@ -70,7 +70,7 @@ impl MaterialKind {
         }
     }
 
-    fn bind_group_layouts(&self, _gpu: &Gpu) -> Option<BindGroupLayout> {
+    fn bind_group_layouts(&self, _dpu: &Gpu) -> Option<BindGroupLayout> {
         match self {
             MaterialKind::Debug => None,
             MaterialKind::Untextured => None,

@@ -6,12 +6,7 @@ use crate::graphics::{BufferCreator, BufferHandler, ShaderHandler};
 
 use bytemuck::{AnyBitPattern, Pod};
 use wgpu::{
-    util::{BufferInitDescriptor, DeviceExt},
-    Adapter, Buffer, BufferAddress, BufferUsages, Device, DeviceDescriptor,
-    Extent3d, Features, Limits, Queue, RequestAdapterOptions,
-    SamplerDescriptor, ShaderModule, Surface, SurfaceConfiguration,
-    TextureDescriptor, TextureDimension, TextureFormat, TextureUsages,
-    TextureViewDescriptor, COPY_BUFFER_ALIGNMENT,
+    util::{BufferInitDescriptor, DeviceExt}, Adapter, Backends, Buffer, BufferAddress, BufferUsages, Device, DeviceDescriptor, Dx12Compiler, Extent3d, Features, Gles3MinorVersion, InstanceDescriptor, InstanceFlags, Limits, Queue, RequestAdapterOptions, SamplerDescriptor, ShaderModule, Surface, SurfaceConfiguration, TextureDescriptor, TextureDimension, TextureFormat, TextureUsages, TextureViewDescriptor, COPY_BUFFER_ALIGNMENT
 };
 
 use crate::{
@@ -77,7 +72,8 @@ pub struct Gpu {
 impl Gpu {
     /// Creates and returns new instance of `GPU`.
     pub async fn new(window: &Window) -> Self {
-        let instance = wgpu::Instance::default();
+        let instance = wgpu::Instance::new(InstanceDescriptor { backends: Backends::METAL, flags: InstanceFlags::all(),             dx12_shader_compiler: Dx12Compiler::default(),
+            gles_minor_version: Gles3MinorVersion::default(), });
 
         let surface = unsafe { instance.create_surface(window) }
             .expect("Unable to acquire the `wgpu` surface.");

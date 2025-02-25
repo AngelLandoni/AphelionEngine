@@ -284,6 +284,17 @@ fn render_gui_system(world: &World) {
         .unwrap();
     let mut shared_data = world.borrow::<UniqueViewMut<SharedData>>().unwrap();
 
+    engine::egui::Window::new("Testing")
+        .min_width(100.0)
+        .min_height(100.0)
+        .show(&egui.0, |ui| {
+            ui.label("Hello");
+
+            if ui.add(engine::egui::Button::new("Click me")).clicked() {
+                println!("PRESSED")
+            }
+        });
+
     engine::egui::CentralPanel::default()
         .frame(Frame {
             inner_margin: Margin::same(5.0),

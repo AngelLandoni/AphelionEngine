@@ -75,7 +75,8 @@ impl AssetServer {
             .read()
             .expect("Unable to acquire read lock")
             .meshes
-            .get(mesh_id).cloned()
+            .get(mesh_id)
+            .cloned()
     }
 
     /// Retrieves a material by its resource ID.
@@ -95,7 +96,8 @@ impl AssetServer {
             .read()
             .expect("Unable to acquire read lock")
             .materials
-            .get(material_id).cloned()
+            .get(material_id)
+            .cloned()
     }
 
     /// Registers a mesh into the Asset Server.
@@ -166,7 +168,7 @@ impl AssetServer {
     ) {
         self.data
             .write()
-            .expect("UNable to acquire write lock")
+            .expect("Unable to acquire write lock")
             .materials_pipelines
             .insert(id, Arc::new(pipeline));
     }
@@ -301,7 +303,8 @@ impl AssetServer {
             .read()
             .expect("Unable to acquire read lock")
             .materials_pipelines
-            .get(pipeline_id).cloned()
+            .get(pipeline_id)
+            .cloned()
     }
 
     /// Extracts textures to be loaded.
