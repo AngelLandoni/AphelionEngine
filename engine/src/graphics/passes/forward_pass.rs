@@ -145,7 +145,6 @@ pub(crate) fn forward_pass_system(
                         "Tring to render a model which does not have material",
                     );
                     continue;
-                    // TODO(Angel): If there is not mat pipeline set one as default.
                 }
 
                 pass.set_vertex_buffer(0, vertex_buffer.0.slice(..));
@@ -188,9 +187,7 @@ fn extract_scene_target_textures(
 }
 
 /// Tries to extract the bind groups from the provided scene.
-fn extract_bind_groups(
-    scene: &Scene,
-) -> Result<&WGPUBindGroup, ForwardError> {
+fn extract_bind_groups(scene: &Scene) -> Result<&WGPUBindGroup, ForwardError> {
     let camera_bind_group = scene
         .camera_bind_group
         .as_ref()

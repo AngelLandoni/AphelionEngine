@@ -65,20 +65,5 @@ impl Pluggable for WorkbenchScenePlugin {
                 "Untextured Mat + Forward".to_owned(),
             ),
         ));
-
-        /*app.world.add_entity((
-        cube_mesh_component(),
-        ForwardRender,
-        Transform {
-            position: Vector3::new(0.0, 0.0, -10.0),
-            rotation: rot,
-            scale: Vector3::new(2.0, 2.0, 2.0),
-        },
-        SceneTarget::SubScene("WorkbenchScene".to_string()),
-        Hierarchy::new(
-            crate::gui::icons::MESH_CUBE,
-            "Second cube".to_owned(),
-        ),
-        ));*/
     }
 }

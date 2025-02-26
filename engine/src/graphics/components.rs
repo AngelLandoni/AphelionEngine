@@ -11,7 +11,6 @@ pub struct ScreenFrame(pub(crate) Option<SurfaceTexture>);
 #[derive(Unique)]
 pub struct ScreenTexture(pub(crate) Option<TextureView>);
 
-// TODO(Angel): Find a better name.
 #[derive(Component)]
 pub struct MeshComponent(pub AssetResourceID);
 

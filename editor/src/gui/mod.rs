@@ -136,7 +136,6 @@ fn configure_gui_system(
     configure_panels(&mut panel_state);
 }
 
-// TODO(Angel): Use AllStorageView
 fn register_workbench_texture(world: &World) {
     let mut egui_renderer =
         world.borrow::<UniqueViewMut<EguiRenderer>>().unwrap();
@@ -144,7 +143,6 @@ fn register_workbench_texture(world: &World) {
     let gpu = world.borrow::<UniqueView<AbstractGpu>>().unwrap();
     let gpu = gpu.downcast_ref::<Gpu>().unwrap();
 
-    // TODO(Angel): Try to make this reasonable.
     let texture = s_state
         .sub_scenes
         .get("WorkbenchScene")
@@ -283,17 +281,6 @@ fn render_gui_system(world: &World) {
         .borrow::<UniqueViewMut<TabDragStartPosition>>()
         .unwrap();
     let mut shared_data = world.borrow::<UniqueViewMut<SharedData>>().unwrap();
-
-    engine::egui::Window::new("Testing")
-        .min_width(100.0)
-        .min_height(100.0)
-        .show(&egui.0, |ui| {
-            ui.label("Hello");
-
-            if ui.add(engine::egui::Button::new("Click me")).clicked() {
-                println!("PRESSED")
-            }
-        });
 
     engine::egui::CentralPanel::default()
         .frame(Frame {

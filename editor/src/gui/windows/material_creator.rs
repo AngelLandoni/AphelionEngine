@@ -74,7 +74,6 @@ pub fn render_material_creator(world: &World) {
 
                     ui.label("");
                     if ui.button("Create").clicked() {
-                        // TODO(Angel): Figure it out how to generate a random id.
                         asset_server.register_material(
                             material_creator_state.name.clone(),
                             Material {

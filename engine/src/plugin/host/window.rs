@@ -263,7 +263,6 @@ fn map_keyboard_input(key: &PhysicalKey) -> KeyCode {
                 return KeyCode::from_u32(key_code - 19);
             }
 
-            // TODO(Angel): Add support for the rest of keys.
             KeyCode::Unknown
         }
         PhysicalKey::Unidentified(_) => KeyCode::Unknown,

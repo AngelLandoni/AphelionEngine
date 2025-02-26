@@ -2,7 +2,7 @@ use engine::{
     egui::{
         vec2, Align2, Color32, FontId, Rect, Response, ScrollArea, Sense, Ui,
     },
-    scene::hierarchy::{Hierarchy},
+    scene::hierarchy::Hierarchy,
 };
 use shipyard::{
     AddComponent, Component, Delete, EntitiesView, EntityId, Get, Remove,
@@ -218,8 +218,6 @@ fn entity_action_menus(
         .button(format!("{} Delete", crate::gui::icons::REMOVE))
         .clicked()
     {
-        // TODO(Angel): Just testing, we should also add all children and sub children.
-        // TODO(Angel): Remove Children from parent in the hierarchy.
         let mut to_mark_as_deleted = vec![*entity];
 
         let mut i = 0;

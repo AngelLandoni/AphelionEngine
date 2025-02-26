@@ -209,7 +209,6 @@ pub(crate) fn sync_sky_pipeline_uniforms(world: &World) {
         &scenes_states.main
     };
 
-    // TODO(Angel): When the texture is already processed remove it?.
     let gpu = gpu
         .downcast_ref::<Gpu>()
         .expect("Incorrect GPU type expecting WGPU gpu");
@@ -269,7 +268,6 @@ pub(crate) fn sync_sky_pipeline_uniforms(world: &World) {
         timestamp_writes: None,
     });
 
-    // TODO(Angel): 1080 is hardcoded we need to get that info from the scene descriptor.
     let num_workgroups = (1080 + 15) / 16;
     pass.set_pipeline(&sky_pipeline.equirectangular_conversion_pipeline);
     pass.set_bind_group(0, &bind_group, &[]);

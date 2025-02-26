@@ -80,7 +80,6 @@ pub struct Scene {
     /// Conaints the camera information allocated in the GPU RAM.
     pub(crate) camera_buffer: Box<dyn UniformBuffer>,
     /// Contains the buffer which holds the transform information.
-    // TODO(Angel): Set this as u32, WGPU only supports u32 for instancing
     pub(crate) mesh_transform_buffers:
         AHashMap<AssetResourceID, (Box<dyn VertexBuffer>, u64)>,
 
@@ -98,8 +97,6 @@ pub struct Scene {
     pub(crate) should_sync_resolution_to_window: bool,
 
     /// Containst the cube texture used to draw the sky.
-    // TODO(Angel): Add to the `SceneDescriptor` a property to disable
-    // sky, and make this optional.
     pub(crate) sky_texture: Option<Box<dyn Texture>>,
     /// Contains the sky env bind group.
     pub(crate) sky_env_bind_group: Option<Box<dyn BindGroup>>,
@@ -160,7 +157,6 @@ fn sync_scene(
         scene.mesh_transform_buffers.entry(id).or_insert_with(|| {
             let buffer = gpu.allocate_aligned_zero_vertex_buffer(
                 &format!("Mesh({}) transform", ent.0),
-                // TODO(Angel): The size must be configured using the pipeline props.
                 200000 * std::mem::size_of::<[[f32; 4]; 4]>() as u64,
                 BufferUsage::COPY_DST,
             );
@@ -373,7 +369,6 @@ fn sync_scene(
 /// transform buffers if they don't already exist. It also allocates transform buffers
 /// for entities with only mesh components and no material components.
 ///
-/// TODO: Do we really want to allocate mesh material data when the sync happens?
 pub(crate) fn sync_forward_models_memory_for_all_scenes_system(
     gpu: UniqueView<AbstractGpu>,
     mut scenes: UniqueViewMut<SceneState>,
@@ -414,8 +409,6 @@ pub(crate) fn sync_forward_models_memory_for_all_scenes_system(
         );
 
         // If the entity hash only mesh.
-        // TODO(Angel): Determine what we want to do with forward entities
-        // which does not have material.
         entities
             .iter()
             .filter(|e| {
@@ -454,7 +447,6 @@ pub(crate) fn sync_forward_models_memory_for_all_scenes_system(
 /// allocation fails or if the mesh does not exist, a warning will be  logged and
 /// the function will return without modifying the scene.
 ///
-/// TODO: Replace mutex with atomic.
 fn allocate_transform_buffer_if_it_does_not_exist(
     gpu: &AbstractGpu,
     scene: &mut Scene,

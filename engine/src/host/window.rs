@@ -47,7 +47,6 @@ impl Window {
     }
 }
 
-/// TODO(Angel): Ensure thread safety for everything inside this block.
 /// The `Window` instance will only be accessed from one thread, but Shipyard
 /// does not have this knowledge. Therefore, we need to make it `Send` + `Sync`.
 /// Address this concern to ensure correct functionality.

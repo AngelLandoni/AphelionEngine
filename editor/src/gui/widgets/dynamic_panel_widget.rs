@@ -276,9 +276,7 @@ fn render_list_of_tabs(
     active_tab: &mut Index,
     drag_start_position: &mut Option<Pos2>,
     shared_data: &mut SharedData,
-    // TODO(Angel): For some reason Rust does not like the the use of
-    // `impl FnMut(&mut Ui, &Tab) -> Response` in this case. Research.
-    mut ui_builder: Box<&mut dyn FnMut(&mut Ui, &Tab) -> Response>, //impl FnMut(&mut Ui, &Tab) -> Response,
+    mut ui_builder: Box<&mut dyn FnMut(&mut Ui, &Tab) -> Response>,
 ) {
     let full_response = ui.allocate_rect(*rect, Sense::hover());
 

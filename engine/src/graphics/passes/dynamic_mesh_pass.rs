@@ -17,7 +17,6 @@ use crate::{
 };
 
 /// Renders the triangle test.
-// TODO(Angel): Add support for sub scenes.
 pub(crate) fn dynamic_mesh_pass_system(
     gpu: UniqueView<AbstractGpu>,
     dyn_mesh_pipeline: UniqueView<DynamicMeshPipeline>,

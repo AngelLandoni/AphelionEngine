@@ -143,7 +143,6 @@ pub(crate) fn setup_frame_composition_pipelines_uniforms_system(
         .downcast_ref::<WGPUTexture>()
         .expect("Incorrect Texture");
 
-    // TODO(Angel): Maybe option is not needed.
     let main_sampler = main_texture
         .sampler
         .as_ref()

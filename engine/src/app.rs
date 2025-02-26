@@ -43,8 +43,6 @@ impl<'app> App<'app> {
     /// Creates a new `App` instance. It utilizes a dummy run loop and requires
     /// configuration for actual rendering.
     pub fn new() -> Self {
-        // TODO(Angel): Find a better place for this.
-
         let world = World::new();
 
         App {
@@ -88,9 +86,7 @@ impl<'app> App<'app> {
         match event {
             Event::Window(w_event) => {
                 match w_event {
-                    WindowEvent::CloseRequested => {
-                        println!("Close window");
-                    }
+                    WindowEvent::CloseRequested => {}
 
                     WindowEvent::RequestRedraw => {
                         start_frame_workload(self);

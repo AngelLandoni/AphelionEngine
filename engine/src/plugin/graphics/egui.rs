@@ -125,7 +125,6 @@ fn egui_generate_full_output(
     let w = match window.accesor.downcast_ref::<WinitWindowWrapper>() {
         Some(w) => w,
         None => {
-            // TODO(Angel): Use logger.
             println!("Unable to find Winit Window");
             return;
         }
@@ -150,7 +149,6 @@ fn egui_render_system(
     let w = match window.accesor.downcast_ref::<WinitWindowWrapper>() {
         Some(w) => w,
         None => {
-            // TODO(Angel): Use logger.
             println!("Unable to find Winit Window");
             return;
         }
@@ -247,7 +245,6 @@ fn egui_handle_events_system(
     let w = match window.accesor.downcast_ref::<WinitWindowWrapper>() {
         Some(w) => w,
         None => {
-            // TODO(Angel): Use logger.
             println!("Unable to find Winit Window");
             return;
         }

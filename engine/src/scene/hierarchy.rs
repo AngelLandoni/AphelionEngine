@@ -54,8 +54,6 @@ impl Hierarchy {
 /// Adds a child to a specific entity. When an entity is added the children
 /// must be resync to set the correct level in order to be translated
 /// correctly.
-// TODO(Angel): Check if it is really necessary to iterate over all the children
-// just only the one that it is added shoudl be enough.
 pub fn add_child(
     parent: EntityId,
     child: EntityId,
@@ -148,7 +146,6 @@ pub fn get_global_transform_matrix_of_entity(
 
 /// Walks up the hierachy tree and extract and miltiply all the transformation
 /// matrices.
-// TODO(Angel): Try to avoid recursion, use a queue to walk the tree.
 fn get_parent_transformation_releation(
     entity_id: EntityId,
     transformation_matrix: Matrix4<f32>,

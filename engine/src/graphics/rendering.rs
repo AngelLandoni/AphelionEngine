@@ -44,7 +44,6 @@ pub(crate) fn reconfigure_main_textures_if_needed_system(
         );
 
         // Sync all the scenes which does not have a default resolution.
-        // TODO(Angel): Add support for sub scenes.
         if s_state.main.should_sync_resolution_to_window {
             s_state.main.target_texture = gpu.allocate_target_texture(
                 &s_state.main.label,
@@ -83,7 +82,6 @@ pub(crate) fn reconfigure_main_textures_if_needed_system(
 }
 
 /// Setups the screen texture into the world.
-// TODO(Angel): Remove panic, to support headless.
 pub(crate) fn acquire_screen_texture(
     gpu: UniqueView<AbstractGpu>,
     mut s_frame: UniqueViewMut<ScreenFrame>,
@@ -104,7 +102,6 @@ pub(crate) fn acquire_screen_texture(
     }
 }
 
-// TODO(Angel): Remove panic, to support headless.
 pub fn present_screen_texture(mut s_frame: UniqueViewMut<ScreenFrame>) {
     // `present` takes ownership of the frame so we need to take
     // it out. I assume it is becase the frame is ending and it

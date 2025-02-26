@@ -102,7 +102,6 @@ pub trait BufferHandler {
     );
 }
 
-// TODO(Angel): Implement this.
 pub trait ShaderHandler {
     fn compile_program(&self);
 }
